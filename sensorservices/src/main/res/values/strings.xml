@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SensorBox</string>
+
+    <string name="text_stop">Stop</string>
+    <string name="notification_title">Measuring</string>
+    <string name="notification_content">Data are being recorded</string>
+    <string name="notification_finish_title">Finish</string>
+    <string name="notification_finish_content">Open app to continue</string>
+
+    <string name="measurement_second_format">%d s</string>
+    <string name="measurement_retry_content_notification">Continue by clicking here</string>
+    <string name="measurement_retry_title_notification">Again?</string>
+
+    <!-- Sensor names -->
+    <string name="agg_name">Gravity</string>
+    <string name="acg_name">Acceleration</string>
+    <string name="acc_name">Linear\nacceleration</string>
+    <string name="gyro_name">Gyroscope</string>
+    <string name="magnet_name">Magnetic\ninduction</string>
+    <string name="light_name">Lightning</string>
+    <string name="proxi_name">Proximity</string>
+    <string name="temp_name">Temperature</string>
+    <string name="pressure_name">Pressure</string>
+    <string name="humi_name">Humidity</string>
+    <string name="rotation_name">Rotation\nvector</string>
+    <string name="step_counter_name">Step\ncounter</string>
+    <string name="step_detector_name">Step\ndetector</string>
+    <string name="acg_name_wear">Acceleration\nWear Os</string>
+    <string name="acc_name_wear">Linear\nacceleration\nWear Os</string>
+    <string name="gyro_name_wear">Gyroscope\nWear Os</string>
+    <string name="magnet_name_wear">Magnetic\ninduction\nWear Os</string>
+
+
+    <string name="no_path">No path</string>
+    <string name="intro_error">Error occurred during creation of folder. Please contact support.</string>
+
+
+</resources>

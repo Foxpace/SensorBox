@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="@dimen/appintro_statusbar_height"
+    android:paddingBottom="@dimen/appintro2_bottombar_height"
+    android:background="@color/colorRedLT">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:text="@string/intro_battery_title"
+        android:textColor="@color/colorWhite"
+        app:autoSizeMaxTextSize="28sp"
+        app:autoSizeMinTextSize="12sp"
+        app:autoSizeTextType="uniform"
+        app:layout_constraintBottom_toTopOf="@+id/guideline23"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread"
+        app:layout_constraintVertical_weight="2" />
+
+    <Button
+        android:id="@+id/intro_ignore_battery"
+        style="@style/AppIntroDefaultImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_transparent_outline"
+        android:contentDescription="@string/app_intro_image_content_description"
+        android:fontFamily="@font/roboto_regular"
+        android:padding="16dp"
+        android:text="@string/intro_ignore_optimizations"
+        android:textColor="@color/colorWhite"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:layout_constraintVertical_weight="5"
+        app:srcCompat="@drawable/ic_battery" />
+
+    <TextView
+        android:id="@+id/description"
+        style="@style/AppIntroDefaultText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/intro_battery_description2"
+        app:autoSizeMaxTextSize="16sp"
+        app:autoSizeMinTextSize="12sp"
+        app:autoSizeTextType="uniform"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/intro_ignore_battery"
+        app:layout_constraintVertical_weight="3"  />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline23"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.30" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

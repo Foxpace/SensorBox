@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.motionapps.sensorbox.fragments.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" >
+
+        <action
+            android:id="@+id/home_info_action"
+            app:destination="@id/nav_info" />
+        <action
+            android:id="@+id/action_nav_home_to_pickFolderFragment"
+            app:destination="@id/pickFolderFragment" />
+        <action
+            android:id="@+id/action_nav_home_to_nav_about"
+            app:destination="@id/nav_about" />
+
+        <action
+            android:id="@+id/action_nav_home_to_nav_wear_os_info"
+            app:destination="@id/infoSensorWearOsFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_advanced"
+        android:name="com.motionapps.sensorbox.fragments.advanced.AdvancedFragment"
+        android:label="@string/menu_advanced"
+        tools:layout="@layout/fragment_home" >
+
+        <action
+            android:id="@+id/action_advanced_to_picker"
+            app:destination="@id/measurementPickerFragment" />
+        <action
+            android:id="@+id/home_info_action"
+            app:destination="@id/nav_info" />
+
+        <action
+            android:id="@+id/action_nav_home_to_nav_wear_os_info"
+            app:destination="@id/infoSensorWearOsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.motionapps.sensorbox.fragments.settings.SettingsFragment"
+        android:label="@string/menu_settings"
+        tools:layout="" >
+
+        <action
+            android:id="@+id/action_nav_settings_to_annotationFragment"
+            app:destination="@id/annotationFragment" />
+        <action
+            android:id="@+id/action_nav_settings_to_pickFolderFragment"
+            app:destination="@id/pickFolderFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_info"
+        android:name="com.motionapps.sensorbox.fragments.InfoSensorFragment"
+        android:label="@string/sensor_info"
+        tools:layout="@layout/fragment_info_sensor" >
+        <action
+            android:id="@+id/action_nav_info_to_nav_home"
+            app:destination="@id/nav_home" />
+
+        <argument
+            android:name="type"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_nav_info_to_nav_advanced"
+            app:destination="@id/nav_advanced" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/measurementPickerFragment"
+        android:name="com.motionapps.sensorbox.fragments.advanced.MeasurementPickerFragment"
+        android:label="@string/advanced_measurement_picker"
+        tools:layout="@layout/fragment_measurement_picker" >
+        <action
+            android:id="@+id/action_picker_to_advanced"
+            app:destination="@id/nav_advanced" />
+        <action
+            android:id="@+id/action_measurementPickerFragment_to_countersFragment"
+            app:destination="@id/countersFragment" />
+        <action
+            android:id="@+id/action_measurementPickerFragment_to_extraFragment"
+            app:destination="@id/extraFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/countersFragment"
+        android:name="com.motionapps.sensorbox.fragments.advanced.CountersFragment"
+        android:label="@string/advanced_counter_fragment"
+        tools:layout="@layout/fragment_counters" >
+        <action
+            android:id="@+id/action_countersFragment_to_measurementPickerFragment"
+            app:destination="@id/measurementPickerFragment" />
+        <action
+            android:id="@+id/action_countersFragment_to_extraFragment"
+            app:destination="@id/extraFragment" />
+        <argument
+            android:name="longMeasurement"
+            app:argType="boolean" />
+    </fragment>
+    <fragment
+        android:id="@+id/extraFragment"
+        android:name="com.motionapps.sensorbox.fragments.advanced.ExtraFragment"
+        android:label="@string/advanced_extra_fragment"
+        tools:layout="@layout/fragment_extra" >
+        <action
+            android:id="@+id/action_extraFragment_to_countersFragment"
+            app:destination="@id/countersFragment" />
+        <action
+            android:id="@+id/action_extraFragment_to_measurementPickerFragment"
+            app:destination="@id/measurementPickerFragment" />
+        <argument
+            android:name="typeMeasurement"
+            app:argType="integer"
+            android:defaultValue="1" />
+        <argument
+            android:name="firstTime"
+            app:argType="integer"
+            android:defaultValue="-1" />
+        <argument
+            android:name="secondTime"
+            app:argType="integer"
+            android:defaultValue="-1" />
+    </fragment>
+    <fragment
+        android:id="@+id/annotationFragment"
+        android:name="com.motionapps.sensorbox.fragments.settings.AnnotationFragment"
+        android:label="@string/settings_annotations"
+        tools:layout="@layout/fragment_annotation" />
+    <fragment
+        android:id="@+id/pickFolderFragment"
+        android:name="com.motionapps.sensorbox.intro.PickFolderFragment"
+        android:label="@string/intro_pick_folder" >
+        <argument
+            android:name="color"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_about"
+        android:name="com.motionapps.sensorbox.activities.About"
+        android:label="@string/menu_about">
+        <action
+            android:id="@+id/action_nav_about_to_nav_home"
+            app:destination="@id/nav_home" />
+    </fragment>
+
+
+    <fragment android:id="@+id/infoSensorWearOsFragment"
+        android:name="com.motionapps.sensorbox.fragments.InfoSensorFragmentWearOs"
+        android:label="Wear Os Info">
+        <argument
+            android:name="type"
+            app:argType="string" />
+    </fragment>
+
+</navigation>

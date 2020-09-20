@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="@dimen/appintro_statusbar_height"
+    android:paddingBottom="@dimen/appintro2_bottombar_height"
+    tools:background="@color/colorBlack">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:textSize="28sp"
+        android:textColor="@color/colorWhite"
+        android:text="@string/intro_pick_folder"
+        app:layout_constraintVertical_weight="2"
+        app:layout_constraintBottom_toTopOf="@+id/image"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread" />
+
+    <ImageView
+        android:id="@+id/image"
+        style="@style/AppIntroDefaultImage"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/app_intro_image_content_description"
+        app:srcCompat="@drawable/ic_folder"
+        app:layout_constraintVertical_weight="5"
+        app:layout_constraintBottom_toTopOf="@+id/description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title" />
+
+    <TextView
+        android:id="@+id/description"
+        style="@style/AppIntroDefaultText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image"
+        app:layout_constraintVertical_weight="3"
+        tools:text="@string/intro_pick_folder_description" />
+
+    <Button
+        android:id="@+id/intro_pick_folder_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/intro_pick_folder"
+        android:textColor="@color/colorWhite"
+        android:padding="16dp"
+        android:background="@drawable/rounded_transparent_outline"
+        app:layout_constraintBottom_toTopOf="@+id/description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

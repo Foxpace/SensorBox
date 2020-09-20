@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.motionapps.sensorbox" >
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="true" />
+
+    <compatible-screens>
+        <screen
+            android:screenDensity="ldpi"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="mdpi"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="hdpi"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="xhdpi"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="420"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="480"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="560"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="640"
+            android:screenSize="small" />
+        <screen
+            android:screenDensity="ldpi"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="mdpi"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="hdpi"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="xhdpi"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="420"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="480"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="560"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="640"
+            android:screenSize="normal" />
+        <screen
+            android:screenDensity="ldpi"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="mdpi"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="hdpi"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="xhdpi"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="420"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="480"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="560"
+            android:screenSize="large" />
+        <screen
+            android:screenDensity="640"
+            android:screenSize="large" />
+    </compatible-screens>
+
+    <application
+        android:name=".SensorBoxApp"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher_white_square"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_launcher_white_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".intro.IntroActivity"
+            android:label="Application intro"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activities.MeasurementActivity"
+            android:label="Activity during measurement"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activities.MainActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".MsgListener" >
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/com.motionapps.sensorbox.Activity"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${apiKey}" />
+    </application>
+
+</manifest>

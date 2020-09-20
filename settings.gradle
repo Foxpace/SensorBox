@@ -1,0 +1,7 @@
+include ':flipper'
+include ':wearoslib'
+include ':wear'
+include ':CountDownDialog'
+include ':SensorServices'
+include ':app'
+rootProject.name = "SensorBox"
