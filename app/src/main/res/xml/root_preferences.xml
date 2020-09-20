@@ -1,0 +1,67 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        app:title="@string/settings_storage"
+        app:icon="@drawable/ic_storage"
+        app:layout="@layout/pref_category"
+        >
+
+        <Preference
+            app:key="folder_change"
+            app:title="@string/settings_folder_change" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/gps"
+        app:icon="@drawable/ic_baseline_gps"
+        app:layout="@layout/pref_category">
+
+        <EditTextPreference
+            android:inputType="number"
+            android:digits="0123456789"
+            app:layout="@layout/pref_preference"
+            app:key="gps_distance"
+            app:title="@string/settings_interval_distance"
+            app:defaultValue="12"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            android:inputType="number"
+            android:digits="0123456789"
+            app:layout="@layout/pref_preference"
+            app:key="gps_time"
+            app:defaultValue="10"
+            app:title="@string/settings_interval_time"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_activity_recognition_API"
+        app:icon="@drawable/ic_walk"
+        app:layout="@layout/pref_category">
+
+        <EditTextPreference
+            android:digits="0123456789"
+            android:inputType="number"
+            app:layout="@layout/pref_preference"
+            app:defaultValue="60"
+            app:key="activity_recognition_period"
+            app:title="@string/settings_interval_time"
+            app:useSimpleSummaryProvider="true" />
+        <Preference
+            app:key="about_activity_recognition"
+            app:title="@string/settings_activity_recognition_preference" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Annotations"
+        app:icon="@drawable/ic_pen"
+        app:layout="@layout/pref_category">
+        <Preference
+            app:key="annots"
+            app:title="@string/settings_custom_annots" />
+    </PreferenceCategory>
+</PreferenceScreen>

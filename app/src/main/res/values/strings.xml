@@ -1,0 +1,201 @@
+<resources>
+    <string name="app_name">SensorBox</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">SensorBox</string>
+    <string name="nav_header_subtitle">Creative Motion apps</string>
+    <string name="nav_header_desc">Navigation header</string>
+
+    <string name="next">Next</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Activities -->
+    <string name="menu_about">About</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_advanced">Advanced</string>
+    <string name="menu_settings">Settings</string>
+    <string name="sensor_info">Sensor information</string>
+    <string name="start_measurement">Start measurement</string>
+
+    <!-- Sensor names -->
+    <string name="agg_name">Gravity</string>
+    <string name="acg_name">Acceleration</string>
+    <string name="acc_name">Linear\nacceleration</string>
+    <string name="gyro_name">Gyroscope</string>
+    <string name="magnet_name">Magnetic\ninduction</string>
+    <string name="light_name">Lightning</string>
+    <string name="proxi_name">Proximity</string>
+    <string name="temp_name">Temperature</string>
+    <string name="pressure_name">Pressure</string>
+    <string name="humi_name">Humidity</string>
+    <string name="rotation_name">Rotation\nvector</string>
+    <string name="step_counter_name">Step\ncounter</string>
+    <string name="step_detector_name">Step\ndetector</string>
+
+    <string name="hours">Hours</string>
+    <string name="minutes">Minutes</string>
+    <string name="seconds">Seconds</string>
+
+
+    <!-- Sensor Info - viewer -->
+    <string name="sensor_info_name">Name</string>
+    <string name="sensor_info_vendor">Vendor</string>
+    <string name="sensor_info_version">Version</string>
+    <string name="sensor_info_max_range">Maximal\nrange</string>
+    <string name="sensor_info_resolution">Resolution</string>
+    <string name="sensor_info_power">Power [mA]</string>
+    <string name="sensor_info_min_delay">Minimal\ndelay [µs]</string>
+    <string name="sensor_info_max_delay">Maximal\ndelay [µs]</string>
+    <string name="sensor_info_float">%.2f</string>
+
+    <!--GPS-->
+    <string name="gps">GPS</string>
+    <string name="sensor_info_GPS_latitude">Latitude</string>
+    <string name="sensor_info_GPS_longitude">Longitude</string>
+    <string name="sensor_info_GPS_altitude">Altitude [m]</string>
+    <string name="sensor_info_GPS_accuracy">Accuracy [m]</string>
+    <string name="sensor_info_GPS_speed">Speed [m/s]</string>
+    <string name="sensor_info_GPS_bearing">Bearing [°]</string>
+    <string name="sensor_info_GPS_provider">Provider</string>
+    <string-array name="sensor_info_GPS_array">
+        <item>@string/sensor_info_GPS_latitude</item>
+        <item>@string/sensor_info_GPS_longitude</item>
+        <item>@string/sensor_info_GPS_altitude</item>
+        <item>@string/sensor_info_GPS_accuracy</item>
+        <item>@string/sensor_info_GPS_speed</item>
+        <item>@string/sensor_info_GPS_bearing</item>
+        <item>@string/sensor_info_GPS_provider</item>
+    </string-array>
+
+    <!--ADVANCED-->
+    <string name="advanced_button_long_measurement"><![CDATA[Long\nmeasurement\n\n > 60 s]]></string>
+    <string name="advanced_button_endless_measurement">Endless\nmeasurement\n\n∞</string>
+    <string name="advanced_button_short_measurement"><![CDATA[Short\nmeasurement\n\n < 60 s]]></string>
+    <string name="advanced_measurement_picker">Pick measurement</string>
+    <string name="advanced_counter_fragment">Pick time intervals</string>
+    <string name="advanced_extra_fragment">Options of measurement</string>
+    <string name="advanced_time_to_start">Time to\nstart [s]</string>
+    <string name="advanced_time_to_measure">Time to\nmeasure [s]</string>
+    <string name="advanced_hours">Hours</string>
+    <string name="advanced_minutes">Minutes</string>
+    <string name="advanced_setup_time">Set up time</string>
+    <string name="advanced_time_pass_limit">Unreachable time</string>
+
+    <!--SETTINGS-->
+    <string name="settings_storage">Storage</string>
+    <string name="settings_folder_change">Change folder</string>
+    <string name="settings_interval_time">Time interval [s]</string>
+    <string name="settings_activity_recognition_API">Activity recognition API</string>
+    <string name="settings_app">App</string>
+    <string name="settings_activity_recognition_preference">About activity recognition</string>
+    <string name="settings_custom_annots">Customize annotations</string>
+    <string name="settings_version">Version of the app</string>
+    <string name="settings_interval_distance">Distance interval [m]</string>
+    <string name="settings_annotations">Annotations</string>
+    <string name="settings_annotation">Annotation</string>
+    <string name="settings_add">Add</string>
+    <string name="settings_high_value_warning">The parameter is too high! Max: </string>
+    <string name="settings_activity_recognition_title">About activity recognition</string>
+    <string name="settings_activity_recognition_text">SensorBox uses Activity Recognition Client, Google\'s API, which is native tool for
+    activity recognition for Android. The client is capable to provide basic information about movement status of a phone,
+    whether it is in a vehicle, with a person or stationary placed. \n\nThe client can recognize changes among this activities:\n\n
+    \u2022 In vehicle\n
+    \u2022 On foot - running/walking\n
+    \u2022 Running\n
+    \u2022 Walking\n
+    \u2022 On Bicycle\n
+    \u2022 Still - device is not moving\n\n
+        This data will be stored in "activity_changes.txt" with a appropriate timestamp.\n\n
+        With the customizable frequency of updates, you can get an actual confidence of each activity in %. This data will
+    be stored in "activity_confidence.csv". There are also available this activities:\n\n
+    \u2022 Tilting - device angle relative to gravity changed significantly\n
+    \u2022 Unknown - unable to detect activity\n\nSum of activities do not equal to 100%, because some activities are not exclusive
+        (on foot is generalization of walking and running).
+        Moreover, the frequency of updates do not need to be precise, due to a battery optimizations of system.
+    </string>
+
+    <string-array name="sensor_speeds">
+        <item>Fastest - 0 ms</item>
+        <item>Game - 20 ms</item>
+        <item>UI - 60 ms</item>
+        <item>Normal - 200 ms</item>
+    </string-array>
+
+    <!--EXTRA-->
+    <string name="extra_name_folder">Name of\nthe folder:</string>
+    <string name="extra_edittext_hint">Optional</string>
+    <string name="extra_pick_sensor">Max delay\nfor sensors:</string>
+    <string name="extra_custom_notes">Add custom notes to JSON file</string>
+    <string name="extra_note">Note</string>
+    <string name="add_custom_noise_alarms_during_measurement">Add custom noise alarms during measurement</string>
+    <string name="extra_other_options">Other options</string>
+    <string name="extra_activity_recognition_checkbox">Use activity recognition</string>
+    <string name="extra_significant_motion_checkbox">Use significant motion sensor</string>
+    <string name="extra_low_battery_checkbox">Stop measurement on low battery</string>
+    <string name="extra_use_wakelock_checkbox">Use wakelock - locks CPU</string>
+    <string name="extra_repeat_measurement_checkbox">Repeating measurement</string>
+    <string name="extra_only_letters">Only letters and underscores are permitted.</string>
+    <string name="extra_alarm_title">Pick time for alarm</string>
+    <string name="extra_alarm_seconds">Time [s]</string>
+    <string name="extra_alarm_minutes">Time [min]</string>
+    <string name="extra_alarm_registered">Alarm already registered</string>
+    <string name="extra_add">Add</string>
+    <string name="extra_hours_mins">%1$d h %2$d min</string>
+    <string name="extra_seconds">%1$d s</string>
+    <string name="text_stop">Stop</string>
+
+    <!--MEASUREMENT-->
+    <string name="measurement_elapsed_time">Elapsed time</string>
+    <string name="measurement_stop_button">Stop\nmeasurement</string>
+    <string name="measurement_stop">Stop</string>
+    <string name="measurement_add_annotation">Add\nannotation</string>
+    <string name="measurement_remaining_time">Remaining time</string>
+    <string name="measurement_format_long">"Measurement end:\n %s</string>
+    <string name="measurement_annot_empty">Add annotations in settings</string>
+    <string name="measurement_annot_title">Pick one item</string>
+    <string name="measurement_delete_previous">Delete previous measurement</string>
+    <string name="measurement_title_repeat">Repeat measurement ?</string>
+    <string name="measurement_repeat">Repeat</string>
+    <string name="measurement_cancel">Cancel</string>
+
+    <!--INTRO-->
+    <string name="intro_welcome">Welcome!</string>
+    <string name="intro_welcome_description">The application that can record sensors and GPS to CSV files, which is also compatible with Wear Os</string>
+    <string name="intro_incognito">Nothing is going out</string>
+    <string name="intro_incognito_description">All the measured data are stored locally. None of them are sent to any cloud. Moreover, this is open-source project. Visit our github!</string>
+    <string name="intro_permission">Permissions</string>
+    <string name="intro_permission_description">In order to use save files, use GPS and use activity recognition API, we need you to give us all these permissions.</string>
+    <string name="intro_allow">Allow</string>
+    <string name="intro_life_cycle_problem">App problem</string>
+    <string name="intro_battery_description">Due to the Android power saving routines, the app does not need to work properly. For example after the screen turns off, sensors can too or app gets killed by the system. Some routines are from manufacturer itself. </string>
+    <string name="intro_battery_title">Partial solution</string>
+    <string name="intro_battery_description2">To turn off Android power management, click on button above. However, manufacturer side does not have method to turn off. Usually, the way to switch it off is to go to settings -> battery -> and add app to whitelist. Even this does not guarantee proper functionality.</string>
+    <string name="intro_battery_description2_landscape">To turn off Android power management, click on button on left. However, manufacturer side does not have method to turn off. Usually, the way to switch it off is to go to settings -> battery -> and add app to whitelist. Even this does not guarantee proper functionality.</string>
+    <string name="intro_ignore_optimizations">Click to\nignore\noptimizations</string>
+    <string name="intro_ignored_optimisations">Optimisations are ignored</string>
+    <string name="intro_ignored_optimisations_error">Device does not support this option</string>
+    <string name="intro_pick_folder">Pick folder</string>
+    <string name="intro_pick_folder_description">Here you can pick folder, where to store all the files. Picked folder is:\n\n%s</string>
+    <string name="intro_pick_folder_description_under_Q">SensorBox folder will be created in your root directory.</string>
+    <string name="intro_deny_dont_ask">Please visit settings to give permissions to the app</string>
+    <string name="intro_deny">The permission are required for full functionality</string>
+    <string name="intro_condition_folder">Please pick folder, where to store all the measurements</string>
+
+    <!--ABOUT-->
+    <string name="about_app_description">SensorBox serves as sensor output aggregation tool. You can pick sensors, views their parameters, store them in csv files. During measurement, you can set up alarms, write notes and take annotations. Application is compatible with Wear Os. SensorBox is open source project, so you can visit github page for code.</string>
+    <string name="about_title_email">Email contact</string>
+    <string name="licenses">Open Source Licenses</string>
+    <string name="about_site_title">Visit our site</string>
+    <string name="sync_data">Download data from Wear Os</string>
+    <string name="wear_os_presence">Wear Os presence</string>
+    <string name="title_activity_main2">MainActivity</string>
+    <string name="action_settings">Settings</string>
+
+    <!--Wear OS-->
+    <string name="wear_os_sync_unavailable_restart">Synchronization is not available - restart connection</string>
+    <string name="wear_os_sync_in_progress">Synchronization in progress</string>
+    <string name="wear_os_active">Turn off Wear Os active measurement</string>
+
+
+</resources>

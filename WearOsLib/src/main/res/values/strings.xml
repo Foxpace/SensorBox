@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SensorBox</string>
+    <string name="sync_failed_restart">Restart connection please</string>
+    <string name="wear_os_sync_data">Syncing Wear Os data</string>
+    <string name="text_stop">Stop</string>
+
+    <string name="dialog_measurements_title">Measurements:</string>
+    <string name="dialog_title">Wear Os measurement synchronization</string>
+    <string name="dialog_size_title">Total size:</string>
+    <string name="dialog_button">Synchronize</string>
+</resources>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_black"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/wear_os_sync_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="@font/roboto_family"
+        android:gravity="center"
+        android:text="@string/dialog_title"
+        android:textColor="@color/colorWhite"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/wear_os_sync_measurement_count"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+
+    <TextView
+        android:id="@+id/wear_os_sync_measurement_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/roboto_family"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/dialog_measurements_title"
+        android:textColor="@color/colorWhite"
+        app:layout_constraintBaseline_toBaselineOf="@+id/wear_os_sync_measurement_count"
+        app:layout_constraintEnd_toStartOf="@+id/wear_os_sync_measurement_count"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/wear_os_sync_measurement_count"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/roboto_family"
+        android:gravity="center"
+        android:padding="16dp"
+        tools:text="50"
+        android:textColor="@color/colorWhite"
+        app:layout_constraintBottom_toTopOf="@+id/wear_os_sync_size_"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/wear_os_sync_measurement_title"
+        app:layout_constraintTop_toBottomOf="@+id/wear_os_sync_title" />
+
+
+    <TextView
+        android:id="@+id/wear_os_sync_size_"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="17dp"
+        android:fontFamily="@font/roboto_family"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/dialog_size_title"
+        android:textColor="@color/colorWhite"
+        app:layout_constraintBottom_toTopOf="@+id/wear_os_sync_button"
+        app:layout_constraintEnd_toStartOf="@+id/wear_os_sync_size_mb"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/wear_os_sync_measurement_count" />
+
+    <TextView
+        android:id="@+id/wear_os_sync_size_mb"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/roboto_family"
+        android:gravity="center"
+        android:padding="16dp"
+        tools:text="1000 MB"
+        android:textColor="@color/colorWhite"
+        app:layout_constraintBaseline_toBaselineOf="@+id/wear_os_sync_size_"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/wear_os_sync_size_" />
+
+
+    <Button
+        android:id="@+id/wear_os_sync_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/rounded_button"
+        android:fontFamily="@font/roboto_family"
+        android:padding="16dp"
+        android:text="@string/dialog_button"
+        android:textColor="@color/colorWhite"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/wear_os_sync_size_" />
+</androidx.constraintlayout.widget.ConstraintLayout>

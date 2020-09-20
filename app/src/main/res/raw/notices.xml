@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<notices>
+    <notice>
+        <name>GraphView</name>
+        <url>https://github.com/jjoe64/GraphView</url>
+        <copyright>Copyright 2016 Jonas Gehring</copyright>
+        <license>Apache Software License 2.0</license>
+    </notice>
+    <notice>
+        <name>AppIntro</name>
+        <url>https://github.com/AppIntro/AppIntro</url>
+        <copyright>Copyright (C) 2015-2020 AppIntro Developers</copyright>
+        <license>Apache Software License 2.0</license>
+    </notice>
+    <notice>
+        <name>Material dialogs</name>
+        <url>https://github.com/afollestad/material-dialogs</url>
+        <copyright>Copyright 2018 Aidan Follestad</copyright>
+        <license>Apache Software License 2.0</license>
+    </notice>
+
+    <notice>
+        <name>Number Picker</name>
+        <url>https://github.com/ShawnLin013/NumberPicker</url>
+        <copyright>Copyright (c) 2018 ShawnLin013</copyright>
+        <license>MIT License</license>
+    </notice>
+
+    <notice>
+        <name>Material spinner</name>
+        <url>https://github.com/jaredrummler/MaterialSpinner</url>
+        <copyright>Copyright 2016 Jared Rummler</copyright>
+        <license>Apache Software License 2.0</license>
+    </notice>
+
+    <notice>
+        <name>Android About Page</name>
+        <url>https://github.com/medyo/android-about-page</url>
+        <copyright>Copyright (c) 2016 Mehdi Sakout</copyright>
+        <license>MIT License</license>
+    </notice>
+
+    <notice>
+        <name>LeakCanary</name>
+        <url>https://square.github.io/leakcanary/</url>
+        <copyright>Copyright 2015 Square, Inc.</copyright>
+        <license>Apache Software License 2.0</license>
+    </notice>
+
+    <notice>
+        <name>Flipper - storage access framework</name>
+        <url>https://github.com/baldapps/Flipper/blob/master/LICENSE</url>
+        <copyright>Copyright (c) 2019 Marco Stornelli</copyright>
+        <license>MIT License</license>
+    </notice>
+
+    <notice>
+        <name>Water drop icon</name>
+        <url>https://www.iconfinder.com/icons/1054937/drop_water_icon</url>
+        <copyright>Copyright (c) 2020 Nick Roach</copyright>
+        <license>GNU General Public License 3.0</license>
+    </notice>
+    <notice>
+        <name>Step icon</name>
+        <url>https://www.iconfinder.com/icons/1086668/feet_foot_footprint_human_login_quest_step_icon</url>
+        <copyright>Copyright (c) 2020 Adlena Zhuvich</copyright>
+        <license>Creative Commons Attribution 3.0 Unported</license>
+    </notice>
+
+
+    <notice>
+        <name>Step icon</name>
+        <url>https://www.iconfinder.com/icons/1086668/feet_foot_footprint_human_login_quest_step_icon</url>
+        <copyright>Copyright (c) 2020 Rizky Arbie</copyright>
+        <license>Creative Commons Attribution 3.0 Unported</license>
+    </notice>
+
+    <notice>
+        <name>Step icon</name>
+        <url>https://www.iconfinder.com/icons/2897336/device_health_monitoring_smartwatch_technology_watch_wearable_icon</url>
+        <copyright>Copyright (c) 2020 DesignForeat</copyright>
+<!--        <license>MIT License</license>-->
+    </notice>
+
+    <notice>
+        <name>Mountain icon</name>
+        <url>https://thenounproject.com/term/mountain/17175/</url>
+        <copyright>Copyright (c) 2020 Philip Joyce</copyright>
+        <license>Creative Commons Attribution 3.0 Unported</license>
+    </notice>
+
+    <notice>
+        <name>Accuracy icon</name>
+        <url>https://www.iconfinder.com/icons/3525374/accuracy_aim_competition_dart_dartboard_hobby_recreation_icon</url>
+        <copyright>Copyright (c) 2020 Chanut is Industries</copyright>
+        <license>Creative Commons Attribution 3.0 Unported</license>
+    </notice>
+</notices>

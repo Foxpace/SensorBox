@@ -1,0 +1,72 @@
+{
+  "project_info": {
+    "project_number": "1052784848720",
+    "firebase_url": "https://sensorbox-211018.firebaseio.com",
+    "project_id": "sensorbox-211018",
+    "storage_bucket": "sensorbox-211018.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052784848720:android:31f578881455508068c655",
+        "android_client_info": {
+          "package_name": "motionapps.sensorbox"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1052784848720-bpcu2iihs8dbgtnd4bja5008gptvs6nf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "motionapps.sensorbox",
+            "certificate_hash": "41decde46fefccd9fb79b791aaf9329cf234fa19"
+          }
+        },
+        {
+          "client_id": "1052784848720-q8ihnv3guq71trumthbsg8rm6vorjru3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "motionapps.sensorbox",
+            "certificate_hash": "a99a36cba63c780944b1233be813283d9a729d97"
+          }
+        },
+        {
+          "client_id": "1052784848720-asibrupi4ttkqm65ltna0sv9lbkn2psd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "motionapps.sensorbox",
+            "certificate_hash": "d81192e668de6ace10532cb19ed73870f9641201"
+          }
+        },
+        {
+          "client_id": "1052784848720-9ftmutjtii7kj7e38u0jag867ga63u86.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "motionapps.sensorbox",
+            "certificate_hash": "69a08d7c0aa11fdf5ca93e1a3eac9972fbec5cd3"
+          }
+        },
+        {
+          "client_id": "1052784848720-rgrk62j6gpda7df8ume6aog0eb0t2ruv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz3jReO3hMW8wjBcoQ4Xvq1VNbXEuPQ3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052784848720-rgrk62j6gpda7df8ume6aog0eb0t2ruv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
