@@ -1,6 +1,7 @@
 # SensorBox - record all your sensors to csv files
-
-![Preview](AppImages/image1.png)
+<p align="center">
+<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/image1.png" width="250">
+</p>
 
 [![API](https://img.shields.io/badge/API-19%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=19)
 [![license](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0) 
