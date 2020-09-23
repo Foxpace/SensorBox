@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/sensorbox_preview.png" width="250">
+<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/sensorbox_preview.png" width="1000">
 </p>
 
 The SensorBox provides easy way to access sensors in Android phone and Wear Os. You can customize measurements in many ways, which is suitable for development of other apps. The outputs of the app are raw outputs of the system.
@@ -37,7 +37,7 @@ Whole functionality is hidden under SensorServices library, where one foreground
 ## Organization of code and the libraries:
 
 ### Code
-* whole code is in **Kotlin**
+* whole code is in **Kotlin** (Flipper - third party - code is in Java)
 * the phone app follows **MVI architecture** - activity/fragment -> ViewModel -> repository
   * There are 2 activities created with this architecture :
     * **MainActivity** - created with other fragments like HomeFragment, AdvancedFragment, SettingsFragment, ...  - these **fragments share one ViewModel** defined by MainActivity. Meanwhile for the navigation is used androidx fragment navigation library.
@@ -60,7 +60,7 @@ Thanks goes to:
 
 * [GraphView](https://github.com/jjoe64/GraphView) - chart library 
 [![license](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0) 
-* [Flipper](https://github.com/baldapps/Flipper) - Storage access framework
+* [Flipper](https://github.com/baldapps/Flipper) - storage access framework
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](https://raw.githubusercontent.com/nok/sklearn-porter/master/license.txt) 
 * [AppInto](https://github.com/AppIntro/AppIntro) - introduction to the app for the first launch
 [![license](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0) 
