@@ -32,9 +32,11 @@ class SensorPickerAdapter(context: Context?, sensors: List<Sensor>) :
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder !is ButtonHolder) {
+        if (holder !is ButtonHolder && position <= itemCount) {
             val textView = holder.itemView.findViewById<TextView>(R.id.sensorText)
             textView.setText(availableSensorsString[position])
+        }else if(position > itemCount){
+            holder.itemView.visibility = View.GONE
         }
     }
 

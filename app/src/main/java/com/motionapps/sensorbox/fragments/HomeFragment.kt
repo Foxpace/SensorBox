@@ -53,18 +53,16 @@ open class HomeFragment : Fragment() {
         val root: View = inflater.inflate(R.layout.fragment_home, container, false)
         this.container = root.findViewById(R.id.home_container)
         this.mainButton = root.findViewById(R.id.home_mainbutton)
-        return root
-    }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
         checkMainFolder()
-        initSensorViews()
-        initGPSView()
+        initSensorViews(inflater)
+        initGPSView(inflater)
         checkSensorsToMeasure()
         initMainButton()
-        setObservers()
+        setObservers(inflater)
         mainViewModel.clearHandlers()
+
+        return root
     }
 
     /**
@@ -90,10 +88,10 @@ open class HomeFragment : Fragment() {
      * if the Wear Os sensors are available - show them
      * Otherwise remove them, if they are available
      */
-    private fun setObservers() {
+    private fun setObservers(inflater: LayoutInflater) {
         mainViewModel.wearOsContacted.observe(requireActivity(), { info ->
             if (info.isNotEmpty()) {
-                createWearViews(info)
+                createWearViews(info, inflater)
             }else{
                 removeWearOs()
             }
@@ -105,13 +103,13 @@ open class HomeFragment : Fragment() {
      * data are obtained from Enumeration of basic sensor
      * @param info - hashMap <if of the sensor, list with attributes>
      */
-    private fun createWearViews(info: HashMap<Int, List<String>>) {
+    private fun createWearViews(info: HashMap<Int, List<String>>, inflater: LayoutInflater) {
         val sensorViewHandler: SensorViewHandler = mainViewModel.getSensorView()
 
         for (key in info.keys) {
             val properties = info[key]
             val sensorNeeds = getSensorByIdWearOs(properties!![0].toInt())
-            val view = inflateOneSensor(sensorNeeds, true)
+            val view = inflateOneSensor(sensorNeeds, inflater, true)
 
             wearOsViews.add(view)
             sensorViewHandler.addWearOsSensor(sensorNeeds)
@@ -143,9 +141,9 @@ open class HomeFragment : Fragment() {
     /**
      * Gathers all the sensors, inflates views and manages buttons
      */
-    private fun initSensorViews() {
+    private fun initSensorViews(inflater: LayoutInflater) {
         val sensorsNeeds: ArrayList<SensorNeeds> = getSensors(requireContext())
-        val imageButtons: ArrayList<ImageButton> = inflateSensorsViews(sensorsNeeds)
+        val imageButtons: ArrayList<ImageButton> = inflateSensorsViews(sensorsNeeds, inflater)
         val sensorViewHandler: SensorViewHandler = mainViewModel.getSensorView()
 
         for (i in 0 until imageButtons.size) {
@@ -178,12 +176,11 @@ open class HomeFragment : Fragment() {
      * @param sensorsNeeds - list of all available sensors - SensorNeeds objects
      * @return list of buttons
      */
-    private fun inflateSensorsViews(sensorsNeeds: ArrayList<SensorNeeds>): ArrayList<ImageButton> {
+    private fun inflateSensorsViews(sensorsNeeds: ArrayList<SensorNeeds>, inflater: LayoutInflater): ArrayList<ImageButton> {
 
         val sensorButtons: ArrayList<ImageButton> = ArrayList()
         for (sensorNeeds: SensorNeeds in sensorsNeeds) {
-
-            val view = inflateOneSensor(sensorNeeds, false)
+            val view = inflateOneSensor(sensorNeeds, inflater, false)
             sensorButtons.add(view.findViewById(R.id.sensorrow_save))
         }
 
@@ -197,10 +194,14 @@ open class HomeFragment : Fragment() {
      * @param wearOs - if the view belongs to Wear Os
      * @return - created view
      */
-    private fun inflateOneSensor(sensorNeeds: SensorNeeds, wearOs: Boolean): View {
+    private fun inflateOneSensor(
+        sensorNeeds: SensorNeeds,
+        inflater: LayoutInflater,
+        wearOs: Boolean
+    ): View {
         val resourceName = sensorNeeds.name
         val resources = SensorResources.valueOf(resourceName)
-        val view = layoutInflater.inflate(R.layout.item_layout_sensorrow, null)
+        val view = inflater.inflate(R.layout.item_layout_sensorrow, null)
         val icon: ImageView = view.findViewById(R.id.sensorrow_icon)
         val textView: TextView = view.findViewById(R.id.sensorrow_info_title)
 
@@ -231,12 +232,12 @@ open class HomeFragment : Fragment() {
      * Has its own place among the senors
      *
      */
-    private fun initGPSView() {
+    private fun initGPSView(inflater: LayoutInflater) {
         if(requireActivity().packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)){
 
             val sensorViewHandler = this.mainViewModel.getSensorView()
 
-            val view = layoutInflater.inflate(R.layout.item_layout_sensorrow, null)
+            val view = inflater.inflate(R.layout.item_layout_sensorrow, null)
             val icon: ImageView = view.findViewById(R.id.sensorrow_icon)
             val textView: TextView = view.findViewById(R.id.sensorrow_info_title)
             val imageButton: ImageButton = view.findViewById(R.id.sensorrow_save)
