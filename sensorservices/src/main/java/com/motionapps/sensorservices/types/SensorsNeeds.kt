@@ -62,6 +62,21 @@ enum class SensorNeeds( val id: Int, val count: Int, val oneValueTextView: Int,
         }
 
         /**
+         * searches sensor requirements by id - not for the Wear Os and limited for chart values
+         *
+         * @param id - of the sensor
+         * @return - SensorNeeds
+         */
+        fun getSensorByIdForChart(id: Int): SensorNeeds {
+            for(sensorNeed: SensorNeeds in values()){
+                if(sensorNeed.id == id && sensorNeed.oneValueTextView == PLOT && "WEAR" !in sensorNeed.name){
+                    return sensorNeed
+                }
+            }
+            return ACG
+        }
+
+        /**
          * searches sensor requirements by id - not for the Wear Os
          *
          * @param id - of the sensor
@@ -69,7 +84,7 @@ enum class SensorNeeds( val id: Int, val count: Int, val oneValueTextView: Int,
          */
         fun getSensorById(id: Int): SensorNeeds {
             for(sensorNeed: SensorNeeds in values()){
-                if(sensorNeed.id == id && sensorNeed.oneValueTextView == PLOT && "WEAR" !in sensorNeed.name){
+                if(sensorNeed.id == id && "WEAR" !in sensorNeed.name){
                     return sensorNeed
                 }
             }

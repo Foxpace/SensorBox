@@ -128,8 +128,13 @@ object StorageHandler {
      * @return - if everything is ok
      */
     fun createInternalStorageMeasurementFolder(context: Context, folderName: String): Boolean{
-        val f = File(context.filesDir, folderName)
-        return f.mkdirs()
+        val mainFolder = File(context.filesDir, context.getString(R.string.app_name))
+        if(!mainFolder.exists()){
+            mainFolder.mkdirs()
+        }
+
+        val folder = File(mainFolder, folderName)
+        return folder.mkdirs()
     }
 
     /**
@@ -196,15 +201,24 @@ object StorageHandler {
     }
 
     /**
-     * created file in internal storage
-     *
+     * created file in internal storage - creates own folder in internal storage, where all the measurements are stored
+     * name should be "SensorBox"
      * @param context
      * @param folderName - folder to use
      * @param nameOfFile - name of the file
      * @return - outputStream to store data
      */
     fun createFileInInternalFolder(context: Context, folderName: String, nameOfFile: String): OutputStream?{
-        val folder = File(context.filesDir, folderName)
+        val mainFolder = File(context.filesDir, context.getString(R.string.app_name))
+        if(!mainFolder.exists()){
+            mainFolder.mkdirs()
+        }
+
+        val folder = File(mainFolder, folderName)
+        if(!folder.exists()){
+            folder.mkdirs()
+        }
+
         val file = File(folder, nameOfFile)
         return FileOutputStream(file)
     }

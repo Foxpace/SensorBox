@@ -228,7 +228,7 @@ class MeasurementActivity : AppCompatActivity() {
         intent.extras?.let {
             it.getIntArray(ANDROID_SENSORS)?.let { array ->
                 if (array.isNotEmpty()) {
-                    sensorNeeds = SensorNeeds.getSensorById(array[0])
+                    sensorNeeds = SensorNeeds.getSensorByIdForChart(array[0])
                 }
             }
         }
