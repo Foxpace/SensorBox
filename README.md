@@ -62,7 +62,7 @@ Thanks goes to:
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 * [Flipper](https://github.com/baldapps/Flipper) - storage access framework
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [AppInto](https://github.com/AppIntro/AppIntro) - introduction to the app for the first launch
+* [AppIntro](https://github.com/AppIntro/AppIntro) - introduction to the app for the first launch
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 * [Material dialogs](https://github.com/afollestad/material-dialogs) - dialogs with material design style
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
