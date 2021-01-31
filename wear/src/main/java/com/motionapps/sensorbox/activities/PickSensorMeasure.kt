@@ -153,14 +153,18 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
 
         if(adapter.availableSensors[position] == -1 && adapter.gpsExists){
             tempPosition = position
+            val permissionIntent = Intent(this, PermissionActivityForResult::class.java)
+            permissionIntent.putExtra(PermissionActivityForResult.GPS_INTENT, PermissionActivityForResult.GPS_LOG)
             if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
                 if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
+//                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
+                    startActivityForResult(permissionIntent, GPS_REQUEST)
                     return
                 }
             }else{
                 if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)  != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), GPS_REQUEST)
+//                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), GPS_REQUEST)
+                    startActivityForResult(permissionIntent, GPS_REQUEST)
                     return
                 }
             }
@@ -182,11 +186,19 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
         }
 
         // checks sensor to measure
-        val imageView = view?.findViewById<ImageView>(R.id.viewholder_image)
-        if (adapter.isChecked(position)) {
-            imageView?.setImageResource(R.drawable.ic_save_red)
-        } else {
-            imageView?.setImageResource(R.drawable.ic_save_green)
+        selectSensor(position)
+//        val imageView = view?.findViewById<ImageView>(R.id.viewholder_image)
+//        if (adapter.isChecked(position)) {
+//            imageView?.setImageResource(R.drawable.ic_save_red)
+//        } else {
+//            imageView?.setImageResource(R.drawable.ic_save_green)
+//        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(requestCode == GPS_REQUEST && resultCode == RESULT_OK){
+            selectSensor(tempPosition)
         }
     }
 
@@ -206,22 +218,25 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
 
     private fun onPermission(permission: String, grantResults: IntArray, toastText: Int){
         if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-            val view: View? = layoutManager.findViewByPosition(tempPosition)
-            view?.let{
-                val imageView = it.findViewById<ImageView>(R.id.viewholder_image)
-                if (adapter.isChecked(tempPosition)) {
-                    imageView.setImageResource(R.drawable.ic_save_red)
-                } else {
-                    imageView.setImageResource(R.drawable.ic_save_green)
-                }
-            }
-
+            selectSensor(tempPosition)
         } else {
             if(shouldShowRequestPermissionRationale(permission)){
                 Toast.makeText(this, toastText, Toast.LENGTH_LONG).show()
             }else{
                 finish()
                 startActivity(Intent(this, PermissionActivity::class.java))
+            }
+        }
+    }
+
+    private fun selectSensor(position: Int){
+        val view: View? = layoutManager.findViewByPosition(position)
+        view?.let{
+            val imageView = it.findViewById<ImageView>(R.id.viewholder_image)
+            if (adapter.isChecked(position)) {
+                imageView.setImageResource(R.drawable.ic_save_red)
+            } else {
+                imageView.setImageResource(R.drawable.ic_save_green)
             }
         }
     }

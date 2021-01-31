@@ -1,17 +1,23 @@
 package com.motionapps.sensorbox.uiHandlers
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
 import com.motionapps.sensorbox.R
+import kotlinx.coroutines.internal.artificialFrame
 
 
 class PermissionHandler {
 
     companion object{
+
+        @RequiresApi(Build.VERSION_CODES.M)
         fun showPermissionSettings(
             fragment: Fragment,
             text: Int,
@@ -28,16 +34,12 @@ class PermissionHandler {
                 cornerRadius(16f)
 
                 positiveButton(R.string.show_permission) { dialog ->
+                    dialog.dismiss()
                     if(rational){
                         fragment.requestPermissions(permission, requestCode)
-                        dialog.dismiss()
                     }else{
-                        dialog.dismiss()
                         Toast.makeText(fragment.requireContext(), text, Toast.LENGTH_LONG).show()
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        val uri: Uri = Uri.fromParts("package", fragment.requireActivity().packageName, null)
-                        intent.data = uri
-                        fragment.startActivity(intent)
+                        showSettings(fragment.requireContext())
                     }
                 }
 
@@ -47,6 +49,14 @@ class PermissionHandler {
             }
             return dialog
         }
+
+        fun showSettings(context: Context){
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri: Uri = Uri.fromParts("package", context.packageName, null)
+            intent.data = uri
+            context.startActivity(intent)
+        }
+
     }
 
 

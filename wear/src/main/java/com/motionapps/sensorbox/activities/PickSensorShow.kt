@@ -1,6 +1,7 @@
 package com.motionapps.sensorbox.activities
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -63,9 +64,9 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
         if(sensorId == -1){
             intent = Intent(this, MapsActivity::class.java)
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this@PickSensorShow,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_RESULT_GPS)
-                tempIntent = intent
+                val permissionIntent = Intent(this, PermissionActivityForResult::class.java)
+                permissionIntent.putExtra(PermissionActivityForResult.GPS_INTENT, PermissionActivityForResult.GPS_SHOW)
+                startActivityForResult(permissionIntent, PERMISSION_RESULT_GPS)
                 return
             }
         }else{
@@ -86,6 +87,13 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
         startActivity(intent)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(requestCode == PERMISSION_RESULT_GPS && resultCode == Activity.RESULT_OK){
+            startActivity(Intent(this, MapsActivity::class.java))
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -97,14 +105,14 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
                 startActivity(tempIntent)
             } else {
                 when(requestCode){
-                    PERMISSION_RESULT_GPS -> {
-                        if(shouldShowRequestPermissionRationale(permissions[0])){
-                            Toast.makeText(this, R.string.permission_rejected_gps, Toast.LENGTH_LONG).show()
-                        }else{
-                            finish()
-                            startActivity(Intent(this, PermissionActivity::class.java))
-                        }
-                    }
+//                    PERMISSION_RESULT_GPS -> {
+//                        if(shouldShowRequestPermissionRationale(permissions[0])){
+//                            Toast.makeText(this, R.string.permission_rejected_gps, Toast.LENGTH_LONG).show()
+//                        }else{
+//                            finish()
+//                            startActivity(Intent(this, PermissionActivity::class.java))
+//                        }
+//                    }
                     PERMISSION_RESULT_BODY -> {
                         if(shouldShowRequestPermissionRationale(permissions[0])){
                             Toast.makeText(this, R.string.permission_rejected_body, Toast.LENGTH_LONG).show()

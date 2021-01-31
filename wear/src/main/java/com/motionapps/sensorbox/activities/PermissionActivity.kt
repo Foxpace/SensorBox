@@ -1,6 +1,7 @@
 package com.motionapps.sensorbox.activities
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -91,7 +92,7 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
         if(wearOsStates is WearOsStates.PresenceResult){
             present = wearOsStates.present
             permission = intent.getStringExtra(PERMISSION_KEY)
-            if(permission != null && present){
+            if(permission != null && present){ // send message to phone about permission, if available
                 if(ActivityCompat.checkSelfPermission(this, permission!!) == PackageManager.PERMISSION_GRANTED){
                     wearOsHandler.sendMsg(
                         this,
@@ -131,7 +132,7 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
                         )
 
                         if(!rational){ // show settings if user clicks deny and do not ask together
-                            showSettings()
+                            showSettings(this)
                             return
                         }
                     }else{
@@ -154,7 +155,7 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
                     }
 
                     if(grantResults[position] == PackageManager.PERMISSION_DENIED && !rational){
-                        showSettings()
+                        showSettings(this)
                         return
                     }
                 }
@@ -173,14 +174,7 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
         startActivity(startMain)
     }
 
-    private fun showSettings(){
-        finish()
-        Toast.makeText(this, R.string.permission_toast, Toast.LENGTH_LONG).show()
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        val uri: Uri = Uri.fromParts("package", packageName, null)
-        intent.data = uri
-        startActivity(intent)
-    }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -191,5 +185,14 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
     companion object{
         const val PERMISSION_KEY = "PERMISSION"
         private const val PERMISSION_REQUEST_CODE = 589
+
+        fun showSettings(activity: Activity){
+            activity.finish()
+            Toast.makeText(activity, R.string.permission_toast, Toast.LENGTH_LONG).show()
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri: Uri = Uri.fromParts("package", activity.packageName, null)
+            intent.data = uri
+            activity.startActivity(intent)
+        }
     }
 }

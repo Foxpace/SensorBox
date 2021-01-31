@@ -15,8 +15,8 @@ android {
         applicationId "motionapps.sensorbox"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 52
-        versionName "4.1.0"
+        versionCode 53
+        versionName "4.1.1"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

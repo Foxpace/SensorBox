@@ -63,10 +63,6 @@ open class HomeFragment : Fragment() {
         this.container = root.findViewById(R.id.home_container)
         this.mainButton = root.findViewById(R.id.home_mainbutton)
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            checkPermissions()
-//        }
-
         initSensorViews(inflater)
         initGPSView(inflater)
         checkSensorsToMeasure()
@@ -111,16 +107,32 @@ open class HomeFragment : Fragment() {
                     val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
                     Navigation.findNavController(requireView()).navigate(action)
                 }else{
-                    dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW, rational)
+                    if(rational){
+                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW, rational)
+                    }else{
+                        Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                        PermissionHandler.showSettings(requireContext())
+                    }
                 }
             }
             PERMISSION_GPS_LOG -> {
                 if(!granted){
-                    dialog = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background,
-                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_GPS_LOG, false)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        if(rational){
+                            dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_GPS_LOG, rational)
+
+                        }else{
+                            Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                            PermissionHandler.showSettings(requireContext())
+                        }
+
                     }else{
-                        PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_LOG, rational)
+                        if(rational){
+                            dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_LOG, rational)
+                        }else{
+                            Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                            PermissionHandler.showSettings(requireContext())
+                        }
                     }
                 }
             }
@@ -343,7 +355,8 @@ open class HomeFragment : Fragment() {
             // with fine location you can see location and log data under Android Q
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                     if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                        requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW)
+                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW,
+                            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
                         return@setOnClickListener
                     }
                 }
@@ -365,17 +378,25 @@ open class HomeFragment : Fragment() {
                 // if the SDK is higher then or equal Q - check background GPS
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
                     if(ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_GPS_LOG)
+
+                        dialog = PermissionHandler.showPermissionSettings(this,
+                            R.string.permission_gps_background,
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                            PERMISSION_GPS_LOG, shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION))
                         return@setOnClickListener
                     }
                 }
                 // if the SDK is higher then or equal M - check if the permission is ok
                 else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                     if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                        requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_LOG)
+                        dialog = PermissionHandler.showPermissionSettings(this,
+                            R.string.permission_gps_background,
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                            PERMISSION_GPS_LOG, shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
+
                         return@setOnClickListener
                     }
-
                 }
 
                 sensorViewHandler.gpsMeasurement = !sensorViewHandler.gpsMeasurement

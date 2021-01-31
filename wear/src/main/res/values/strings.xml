@@ -23,6 +23,7 @@
     <string name="permission_rejected_body">To use this sensor, the permission is required. To allow, go to settings.</string>
     <string name="permission_body_sensor">To see and record the Heart rate, you need to provide the app to monitor Body sensor.</string>
     <string name="permission_show">The smartwatch needs Body sensor and Location permission to work properly. All the data are stored only locally. If you do not see permission, click the button bellow.</string>
+    <string name="permission_show_gps_only">The smartwatch needs Location permission to show map / log coordinates to csv file. All the data are stored only locally.</string>
     <string name="permission_toast">To save location and body sensors, permit the required permissions</string>
     <string name="title_activity_permission">PermissionActivity</string>
     <string name="permission_button">Show permission</string>
@@ -118,6 +119,12 @@
     <string name="back">Back</string>
     <string name="ok">OK</string>
     <string name="image_description_menu">Image describing tab in menu</string>
+    <string name="title_activity_permission_for_result">PermissionActivityForResult</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
 
 
 </resources>

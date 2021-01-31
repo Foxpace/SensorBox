@@ -45,9 +45,12 @@
         </activity>
 
         <activity
+            android:name=".activities.PermissionActivityForResult"
+            android:label="@string/title_activity_permission_for_result"/>
+
+        <activity
             android:name=".activities.PermissionActivity"
-            android:label="@string/title_activity_permission">
-        </activity>
+            android:label="@string/title_activity_permission"/>
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -56,7 +59,6 @@
         <activity
             android:name=".activities.MapsActivity"
             android:label="@string/title_activity_maps" />
-
         <activity
             android:name=".activities.MainSettings"
             android:label="@string/title_activity_main_settings" />
@@ -69,7 +71,6 @@
         <activity
             android:name=".activities.StopActivity"
             android:label="@string/title_activity_stopactivity" />
-
         <activity android:name=".activities.MoveToMain" />
 
         <service android:name=".communication.MsgListener">
