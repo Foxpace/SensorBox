@@ -1,5 +1,6 @@
 package com.motionapps.sensorbox.communication
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -10,21 +11,23 @@ import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import com.motionapps.sensorbox.rlRecording.RealTimeSensorService
 import com.motionapps.sensorbox.activities.MainSettings
+import com.motionapps.sensorbox.activities.PermissionActivity
 import com.motionapps.sensorbox.adapters.SettingsAdapter
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.Companion.getIntentWearOs
 import com.motionapps.sensorservices.services.MeasurementService.MeasurementBinder
 import com.motionapps.wearoslib.WearOsConstants.DELETE_ALL_MEASUREMENTS
 import com.motionapps.wearoslib.WearOsConstants.DELETE_FOLDER
-import com.motionapps.wearoslib.WearOsConstants.END_WEAR_SENSOR_REAL_TIME
+import com.motionapps.wearoslib.WearOsConstants.WEAR_END_SENSOR_REAL_TIME
 import com.motionapps.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
 import com.motionapps.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
 import com.motionapps.wearoslib.WearOsConstants.START_MEASUREMENT
-import com.motionapps.wearoslib.WearOsConstants.START_WEAR_SENSOR_REAL_TIME
+import com.motionapps.wearoslib.WearOsConstants.WEAR_START_SENSOR_REAL_TIME
 import com.motionapps.wearoslib.WearOsConstants.WEAR_KILL_APP
 import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_FILE
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
 import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_PATHS
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsHandler
@@ -65,29 +68,38 @@ class MsgListener : WearableListenerService() {
                         sharedPreferences.getInt(SettingsAdapter.SAMPLING_PREFERENCE, 0)
                     val batteryRestriction =
                         sharedPreferences.getBoolean(MainSettings.BATTERY_RESTRICTION, true)
-                    intent =
-                        getIntentWearOs(this, data[1], sensors, sensorSpeed, batteryRestriction)
+                    intent = getIntentWearOs(this, data[1], sensors, sensorSpeed, false, batteryRestriction)
                     startService(intent)
                 }
 
-                SEND_WEAR_SENSOR_INFO -> { // sends attributes of the sensors
+                WEAR_SEND_SENSOR_INFO -> { // sends attributes of the sensors
                     val sensorInfo = SensorTools.getSensorInfo(this)
                     w.sendMessageInstant(this, PHONE_APP_CAPABILITY, PHONE_MESSAGE_PATH, sensorInfo)
+
+                    if(SensorTools.isHeartRatePermissionRequired(this)){
+                        w.sendMessageInstant(this, PHONE_APP_CAPABILITY, PHONE_MESSAGE_PATH, "$WEAR_HEART_RATE_PERMISSION_REQUIRED;1")
+                    }
                 }
 
-                START_WEAR_SENSOR_REAL_TIME -> { // starts service to send samples to phone
+                WEAR_HEART_RATE_PERMISSION_REQUIRED -> {
+                    intent = Intent(this, PermissionActivity::class.java)
+                    intent.putExtra(PermissionActivity.PERMISSION_KEY, Manifest.permission.BODY_SENSORS)
+                    startActivity(intent)
+                }
+
+                WEAR_START_SENSOR_REAL_TIME -> { // starts service to send samples to phone
                     val startRealTimeService = Intent(this, RealTimeSensorService::class.java)
                     startRealTimeService.putExtra(RealTimeSensorService.SENSOR_ID, Integer.valueOf(data[1]))
                     startService(startRealTimeService)
                 }
 
                 // ends transmission of the sensor events
-                END_WEAR_SENSOR_REAL_TIME -> sendBroadcast(Intent(END_WEAR_SENSOR_REAL_TIME))
+                WEAR_END_SENSOR_REAL_TIME -> sendBroadcast(Intent(WEAR_END_SENSOR_REAL_TIME))
 
                 // ends measurement / realtime transmission
                 WEAR_KILL_APP -> {
                     sendBroadcast(Intent(MeasurementService.STOP_SERVICE))
-                    sendBroadcast(Intent(END_WEAR_SENSOR_REAL_TIME))
+                    sendBroadcast(Intent(WEAR_END_SENSOR_REAL_TIME))
                 }
 
                 // sends paths to the files in internal storage

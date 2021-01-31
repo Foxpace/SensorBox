@@ -5,10 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.support.wearable.activity.WearableActivity
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.wear.ambient.AmbientModeSupport
 import androidx.wear.widget.BoxInsetLayout
 import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorbox.R
@@ -23,13 +24,14 @@ import kotlinx.coroutines.*
 @InternalCoroutinesApi
 /**
  * launched, when the measurementService is active
- *
  */
-class StopActivity : WearableActivity(), WearOsListener {
+class StopActivity : AppCompatActivity(), WearOsListener, AmbientModeSupport.AmbientCallbackProvider {
 
     private val wearOsHandler: WearOsHandler = WearOsHandler()
     private var wearOsState: WearOsStates.PresenceResult? = null
     private var job: Job? = null
+
+    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     private var running = false
     private val broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -43,8 +45,10 @@ class StopActivity : WearableActivity(), WearOsListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.stop_activity)
+
         // whole screen is button
         val view = findViewById<View>(R.id.stopButton)
+
         view.setOnClickListener{
             // stops the MeasurementActivity
             var intent = Intent(MeasurementService.STOP_SERVICE)
@@ -64,7 +68,7 @@ class StopActivity : WearableActivity(), WearOsListener {
         }
 
         // changes colour to black, when inactive - as watch
-        setAmbientEnabled()
+        ambientController = AmbientModeSupport.attach(this)
 
         registerReceiver(broadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY))
         running = true
@@ -86,36 +90,41 @@ class StopActivity : WearableActivity(), WearOsListener {
         wearOsHandler.onDestroy()
     }
 
-    /**
-     * changes colour of the button to black, when inactive
-     *
-     * @param ambientDetails
-     */
-    override fun onEnterAmbient(ambientDetails: Bundle) {
-        super.onEnterAmbient(ambientDetails)
-        val view: BoxInsetLayout = findViewById(R.id.stopButton)
-        view.backgroundTintList = ContextCompat.getColorStateList(
-            this,
-            R.color.black_list_color
-        )
-    }
-
-    /**
-     * turns it back to red, when active
-     *
-     */
-    override fun onExitAmbient() {
-        super.onExitAmbient()
-        val view: BoxInsetLayout = findViewById(R.id.stopButton)
-        view.backgroundTintList = ContextCompat.getColorStateList(
-            this,
-            R.color.red_list_color
-        )
-    }
-
     override suspend fun onWearOsStates(wearOsStates: WearOsStates) {
         if(wearOsStates is WearOsStates.PresenceResult){
             this.wearOsState = wearOsStates
         }
+    }
+
+    private inner class StopAmbientCallback : AmbientModeSupport.AmbientCallback() {
+        /**
+         * changes colour of the button to black, when inactive
+         * @param ambientDetails
+         */
+        override fun onEnterAmbient(ambientDetails: Bundle?) {
+            val view: BoxInsetLayout = this@StopActivity.findViewById(R.id.stopButton)
+            view.backgroundTintList = ContextCompat.getColorStateList(
+                this@StopActivity,
+                R.color.black_list_color
+            )
+        }
+        /**
+         * turns it back to red, when active
+         */
+        override fun onExitAmbient() {
+            val view: BoxInsetLayout = findViewById(R.id.stopButton)
+            view.backgroundTintList = ContextCompat.getColorStateList(
+                this@StopActivity,
+                R.color.red_list_color
+            )
+        }
+
+        override fun onUpdateAmbient() {
+            // Update the content
+        }
+    }
+
+    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
+        return StopAmbientCallback()
     }
 }

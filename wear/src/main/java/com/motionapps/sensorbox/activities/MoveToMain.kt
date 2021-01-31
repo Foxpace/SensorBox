@@ -1,9 +1,9 @@
 package com.motionapps.sensorbox.activities
 
 import android.os.Bundle
-import android.support.wearable.activity.WearableActivity
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.motionapps.sensorbox.R
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
  * opens app on the phone side
  *
  */
-class MoveToMain : WearableActivity(), WearOsListener {
+class MoveToMain: AppCompatActivity(), WearOsListener {
     private var imageButton: ImageButton? = null
     private val wearOsHandler = WearOsHandler()
     private var present: Boolean = false

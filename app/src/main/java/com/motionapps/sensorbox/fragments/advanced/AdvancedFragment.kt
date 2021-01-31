@@ -1,9 +1,14 @@
 package com.motionapps.sensorbox.fragments.advanced
 
+import android.Manifest
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.HomeFragment
+import com.motionapps.sensorbox.fragments.HomeFragmentDirections
+import com.motionapps.sensorservices.handlers.StorageHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -21,10 +26,24 @@ class AdvancedFragment : HomeFragment() {
     override fun initMainButton() {
         mainButton?.setText(R.string.next)
         mainButton?.setOnClickListener {
-                val action: NavDirections = AdvancedFragmentDirections.actionAdvancedToPicker()
-                Navigation.findNavController(requireView()).navigate(action)
+            if (!StorageHandler.isAccess(requireContext())) {
+                if (Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT) {
+                    Navigation.findNavController(requireView()).navigate(
+                        HomeFragmentDirections.actionNavHomeToPickFolderFragment(
+                            ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)
+                        )
+                    )
+                    return@setOnClickListener
+                } else {
+                    requestPermissions(
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        PERMISSION_STORAGE
+                    )
+                    return@setOnClickListener
+                }
+            }
+            val action: NavDirections = AdvancedFragmentDirections.actionAdvancedToPicker()
+            Navigation.findNavController(requireView()).navigate(action)
         }
     }
-
-
 }

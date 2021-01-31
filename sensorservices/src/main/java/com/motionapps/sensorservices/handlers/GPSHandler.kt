@@ -114,11 +114,18 @@ class GPSHandler : LocationCallback() {
 
         val sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val locationRequest = LocationRequest()
+        try {
+            locationRequest.interval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
+            locationRequest.fastestInterval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
+            locationRequest.smallestDisplacement = sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat()
+            locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }catch (e: ClassCastException){
+            locationRequest.interval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
+            locationRequest.fastestInterval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
+            locationRequest.smallestDisplacement = sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat()
+            locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
 
-        locationRequest.interval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-        locationRequest.fastestInterval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-        locationRequest.smallestDisplacement = sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
 
         //registering GPS
         Log.i("GPS", "location request created")

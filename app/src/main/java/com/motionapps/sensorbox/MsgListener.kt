@@ -7,9 +7,11 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.motionapps.sensorbox.activities.MainActivity
 import com.motionapps.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO_EXTRA
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO_EXTRA
 import com.motionapps.wearoslib.WearOsConstants.START_MAIN_ACTIVITY
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN
 import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_PATHS
 import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_PATHS_EXTRA
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS_EXTRA
@@ -47,9 +49,9 @@ class MsgListener : WearableListenerService() {
                     }
                 }
 
-                SEND_WEAR_SENSOR_INFO ->{ // sensor info to parse for HomeFragment
-                    Intent(SEND_WEAR_SENSOR_INFO).also {
-                        it.putExtra(SEND_WEAR_SENSOR_INFO_EXTRA, data[1])
+                WEAR_SEND_SENSOR_INFO ->{ // sensor info to parse for HomeFragment
+                    Intent(WEAR_SEND_SENSOR_INFO).also {
+                        it.putExtra(WEAR_SEND_SENSOR_INFO_EXTRA, data[1])
                         sendBroadcast(it)
                     }
                 }
@@ -64,6 +66,13 @@ class MsgListener : WearableListenerService() {
                 WEAR_SEND_PATHS -> { // paths to synchronize between Phone and Wear Os
                     Intent(WEAR_SEND_PATHS).also{
                         it.putExtra(WEAR_SEND_PATHS_EXTRA, data[1])
+                        sendBroadcast(it)
+                    }
+                }
+
+                WEAR_HEART_RATE_PERMISSION_REQUIRED ->{
+                    Intent(WEAR_HEART_RATE_PERMISSION_REQUIRED).also{
+                        it.putExtra(WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN, data[1] == "1")
                         sendBroadcast(it)
                     }
                 }

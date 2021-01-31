@@ -141,7 +141,7 @@ class WearOsSyncService : Service(), DataClient.OnDataChangedListener, WearOsLis
         }
     }
 
-    override fun onBind(p0: Intent?): IBinder? {
+    override fun onBind(p0: Intent?): IBinder {
         return WearOsSyncServiceBinder()
     }
 

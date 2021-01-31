@@ -4,18 +4,23 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.support.wearable.activity.WearableActivity
 import android.view.View
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.SettingsAdapter
+import com.motionapps.sensorservices.services.MeasurementService
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
 
 /**
  * parameters for speed of the sensors, and if to stop the measurement if the battery is low
  *
  */
-class MainSettings : WearableActivity(), View.OnClickListener {
+@InternalCoroutinesApi
+@ExperimentalCoroutinesApi
+class MainSettings: AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +31,10 @@ class MainSettings : WearableActivity(), View.OnClickListener {
         view.setOnClickListener(this)
         view = findViewById(R.id.main_settings_sampling_button)
         view.setOnClickListener(this)
+        view = findViewById(R.id.main_settings_gps_time_button)
+        view.setOnClickListener(this)
+        view = findViewById(R.id.main_settings_gps_distance_button)
+        view.setOnClickListener(this)
     }
 
     /**
@@ -33,9 +42,10 @@ class MainSettings : WearableActivity(), View.OnClickListener {
      *
      * @param sharedPreferences - to obtain settings
      */
+
     private fun updateSampling(sharedPreferences: SharedPreferences) {
         val textView = findViewById<TextView>(R.id.main_settings_sampling_value)
-        when (sharedPreferences.getInt(SettingsAdapter.SAMPLING_PREFERENCE, 0)) {
+        when (sharedPreferences.getInt(SettingsAdapter.SAMPLING_PREFERENCE, 1)) {
             SensorManager.SENSOR_DELAY_FASTEST -> textView.setText(R.string.settings_wear_sampling_fastest)
             SensorManager.SENSOR_DELAY_GAME -> textView.setText(R.string.settings_wear_sampling_game)
             SensorManager.SENSOR_DELAY_UI -> textView.setText(R.string.settings_wear_sampling_ui)
@@ -58,6 +68,19 @@ class MainSettings : WearableActivity(), View.OnClickListener {
         }
     }
 
+    private fun updateGPSTime(sharedPreferences: SharedPreferences){
+        val textView = findViewById<TextView>(R.id.main_settings_gps_time_value)
+        val position = SettingsAdapter.PREFERENCES[MeasurementService.GPS_TIME]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_TIME, 1))
+        textView.text = resources.getStringArray(R.array.GPS_times)[position]
+    }
+
+    private fun updateGPSDistance(sharedPreferences: SharedPreferences){
+        val textView = findViewById<TextView>(R.id.main_settings_gps_distance_value)
+        val position = SettingsAdapter.PREFERENCES[MeasurementService.GPS_DISTANCE]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 1))
+        textView.text = resources.getStringArray(R.array.GPS_distances)[position]
+    }
+
+
     override fun onClick(view: View) {
         when (view.id) {
 
@@ -77,12 +100,23 @@ class MainSettings : WearableActivity(), View.OnClickListener {
             }
 
             // needs new activity
-            R.id.main_settings_sampling_button -> startActivity(
-                Intent(
-                    this,
-                    SettingsSampling::class.java
-                )
-            )
+            R.id.main_settings_sampling_button -> {
+                val intent = Intent(this, SettingsPicker::class.java)
+                intent.putExtra(SettingsPicker.KEY_SETTINGS, SettingsAdapter.SAMPLING_PREFERENCE)
+                startActivity(intent)
+            }
+
+            R.id.main_settings_gps_time_button ->{
+                val intent = Intent(this, SettingsPicker::class.java)
+                intent.putExtra(SettingsPicker.KEY_SETTINGS, MeasurementService.GPS_TIME)
+                startActivity(intent)
+            }
+
+            R.id.main_settings_gps_distance_button ->{
+                val intent = Intent(this, SettingsPicker::class.java)
+                intent.putExtra(SettingsPicker.KEY_SETTINGS, MeasurementService.GPS_DISTANCE)
+                startActivity(intent)
+            }
         }
     }
 
@@ -92,6 +126,8 @@ class MainSettings : WearableActivity(), View.OnClickListener {
         // check on settings
         updateWearBattery(sharedPreferences)
         updateSampling(sharedPreferences)
+        updateGPSTime(sharedPreferences)
+        updateGPSDistance(sharedPreferences)
     }
 
     companion object {

@@ -1,10 +1,8 @@
 package com.motionapps.sensorbox.activities
 
-import android.Manifest
 import android.app.Dialog
 import android.content.*
-import android.content.pm.PackageManager
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
@@ -13,7 +11,6 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -21,14 +18,18 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
+import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.navigation.NavigationView
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment
+import com.motionapps.sensorbox.fragments.settings.SettingsFragment.Companion.POLICY_AGREED
 import com.motionapps.sensorbox.intro.IntroActivity
 import com.motionapps.sensorbox.viewmodels.MainViewModel
 import com.motionapps.sensorservices.services.MeasurementService
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO_EXTRA
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO_EXTRA
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS_EXTRA
 import com.motionapps.wearoslib.WearOsStates
@@ -57,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private var wearOsMenuItemPresence: MenuItem? = null // items in AppBar for Wear Os interaction
     private var wearOsMenuItemSync: MenuItem? = null
     private var dialog: Dialog? = null
+    private var materialDialog: MaterialDialog? = null
 
     private val connectionMeasurementService: ServiceConnection = object : ServiceConnection{
         /**
@@ -109,8 +111,8 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context, intent: Intent?) {
             intent?.action?.let {
                 when(it){
-                    SEND_WEAR_SENSOR_INFO -> { // SensorInfo are divided by "\n" and specific parameters by "|"
-                        mainViewModel.onWearOsProperties(context, intent.getStringExtra(SEND_WEAR_SENSOR_INFO_EXTRA))
+                    WEAR_SEND_SENSOR_INFO -> { // SensorInfo are divided by "\n" and specific parameters by "|"
+                        mainViewModel.onWearOsProperties(context, intent.getStringExtra(WEAR_SEND_SENSOR_INFO_EXTRA))
                         wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
                     }
                     WEAR_STATUS ->{
@@ -119,6 +121,12 @@ class MainActivity : AppCompatActivity() {
                         // is running on the wearable
                         mainViewModel.onWearOsStatus(intent.getStringExtra(WEAR_STATUS_EXTRA))
                     }
+                    WEAR_HEART_RATE_PERMISSION_REQUIRED ->{
+                        // hear rate sensor needs permission in order to get data - this
+                        mainViewModel.onWearOsHearRatePermissionRequired(
+                            intent.getBooleanExtra(WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN, false))
+                    }
+
                     MeasurementService.RUNNING -> {
                         Toast.makeText(context, "Measuring", Toast.LENGTH_LONG).show()
                     }
@@ -169,46 +177,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Checks if all the permissions are granted to the app
-     */
-    private fun checkPermissions() {
-
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            arrayOf(
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.ACTIVITY_RECOGNITION
-            )
-        } else {
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-        }
-
-        if (!hasPermissions(this, *permissions)) {
-            ActivityCompat.requestPermissions(
-                this, permissions,
-                PERMISSION_ALL
-            )
-        }
-    }
-
-    /**
-     * Quick way to check all the permission at once with kotlin expression
-     *
-     * @param context
-     * @param permissions - Array of strings with permissions from the manifest
-     * @return
-     */
-    private fun hasPermissions(context: Context, vararg permissions: String): Boolean = permissions.all {
-        ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-    }
-
     override fun onResume() {
         super.onResume()
         setUp()
+        checkPolicy()
+    }
+
+    /**
+     * check, whether the user has agreed to privacy policy
+     *
+     */
+    private fun checkPolicy() {
+        val sharedPreferences: SharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+        if (!sharedPreferences.getBoolean(POLICY_AGREED, false)) {
+            materialDialog = MaterialDialog(this).show {
+                title(R.string.intro_policy_button)
+                message(R.string.dialog_privacy_policy)
+                cornerRadius(16f)
+                cancelable(false)
+                cancelOnTouchOutside(false)
+                positiveButton(R.string.agree) {
+                    it.dismiss()
+                    val editor = sharedPreferences.edit()
+                    editor.putBoolean(POLICY_AGREED, true)
+                    editor.apply()
+                }
+                negativeButton(R.string.intro_policy_button) {
+                    val browserIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(getString(R.string.link_privacy_policy))
+                    )
+                    startActivity(browserIntent)
+                }
+            }
+        }
     }
 
     /**
@@ -219,10 +222,6 @@ class MainActivity : AppCompatActivity() {
 
         Intent(this, MeasurementService::class.java).also { intent ->
             bindService(intent, connectionMeasurementService, Context.BIND_AUTO_CREATE)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkPermissions()
         }
 
         registerWearOsReceiver()
@@ -236,8 +235,9 @@ class MainActivity : AppCompatActivity() {
     private fun registerWearOsReceiver(){
         if(!wearOsReceiverB){
             val intentFilter = IntentFilter()
-            intentFilter.addAction(SEND_WEAR_SENSOR_INFO)
+            intentFilter.addAction(WEAR_SEND_SENSOR_INFO)
             intentFilter.addAction(WEAR_STATUS)
+            intentFilter.addAction(WEAR_HEART_RATE_PERMISSION_REQUIRED)
             registerReceiver(wearOsReceiver, intentFilter)
             wearOsReceiverB = true
         }
@@ -255,6 +255,9 @@ class MainActivity : AppCompatActivity() {
 
         dialog?.dismiss()
         dialog = null
+
+        materialDialog?.dismiss()
+        materialDialog = null
 
         wearOsJob?.cancel()
 
@@ -291,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                     wearOsMenuItemPresence?.isEnabled = wearOsState.present
                     wearOsMenuItemPresence?.isVisible = wearOsState.present
                 }
+                else -> {}
             }
         })
 
@@ -299,6 +303,7 @@ class MainActivity : AppCompatActivity() {
             if(data.isNullOrEmpty()){
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_off)
                 wearOsMenuItemPresence?.isEnabled = true
+
 
             }else{
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
@@ -327,6 +332,7 @@ class MainActivity : AppCompatActivity() {
                         wearOsMenuItemSync?.isVisible = false
                     }
                 }
+                else -> {}
             }
         })
 
@@ -363,16 +369,10 @@ class MainActivity : AppCompatActivity() {
                     override fun onServiceDisconnected(componentName: ComponentName?) {}
                 }, Context.BIND_AUTO_CREATE)
             }
-
-
             true
         }
         else -> {
             super.onOptionsItemSelected(item)
         }
-    }
-
-    companion object{
-        private const val PERMISSION_ALL = 154
     }
 }

@@ -62,7 +62,7 @@ class MeasurementService : Service(), WearOsListener {
 
     }
 
-    override fun onBind(p0: Intent?): IBinder? {
+    override fun onBind(p0: Intent?): IBinder {
         return MeasurementBinder()
     }
 
@@ -92,7 +92,7 @@ class MeasurementService : Service(), WearOsListener {
     // main controller for measurement
     private val serviceController: ServiceController = ServiceController()
 
-    // wear Os refrences
+    // wear Os references
     private val wearOsHandler: WearOsHandler = WearOsHandler()
     private var wearOsPresence: WearOsStates.PresenceResult? = null
     private var wearOsJob: Job? = null
@@ -477,7 +477,7 @@ class MeasurementService : Service(), WearOsListener {
          * @param battery - stop on low battery - true
          * @return filled Intent with  params
          */
-        fun getIntentWearOs(context: Context, path: String, sensors: IntArray, sensorSpeed: Int, battery: Boolean): Intent{
+        fun getIntentWearOs(context: Context, path: String, sensors: IntArray, sensorSpeed: Int, gps: Boolean, battery: Boolean): Intent{
             val intent = Intent(context, MeasurementService::class.java)
 
             return addExtraToIntentAdvanced(
@@ -487,7 +487,7 @@ class MeasurementService : Service(), WearOsListener {
                 true,
                 sensors,
                 sensorSpeed,
-                false,
+                gps,
                 ENDLESS,
                 arrayOf(-1),
                 arrayListOf(""),

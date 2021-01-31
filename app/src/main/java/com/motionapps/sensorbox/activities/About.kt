@@ -40,7 +40,7 @@ class About : Fragment() {
         // license dialog show tab
         val licences = Element()
         licences.title = getString(R.string.licenses)
-        licences.iconDrawable = R.drawable.ic_document
+        licences.iconDrawable = R.drawable.ic_license
         licences.iconTint = R.color.colorWhite
         licences.setOnClickListener{
             dialog = LicensesDialog.Builder(requireContext()).setNotices(R.raw.notices).build().show()
@@ -61,6 +61,8 @@ class About : Fragment() {
             .addItem(emailElement())
             .addItem(githubElement())
             .addItem(licences)
+            .addItem(getPolicyElement())
+            .addItem(getTermsElement())
             .create()
     }
 
@@ -151,6 +153,40 @@ class About : Fragment() {
 
         gitHubElement.intent = intent
         return gitHubElement
+    }
+
+    /**
+     * Tab element for Privacy policy to read
+     * @return Privacy policy Element
+     */
+    private fun getPolicyElement(): Element{
+
+        val websiteElement = Element()
+        websiteElement.title = getString(R.string.intro_policy_button)
+        websiteElement.iconDrawable = R.drawable.ic_incognito
+        websiteElement.iconTint = R.color.colorWhite
+        websiteElement.value = getString(R.string.link_privacy_policy)
+        val uri = Uri.parse(getString(R.string.link_privacy_policy))
+        val browserIntent = Intent(Intent.ACTION_VIEW, uri)
+        websiteElement.intent = browserIntent
+        return websiteElement
+    }
+
+    /**
+     * Tab element for Terms of use
+     * @return Terms of use page Element
+     */
+    private fun getTermsElement(): Element{
+
+        val websiteElement = Element()
+        websiteElement.title = getString(R.string.intro_terms_button)
+        websiteElement.iconDrawable = R.drawable.ic_policy
+        websiteElement.iconTint = R.color.colorWhite
+        websiteElement.value = getString(R.string.link_terms)
+        val uri = Uri.parse(getString(R.string.link_terms))
+        val browserIntent = Intent(Intent.ACTION_VIEW, uri)
+        websiteElement.intent = browserIntent
+        return websiteElement
     }
 
 }

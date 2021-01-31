@@ -1,8 +1,14 @@
 package com.motionapps.sensorservices.handlers.measurements
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationAvailability
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
@@ -59,7 +65,7 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler): Measuremen
      * @return - formatted line of the csv
      */
     private fun createLocationStamp(location: Location): String {
-        return "${System.currentTimeMillis()}" +
+        return "${System.currentTimeMillis()};" +
                 "${location.latitude};" +
                 "${location.longitude};" +
                 "${location.altitude};" +
@@ -74,7 +80,13 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler): Measuremen
      *
      * @param context
      */
+
     override fun startMeasurement(context: Context) {
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            return
+        }
+
         gpsHandler.addCallback(context, this)
     }
 

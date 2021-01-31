@@ -185,6 +185,7 @@ class MeasurementActivity : AppCompatActivity() {
                     dialog = null
                     onCountDownEnd()
                 }
+                else -> {}
             }
         })
 
@@ -215,6 +216,7 @@ class MeasurementActivity : AppCompatActivity() {
                         endMeasurement()
                     }
                 }
+                else -> {}
             }
         })
     }

@@ -22,6 +22,8 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @InternalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
 
+    private var dialog: MaterialDialog? = null
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
@@ -42,10 +44,26 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // preference to open dialog about Google's activity regognition system
         val recognition: Preference? = findPreference("about_activity_recognition")
         recognition?.setOnPreferenceClickListener {
-            MaterialDialog(this@SettingsFragment.requireContext()).show{
+            dialog = MaterialDialog(this@SettingsFragment.requireContext()).show{
                 cornerRadius(16f)
                 title(R.string.settings_activity_recognition_title)
                 message(R.string.settings_activity_recognition_text)
+                negativeButton(R.string.cancel) {
+                    it.dismiss()
+                }
+            }
+            true
+        }
+
+        val storageDetails: Preference? = findPreference("storage_details")
+        storageDetails?.setOnPreferenceClickListener {
+            dialog = MaterialDialog(this@SettingsFragment.requireContext()).show{
+                cornerRadius(16f)
+                title(R.string.settings_csv_formatting)
+                message(R.string.settings_csv_formatting_text)
+                negativeButton(R.string.cancel) {
+                    it.dismiss()
+                }
             }
             true
         }
@@ -99,8 +117,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        dialog?.dismiss()
+        dialog = null
+    }
+
     companion object{
         const val APP_FIRST_TIME = "APP_FIRST_TIME"
+        const val POLICY_AGREED = "POLICY_AGREED"
     }
 
 }

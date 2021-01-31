@@ -57,11 +57,19 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="Annotations"
+        app:title="@string/settings_annotations"
         app:icon="@drawable/ic_pen"
         app:layout="@layout/pref_category">
         <Preference
             app:key="annots"
             app:title="@string/settings_custom_annots" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        app:icon="@drawable/ic_baseline_storage"
+        app:layout="@layout/pref_category"
+        app:title="@string/settings_csv">
+        <Preference
+            app:key="storage_details"
+            app:title="@string/settings_csv_formatting" />
     </PreferenceCategory>
 </PreferenceScreen>

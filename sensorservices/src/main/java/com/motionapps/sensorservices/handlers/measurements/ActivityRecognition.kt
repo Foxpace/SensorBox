@@ -1,9 +1,14 @@
 package com.motionapps.sensorservices.handlers.measurements
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.*
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import com.google.android.gms.location.*
 import com.google.android.gms.location.ActivityRecognition
@@ -150,6 +155,11 @@ class ActivityRecognition : MeasurementInterface {
      * @param context
      */
     override fun startMeasurement(context: Context) {
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
+            return
+        }
+
         activityRecognitionClient = ActivityRecognition.getClient(context)
 
         val sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)

@@ -47,7 +47,7 @@ class SensorViewHandler @Inject constructor(@ActivityContext context: Context) {
             }
         }
 
-        return false
+        return gpsMeasurement
     }
 
     /**

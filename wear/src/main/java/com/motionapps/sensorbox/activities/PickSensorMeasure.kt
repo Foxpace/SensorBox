@@ -1,17 +1,21 @@
 package com.motionapps.sensorbox.activities
 
+import android.Manifest
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
-import android.support.wearable.activity.WearableActivity
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
@@ -34,11 +38,12 @@ import java.util.*
 @InternalCoroutinesApi
 /**
  * User can pick sensors, which will be measured by MeasurementActivity
- *
  */
-class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener {
 
-    private var adapter: SensorPickerAdapter? = null
+class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
+
+    private lateinit var adapter: SensorPickerAdapter
+    private lateinit var layoutManager: WearableLinearLayoutManager
 
     // checks for low battery
     private var receiverRegistered = false
@@ -80,18 +85,13 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_pick_sensor_measure)
-        // sets up recycleView
-        val wearableRecyclerView: WearableRecyclerView = findViewById(R.id.recycler_pick_view)
-        wearableRecyclerView.layoutManager = WearableLinearLayoutManager(this)
-        wearableRecyclerView.isEdgeItemsCenteringEnabled = true
 
         // checks sensors if available
         val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         val sensors = sensorManager.getSensorList(Sensor.TYPE_ALL)
 
-        if (sensors == null || sensors.isEmpty()) {
+        if (sensors.isNullOrEmpty()) {
             Toast.makeText(this, R.string.nosensors, Toast.LENGTH_SHORT).show()
             finish()
             startActivity(Intent(this, MainActivity::class.java))
@@ -100,8 +100,15 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
 
         // adds adapter
         adapter = SensorPickerAdapter(this, sensors)
-        adapter!!.setClickListener(this)
-        wearableRecyclerView.adapter = adapter
+        adapter.setClickListener(this)
+        layoutManager = WearableLinearLayoutManager(this)
+
+        // sets up recycleView
+        findViewById<WearableRecyclerView>(R.id.recycler_pick_view).apply{
+            layoutManager = this@PickSensorMeasure.layoutManager
+            isEdgeItemsCenteringEnabled = true
+            adapter = this@PickSensorMeasure.adapter
+        }
 
         // checks on battery level
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -133,12 +140,39 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
         wearOsHandler.onDestroy()
     }
 
+    // to save GPS view
+    private var tempPosition: Int = 0
+
     override fun onItemClicked(view: View?, position: Int) {
 
         // start button
-        if (position + 1 == adapter!!.itemCount && !onLowBattery) {
+        if (position + 1 == adapter.itemCount && !onLowBattery) {
             startMeasurement()
             return
+        }
+
+        if(adapter.availableSensors[position] == -1 && adapter.gpsExists){
+            tempPosition = position
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
+                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
+                    return
+                }
+            }else{
+                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)  != PackageManager.PERMISSION_GRANTED){
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), GPS_REQUEST)
+                    return
+                }
+            }
+
+        }
+
+        if(adapter.availableSensors[position] == Sensor.TYPE_HEART_RATE){
+            tempPosition = position
+            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BODY_SENSORS), BODY_REQUEST)
+                return
+            }
         }
 
         // low battery toast
@@ -149,17 +183,52 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
 
         // checks sensor to measure
         val imageView = view?.findViewById<ImageView>(R.id.viewholder_image)
-        if (adapter!!.isChecked(position)) {
+        if (adapter.isChecked(position)) {
             imageView?.setImageResource(R.drawable.ic_save_red)
         } else {
             imageView?.setImageResource(R.drawable.ic_save_green)
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == GPS_REQUEST) {
+            onPermission(permissions[0], grantResults, R.string.permission_rejected_gps)
+        }else if(requestCode == BODY_REQUEST){
+            onPermission(permissions[0], grantResults, R.string.permission_rejected_body)
+        }
+    }
+
+    private fun onPermission(permission: String, grantResults: IntArray, toastText: Int){
+        if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            val view: View? = layoutManager.findViewByPosition(tempPosition)
+            view?.let{
+                val imageView = it.findViewById<ImageView>(R.id.viewholder_image)
+                if (adapter.isChecked(tempPosition)) {
+                    imageView.setImageResource(R.drawable.ic_save_red)
+                } else {
+                    imageView.setImageResource(R.drawable.ic_save_green)
+                }
+            }
+
+        } else {
+            if(shouldShowRequestPermissionRationale(permission)){
+                Toast.makeText(this, toastText, Toast.LENGTH_LONG).show()
+            }else{
+                finish()
+                startActivity(Intent(this, PermissionActivity::class.java))
+            }
+        }
+    }
 
     private fun startMeasurement() {
-        if (adapter!!.isReady) {
 
+        if (adapter.isReady) {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
             // pathing, sensors, battery check
@@ -169,8 +238,7 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
                 sharedPreferences.getBoolean(MainSettings.BATTERY_RESTRICTION, true)
 
             // intent creation for Wear Os
-            var intent =
-                getIntentWearOs(this, path, adapter!!.sensors, sensorSpeed, batteryRestriction)
+            var intent = getIntentWearOs(this, path, adapter.sensors, sensorSpeed, adapter.isGPS, batteryRestriction)
 
             // if the phone is available - send status
             wearOsState?.let {
@@ -207,5 +275,8 @@ class PickSensorMeasure : WearableActivity(), ItemClickListener, WearOsListener 
         return formatter.format(date)
     }
 
-
+    companion object{
+        const val GPS_REQUEST = 459
+        const val BODY_REQUEST = 460
+    }
 }

@@ -14,7 +14,6 @@ import java.util.*
  *
  * @property max number of samples to show in 10 seconds
  * @constructor
- * TODO
  *
  * @param graphView - view with chart
  * @param title - title of the chart
@@ -43,7 +42,8 @@ class GraphHandler(graphView: GraphView, title: String, private val max: Int) {
         if (reducer == System.currentTimeMillis()) {
             return
         }
-        for (i in data.indices) {
+
+        for (i in sensorEvent.values.indices) {
             data[i]!!.appendData(
                 DataPoint((System.currentTimeMillis() - start).toDouble(), sensorEvent.values[i].toDouble()),
                 true, max
@@ -61,6 +61,8 @@ class GraphHandler(graphView: GraphView, title: String, private val max: Int) {
     private fun setGraph(graph: GraphView, title: String) {
 
         graph.title = title
+        graph.titleColor = Color.WHITE
+
         //manual range
         graph.viewport.isXAxisBoundsManual = true
         graph.viewport.setMinX(0.0)
@@ -79,6 +81,9 @@ class GraphHandler(graphView: GraphView, title: String, private val max: Int) {
         graph.gridLabelRenderer.numHorizontalLabels = 3
         graph.gridLabelRenderer.textSize = 18f
         graph.gridLabelRenderer.labelsSpace = 15
+        graph.gridLabelRenderer.gridColor = Color.WHITE
+        graph.gridLabelRenderer.verticalLabelsColor = Color.WHITE
+        graph.gridLabelRenderer.horizontalLabelsColor = Color.WHITE
 
         // style to linecharts
         val titles = arrayOf("x", "y", "z", "0")

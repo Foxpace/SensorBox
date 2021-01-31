@@ -7,22 +7,21 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher_white_square"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
-
+        android:theme="@style/AppTheme">
         <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
@@ -36,28 +35,41 @@
             android:value="true" />
 
         <activity
-            android:name=".activities.MainSettings"
-            android:label="@string/title_activity_main_settings"
-            >
-        </activity>
-        <activity
-            android:name=".activities.SettingsSampling"
-            android:label="@string/title_activity_settings" />
+            android:name=".activities.MainActivity"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".activities.PermissionActivity"
+            android:label="@string/title_activity_permission">
+        </activity>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/maps_api_key" />
+
+        <activity
+            android:name=".activities.MapsActivity"
+            android:label="@string/title_activity_maps" />
+
+        <activity
+            android:name=".activities.MainSettings"
+            android:label="@string/title_activity_main_settings" />
+        <activity
+            android:name=".activities.SettingsPicker"
+            android:label="@string/title_activity_settings" />
         <activity
             android:name=".activities.PickSensorMeasure"
             android:label="@string/title_activity_pick_sensor_measure" />
         <activity
             android:name=".activities.StopActivity"
             android:label="@string/title_activity_stopactivity" />
-        <activity
-            android:name=".activities.MainActivity"
-            android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+
         <activity android:name=".activities.MoveToMain" />
 
         <service android:name=".communication.MsgListener">
@@ -77,11 +89,10 @@
                 <action android:name="com.foxpace.sensors.LAUNCH" />
             </intent-filter>
         </service>
-
         <service
             android:name=".communication.SendFileService"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="false"/>
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <activity
             android:name=".activities.PickSensorShow"

@@ -19,6 +19,7 @@ import com.motionapps.sensorbox.fragments.SensorInfoView
 import com.motionapps.sensorbox.types.SensorAttributes
 import com.motionapps.sensorbox.types.SensorResources
 import com.motionapps.sensorbox.uiHandlers.GraphHandler
+import com.motionapps.sensorbox.uiHandlers.TextUpdater
 import com.motionapps.sensorbox.viewmodels.MainViewModel
 import com.motionapps.sensorservices.types.SensorNeeds
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH_TIME
@@ -36,7 +37,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
  *
  * @property mainViewModel
  */
-class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displayer,
+class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displayer, TextUpdater.TextUpdaterInterface,
     OnDataChangedListener {
 
     private var dataClient: DataClient? = null
@@ -44,6 +45,7 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
     private var startTime = -1L
     private var maxSensorPoints = -1
     private var chartData: ArrayList<LineGraphSeries<DataPoint>> = ArrayList()
+    private var idView = 0
 
     override fun getView(
         context: Context,
@@ -56,25 +58,46 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
         val data = mainViewModel.wearOsContacted.value
         data?.let {
 
-            view = inflater.inflate(R.layout.fragment_info_sensor, viewGroup, false)
+            idView = pickSensorView(args as InfoSensorFragmentWearOsArgs)
+
+            view = inflater.inflate(idView, viewGroup, false)
+
             // data are gathered from viewModel
-            for (v in createSensorAttributes(
-                context,
-                data,
-                inflater,
-                args as InfoSensorFragmentWearOsArgs
-            )){
+            for (v in createSensorAttributes(context, data, inflater, args)){
                 view?.findViewById<LinearLayout>(R.id.sensorinfo_container)?.addView(v)
             }
 
-            // sends message to start Wear Os service to send sensor data
-            view?.findViewById<GraphView>(R.id.graph)?.let{
-                initWearOsSensor(context, it, args)
+            if(R.layout.fragment_info_sensor == idView){
+                // sends message to start Wear Os service to send sensor data
+                view?.findViewById<GraphView>(R.id.graph)?.let{
+                    initWearOsSensorChart(context, it, args)
+                }
+            }else{
+                initWearOsSensorChart(context, args)
             }
+
             return view
         }
 
         return null
+    }
+
+    /**
+     * Changes contentView for specific sensor Chart / TextView
+     * @return
+     */
+    private fun pickSensorView(args: InfoSensorFragmentWearOsArgs): Int {
+        return when (SensorNeeds.valueOf(args.type).oneValueTextView) {
+            SensorNeeds.Companion.TypeOfRepresentation.PLOT -> {
+                R.layout.fragment_info_sensor
+            }
+            SensorNeeds.Companion.TypeOfRepresentation.REALTIME_COUNTER,
+            SensorNeeds.Companion.TypeOfRepresentation.TEXTVIEW -> {
+                R.layout.fragment_info_textview
+
+            }
+            else -> 0
+        }
     }
 
 
@@ -126,7 +149,7 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
      * @param graphView - chart to use
      * @param args - picked sensor passed from fragment
      */
-    private fun initWearOsSensor(
+    private fun initWearOsSensorChart(
         context: Context,
         graphView: GraphView,
         args: InfoSensorFragmentWearOsArgs
@@ -138,6 +161,18 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
             GraphHandler.INFO_VIEW
         )
 
+        connectToWearOs(context, sensorNeeds.id)
+    }
+
+    /**
+     * sends message to Wear Os device to send sensor samples to show on textview
+     *
+     * @param context
+     * @param args - picked sensor passed from fragment
+     */
+    private fun initWearOsSensorChart(
+        context: Context, args: InfoSensorFragmentWearOsArgs) {
+        val sensorNeeds: SensorNeeds = SensorNeeds.valueOf(args.type)
         connectToWearOs(context, sensorNeeds.id)
     }
 
@@ -180,14 +215,26 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
 
                 // unwrap values
                 val values = dataMap.getFloatArray(SAMPLE_PATH_VALUE)
-                for(i in 0 until values.size-2){
-                    chartData[i].appendData(
-                        DataPoint(
-                            (System.currentTimeMillis() - startTime).toDouble(), values[i].toDouble()
-                        ), true, maxSensorPoints
-                    )
+
+                if (idView == R.layout.fragment_info_sensor) {
+                    for (i in 0 until values.size - 2) {
+                        chartData[i].appendData(
+                            DataPoint(
+                                (System.currentTimeMillis() - startTime).toDouble(),
+                                values[i].toDouble()
+                            ), true, maxSensorPoints
+                        )
+                    }
+                } else {
+                    onTextUpdate("%d %s".format(values[0].toInt(), "bpm"))
                 }
             }
+        }
+    }
+
+    override fun onTextUpdate(s: String) {
+        view!!.findViewById<TextView>(R.id.sensorinfo_textview)?.let {
+            it.text = s
         }
     }
 }

@@ -41,7 +41,7 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         val view: View = inflater.inflate(R.layout.fragment_pick_folder, container, false)
         view.setBackgroundColor(defaultBackgroundColor)
@@ -68,6 +68,10 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
                 text = getString(R.string.intro_pick_folder_description_under_Q)
             }
 
+            (view.findViewById<TextView>(R.id.folder_pick_title)).apply{
+                text = getString(R.string.intro_pick_folder_placement)
+            }
+
             (view.findViewById<Button>(R.id.intro_pick_folder_button)).apply {
                 visibility = GONE
             }
@@ -82,6 +86,8 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
 
         return view
     }
+
+
 
     // default colour of the background
     override val defaultBackgroundColor: Int

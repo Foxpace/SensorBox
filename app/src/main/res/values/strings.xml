@@ -9,6 +9,8 @@
     <string name="next">Next</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="agree">Agree</string>
+    <string name="dialog_privacy_policy">In short: Our policy is not to gather data. All the recorded sensor / GPS data are stored only locally for you. We get only technical reports, which are used to fix bugs in the SensorBox. For further details, you can read our policy at website.</string>
 
     <!-- Activities -->
     <string name="menu_about">About</string>
@@ -17,6 +19,20 @@
     <string name="menu_settings">Settings</string>
     <string name="sensor_info">Sensor information</string>
     <string name="start_measurement">Start measurement</string>
+    <string name="activity_permissions_required">Permissions are required</string>
+    <string name="activity_permissions_required_text">Main purpose of SensorBox is to record all outputs to csv files.
+        For full functionality, the SensorBox needs 3 permissions:\n\n
+        \u2022 Storage - to store all csv files recorded by you\n\n
+        \u2022 Location - to capture your coordinates, the app need you to provide us unlimited access to GPS at background\n\n
+        \u2022 Physical Activity - to capture your changes in state - walking, driving, … - check Activity recognition API in settings\n\n
+        \u2022 Body Sensors - to record heart rate on Wear Os device, if available\n\nAny of your recorded data are not shared with us. They are stored only locally in your phone. Recording is started only by you. For more information, you can read our Privacy Policy in \"About\" tab.
+    </string>
+
+
+    <string name="activity_permissions_no">SensorBox will not be fully functional without permissions. If you need to change permissions, visit settings of the app.</string>
+    <string name="permission_storage">To store csv files, the app requires storage permission to access memory</string>
+    <string name="show_permission">Show permission</string>
+    <string name="permission">Permission</string>
 
     <!-- Sensor names -->
     <string name="agg_name">Gravity</string>
@@ -32,6 +48,7 @@
     <string name="rotation_name">Rotation\nvector</string>
     <string name="step_counter_name">Step\ncounter</string>
     <string name="step_detector_name">Step\ndetector</string>
+    <string name="heart_rate_name">Heart rate</string>
 
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>
@@ -39,6 +56,7 @@
 
 
     <!-- Sensor Info - viewer -->
+    <string name="sensor_permission">To save sensor data, give SensorBox permission to storage in settings</string>
     <string name="sensor_info_name">Name</string>
     <string name="sensor_info_vendor">Vendor</string>
     <string name="sensor_info_version">Version</string>
@@ -50,6 +68,8 @@
     <string name="sensor_info_float">%.2f</string>
 
     <!--GPS-->
+    <string name="permission_gps_show">to show your location, the permission for location is required</string>
+    <string name="permission_gps_background">To save data from GPS to csv file, the permission for location is required</string>
     <string name="gps">GPS</string>
     <string name="sensor_info_GPS_latitude">Latitude</string>
     <string name="sensor_info_GPS_longitude">Longitude</string>
@@ -81,6 +101,7 @@
     <string name="advanced_minutes">Minutes</string>
     <string name="advanced_setup_time">Set up time</string>
     <string name="advanced_time_pass_limit">Unreachable time</string>
+    <string name="advanced_recognition_permission">To log movement recognition changes to csv files, the app requires permission for this kind of recognition</string>
 
     <!--SETTINGS-->
     <string name="settings_storage">Storage</string>
@@ -90,12 +111,24 @@
     <string name="settings_app">App</string>
     <string name="settings_activity_recognition_preference">About activity recognition</string>
     <string name="settings_custom_annots">Customize annotations</string>
+    <string name="settings_csv_formatting">CSV formatting</string>
+    <string name="settings_csv_formatting_text">Every CSV file is composed of header, where you can find time as \"t\",
+        values of specific sensor and accuracy of the sensor as \"a\".\n\nTimestamps across sensors are in nanoseconds of Android system time. GPS, activity recognition,
+        significant motion and other use UNIX time.\n\nTo convert sensor timestamps to UNIX time follow these steps:\n\n
+        \u2022 subtract from column nanos field from "extra.json" - this is starting time of measurement in Android system time\n\n
+        \u2022 convert nanoseconds to milliseconds\n\n
+        \u2022 add to column millis from "extra.json" - this is starting time of measurement in UNIX time\n\nAccuracy is in range from 0 to 3, where 0 means the lowest accuracy and 3 the highest.
+
+
+    </string>
+    <string name="settings_annotations">Annotations</string>
+    <string name="settings_csv">Data format</string>
     <string name="settings_version">Version of the app</string>
     <string name="settings_interval_distance">Distance interval [m]</string>
-    <string name="settings_annotations">Annotations</string>
     <string name="settings_annotation">Annotation</string>
     <string name="settings_add">Add</string>
     <string name="settings_high_value_warning">The parameter is too high! Max: </string>
+    <string name="settings_activity_recognition_permission">Allow Activity recognition permission in settings to log changes in activity</string>
     <string name="settings_activity_recognition_title">About activity recognition</string>
     <string name="settings_activity_recognition_text">SensorBox uses Activity Recognition Client, Google\'s API, which is native tool for
     activity recognition for Android. The client is capable to provide basic information about movement status of a phone,
@@ -131,6 +164,7 @@
     <string name="add_custom_noise_alarms_during_measurement">Add custom noise alarms during measurement</string>
     <string name="extra_other_options">Other options</string>
     <string name="extra_activity_recognition_checkbox">Use activity recognition</string>
+    <string name="extra_activity_recognition_checkbox_no_permission">Use activity recognition\npermission required</string>
     <string name="extra_significant_motion_checkbox">Use significant motion sensor</string>
     <string name="extra_low_battery_checkbox">Stop measurement on low battery</string>
     <string name="extra_use_wakelock_checkbox">Use wakelock - locks CPU</string>
@@ -164,6 +198,10 @@
     <string name="intro_welcome_description">The application that can record sensors and GPS to CSV files, which is also compatible with Wear Os</string>
     <string name="intro_incognito">Nothing is going out</string>
     <string name="intro_incognito_description">All the measured data are stored locally. None of them are sent to any cloud. Moreover, this is open-source project. Visit our github!</string>
+    <string name="intro_policy">Our policy: just fix bugs</string>
+    <string name="intro_policy_description">We gather only error messages, which can be used to fix the app. By moving on, you agree to our Privacy Policy &amp; Terms.</string>
+    <string name="intro_policy_button">Privacy policy</string>
+    <string name="intro_terms_button">Terms of use</string>
     <string name="intro_permission">Permissions</string>
     <string name="intro_permission_description">In order to use save files, use GPS and use activity recognition API, we need you to give us all these permissions.</string>
     <string name="intro_allow">Allow</string>
@@ -176,17 +214,24 @@
     <string name="intro_ignored_optimisations">Optimisations are ignored</string>
     <string name="intro_ignored_optimisations_error">Device does not support this option</string>
     <string name="intro_pick_folder">Pick folder</string>
+    <string name="intro_pick_folder_placement">Placement of folder</string>
     <string name="intro_pick_folder_description">Here you can pick folder, where to store all the files. Picked folder is:\n\n%s</string>
     <string name="intro_pick_folder_description_under_Q">SensorBox folder will be created in your root directory.</string>
     <string name="intro_deny_dont_ask">Please visit settings to give permissions to the app</string>
     <string name="intro_deny">The permission are required for full functionality</string>
     <string name="intro_condition_folder">Please pick folder, where to store all the measurements</string>
 
+    <!--POLICIES-->
+    <string name="link_terms">https://creativemotion.app/terms_and_conditions.html"</string>
+    <string name="link_privacy_policy">https://creativemotion.app/privacy_policy_sensorbox.html</string>
+
     <!--ABOUT-->
     <string name="about_app_description">SensorBox serves as sensor output aggregation tool. You can pick sensors, views their parameters, store them in csv files. During measurement, you can set up alarms, write notes and take annotations. Application is compatible with Wear Os. SensorBox is open source project, so you can visit github page for code.</string>
     <string name="about_title_email">Email contact</string>
     <string name="licenses">Open Source Licenses</string>
     <string name="about_site_title">Visit our site</string>
+    <string name="about_privacy_policy">Read our Privacy Policy</string>
+    <string name="about_terms_of_use">Read our Terms of use</string>
     <string name="sync_data">Download data from Wear Os</string>
     <string name="wear_os_presence">Wear Os presence</string>
     <string name="title_activity_main2">MainActivity</string>
@@ -196,6 +241,9 @@
     <string name="wear_os_sync_unavailable_restart">Synchronization is not available - restart connection</string>
     <string name="wear_os_sync_in_progress">Synchronization in progress</string>
     <string name="wear_os_active">Turn off Wear Os active measurement</string>
+    <string name="heart_rate_permission_title">Heart rate permission</string>
+    <string name="heart_rate_permission_text">In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\" permission for Wear Os. The permission will be shown at your smartwatch after clicking the button.</string>
+
 
 
 </resources>

@@ -14,7 +14,7 @@ import android.util.Log
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
-import com.motionapps.wearoslib.WearOsConstants.END_WEAR_SENSOR_REAL_TIME
+import com.motionapps.wearoslib.WearOsConstants.WEAR_END_SENSOR_REAL_TIME
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH_TIME
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH_VALUE
@@ -33,7 +33,7 @@ class RealTimeSensorService : Service(), SensorEventListener {
     private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != null) {
-                if (END_WEAR_SENSOR_REAL_TIME == intent.action) {
+                if (WEAR_END_SENSOR_REAL_TIME == intent.action) {
                     stopSelf()
                 }
             }
@@ -68,7 +68,7 @@ class RealTimeSensorService : Service(), SensorEventListener {
     }
 
     private fun registerBroadcast() {
-        val filter = IntentFilter(END_WEAR_SENSOR_REAL_TIME)
+        val filter = IntentFilter(WEAR_END_SENSOR_REAL_TIME)
         registerReceiver(receiver, filter)
     }
 
@@ -143,19 +143,28 @@ class RealTimeSensorService : Service(), SensorEventListener {
      * @return floatArray [values, value, ..., sensorType, accuracy]
      */
     private fun createArray(event: SensorEvent): FloatArray {
-        return if (event.values.size < 5) {
-            floatArrayOf(
-                event.values[0],
-                event.values[1],
-                event.values[2],
-                event.sensor.type.toFloat(),
-                event.accuracy.toFloat()
-            )
-        } else {
-            floatArrayOf(
-                event.values[0], event.values[1], event.values[2], event.values[3],
-                event.values[4], event.sensor.type.toFloat(), event.accuracy.toFloat()
-            )
+        return when {
+            event.values.size < 3 -> {
+                floatArrayOf(event.values[0],
+                    event.sensor.type.toFloat(),
+                    event.accuracy.toFloat()
+                )
+            }
+            event.values.size < 5 -> {
+                floatArrayOf(
+                    event.values[0],
+                    event.values[1],
+                    event.values[2],
+                    event.sensor.type.toFloat(),
+                    event.accuracy.toFloat()
+                )
+            }
+            else -> {
+                floatArrayOf(
+                    event.values[0], event.values[1], event.values[2], event.values[3],
+                    event.values[4], event.sensor.type.toFloat(), event.accuracy.toFloat()
+                )
+            }
         }
     }
 

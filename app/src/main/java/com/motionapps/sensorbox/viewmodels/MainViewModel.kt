@@ -17,6 +17,7 @@ import com.motionapps.sensorbox.fragments.advanced.extrahandlers.AlarmHandler
 import com.motionapps.sensorbox.uiHandlers.SensorViewHandler
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsConstants.START_MEASUREMENT
+import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
 import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsListener
@@ -74,6 +75,8 @@ class MainViewModel
     private var _wearOsStatus: MutableLiveData<WearOsStates> = MutableLiveData()
     val wearOsStatus: LiveData<WearOsStates>
         get() = _wearOsStatus
+
+    var isHeartRatePermissionRequired = false
 
     /**
      * Start info with specific interval
@@ -206,6 +209,7 @@ class MainViewModel
                         _wearOsContacted.value = hashMapOf()
                     }
                 }
+                else -> {}
             }
         }
     }
@@ -218,7 +222,7 @@ class MainViewModel
     fun onWearPresentClick(context: Context) {
         if(_wearOsContacted.value.isNullOrEmpty()){
             _wearOsStatus.value = WearOsStates.AwaitResult
-            repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.SEND_WEAR_SENSOR_INFO)
+            repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.WEAR_SEND_SENSOR_INFO)
         }else{
             onRemoveWearOs(context)
         }
@@ -235,6 +239,7 @@ class MainViewModel
         repository.sensorViewHandler.removeActiveWearOsMeasurements()
         _wearOsContacted.value = hashMapOf()
         _wearOsStatus.value = WearOsStates.Offline
+        isHeartRatePermissionRequired = false
     }
 
     /**
@@ -293,7 +298,7 @@ class MainViewModel
      * @param id - id of the sensor to broadcast
      */
     fun startWearOsSensor(context: Context, id: Int) {
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, "${WearOsConstants.START_WEAR_SENSOR_REAL_TIME};$id")
+        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, "${WearOsConstants.WEAR_START_SENSOR_REAL_TIME};$id")
     }
 
     /**
@@ -302,7 +307,7 @@ class MainViewModel
      * @param context
      */
     fun stopWearOsSensor(context: Context) {
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.END_WEAR_SENSOR_REAL_TIME)
+        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.WEAR_END_SENSOR_REAL_TIME)
     }
 
     /**
@@ -329,7 +334,17 @@ class MainViewModel
         repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, "$START_MEASUREMENT;$path;${sensors.joinToString("|")}")
     }
 
+    fun askHeartRatePermission(context: Context){
+        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WEAR_HEART_RATE_PERMISSION_REQUIRED)
+    }
 
+    /**
+     * flag for requirement of the hear rate sensor
+     * @param required - true if it is required - setter
+     */
+    fun onWearOsHearRatePermissionRequired(required: Boolean) {
+        isHeartRatePermissionRequired = required
+    }
 
 
 }

@@ -1,8 +1,12 @@
 package com.motionapps.sensorservices.handlers
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.balda.flipper.DocumentFileCompat
 import com.balda.flipper.OperationFailedException
@@ -79,11 +83,31 @@ object StorageHandler {
     }
 
     /**
+     * checks if everything is ok from permission perspective and if the folder exists
+     *
+     * @param context
+     * @return true if exists
+     */
+    fun isAccess(context: Context): Boolean{
+        return when {
+            Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT -> {
+                isFolder(context)
+            }
+            Build.VERSION_CODES.M <= Build.VERSION.SDK_INT -> {
+                isFolder(context) && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+            }
+            else -> {
+                isFolder(context)
+            }
+        }
+    }
+
+    /**
      *
      * @param context
      * @return whole path to main folder in string format
      */
-    fun getFolderName(context: Context): String? {
+    fun getFolderName(context: Context): String {
         val manager = StorageManagerCompat(context)
         manager.getRoot(StorageManagerCompat.DEF_MAIN_ROOT)?.let{
 
@@ -111,7 +135,7 @@ object StorageHandler {
      * @param path - path to main folder
      * @return reversed path, because DocumentFile is reversed
      */
-    private fun reversePath(path: String): String? {
+    private fun reversePath(path: String): String {
         val parts = path.split("/".toRegex()).toTypedArray()
         val stringBuilder = StringBuilder()
         for (i in parts.indices.reversed()) {
@@ -208,7 +232,7 @@ object StorageHandler {
      * @param nameOfFile - name of the file
      * @return - outputStream to store data
      */
-    fun createFileInInternalFolder(context: Context, folderName: String, nameOfFile: String): OutputStream?{
+    fun createFileInInternalFolder(context: Context, folderName: String, nameOfFile: String): OutputStream {
         val mainFolder = File(context.filesDir, context.getString(R.string.app_name))
         if(!mainFolder.exists()){
             mainFolder.mkdirs()

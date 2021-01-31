@@ -9,8 +9,13 @@
         <item name="fontFamily">@font/roboto_family</item>
         <item name="md_font_title">@font/roboto_regular</item>
         <item name="md_font_body">@font/roboto_regular</item>
-        <item name="md_font_button">@font/roboto_regular</item>
+
         <item name="android:actionButtonStyle">@style/ActionButtonStyle</item>
+        <item name="md_font_button">@font/roboto_regular</item>
+        <item name="md_background_color">@color/colorPrimary</item>
+        <item name="md_color_button_text">@color/colorWhite</item>
+        <item name="md_color_title">@color/colorWhite</item>
+        <item name="md_color_content">@color/colorWhite</item>
 <!--        <item name="android:alertDialogStyle">@style/MyAlertDialogStyle</item>-->
     </style>
 

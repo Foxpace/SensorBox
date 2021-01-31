@@ -36,7 +36,7 @@ class InfoSensorFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         return when(args.type){
             SensorNeeds.GPS -> {
                 gpsDisplayer.getView(requireContext(), inflater, container, args)

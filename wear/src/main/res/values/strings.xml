@@ -4,27 +4,40 @@
     <!-- Activities -->
     <string name="wear_text">If you want to collect data from Wear Os, click the button below to open the application on a phone, where you can configure a measurement.</string>
     <string name="open_module">Opening module</string>
+    <string name="open_phone_browser">Check your browser in phone</string>
     <string name="norespond">Mobile does not respond</string>
-    <string name="test_version">Test version</string>
+    <string name="pick_sensor_measure_title">Pick sensor to measure</string>
+    <string name="pick_sensor_show_title">Pick sensor to show</string>
     <string name="Service_running">Service works</string>
     <string name="title_activity_main" translatable="false">MainActivity</string>
     <string name="graph" translatable="false">GRAPH</string>
     <string name="info" translatable="false">INFO</string>
+    <string name="title_activity_maps">Map</string>
 
     <string name="activity_view_sensor">View sensor</string>
     <string name="activity_info_phone">Info phone</string>
     <string name="activity_record">Record</string>
-    <string name="activity_settings">Settings</string>
-
     <string name="measure_locally">Measure locally</string>
 
+    <string name="permission_rejected_gps">To use GPS, the permission is required. To allow, go to settings.</string>
+    <string name="permission_rejected_body">To use this sensor, the permission is required. To allow, go to settings.</string>
+    <string name="permission_body_sensor">To see and record the Heart rate, you need to provide the app to monitor Body sensor.</string>
+    <string name="permission_show">The smartwatch needs Body sensor and Location permission to work properly. All the data are stored only locally. If you do not see permission, click the button bellow.</string>
+    <string name="permission_toast">To save location and body sensors, permit the required permissions</string>
+    <string name="title_activity_permission">PermissionActivity</string>
+    <string name="permission_button">Show permission</string>
 
+    <string name="gps">GPS</string>
+    <string name="cancel_button_for_map">Cancel button for map</string>
+    <string name="image_description_save">If the sensor is meant to be measured</string>
+    <string name="image_description_picked_option">Marks, which option is selected</string>
 
     <!--Sensors -->
     <string name="sensor_gravity">Acceleration</string>
     <string name="sensor_linear_acceleration">Linear acc.</string>
     <string name="sensor_gyroscope">Gyroscope</string>
     <string name="sensor_magnet">Magnetic induction</string>
+    <string name="heart_rate">Heart rate</string>
     <string-array name="sensor_delays" translatable="false">
         <item>Fastest - 0 μs</item>
         <item>Game - 20 000 μs</item>
@@ -33,20 +46,50 @@
     </string-array>
 
     <!--Settings-->
+    <string name="activity_settings">Settings</string>
+    <string name="activity_sampling_frequency">Sampling frequency</string>
+    <string name="activity_privacy_policy">Privacy Policy</string>
+    <string name="activity_terms_of_use">Terms of use</string>
 
     <string name="title_activity_settings" translatable="false">SettingsSampling</string>
     <string name="sampling_frq">Pick sampling frequency</string>
+    <string name="gps_time_title">Max latency for GPS</string>
+    <string name="gps_dist_title">Minimal displacement</string>
     <string name="title_activity_main_settings" translatable="false">MainSettings</string>
-    <string name="battery_limit">Battery limit - </string>
-    <string name="wear_sampling_text">Sampling - </string>
+    <string name="battery_limit">Battery limit</string>
+    <string name="wear_sampling_text">Sampling</string>
+    <string name="activity_gps_time">GPS time</string>
+    <string name="activity_gps_distance">GPS distance</string>
 
     <string name="settings_wear_sampling_fastest" translatable="false">0 ms</string>
     <string name="settings_wear_sampling_game" translatable="false">20 ms</string>
     <string name="settings_wear_sampling_ui" translatable="false">66 ms</string>
     <string name="settings_wear_sampling_normal" translatable="false">200 ms</string>
+
     <string name="settings_battery_on" translatable="false">On</string>
     <string name="settings_battery_off" translatable="false">Off</string>
     <string name="low_battery">Low battery</string>
+
+    <string-array name="GPS_times" translatable="false">
+        <item>1 s</item>
+        <item>30 s</item>
+        <item>60 s</item>
+        <item>2 min</item>
+        <item>5 min</item>
+        <item>10 min</item>
+        <item>30 min</item>
+        <item>60 min</item>
+    </string-array>
+
+    <string-array name="GPS_distances" translatable="false">
+        <item>1 m</item>
+        <item>10 m</item>
+        <item>50 m</item>
+        <item>100 m</item>
+        <item>250 m</item>
+        <item>500 m</item>
+        <item>1000 m</item>
+    </string-array>
 
     <!-- Record data -->
     <string name="title_activity_pick_sensors" translatable="false">PickSensors</string>
@@ -54,7 +97,7 @@
     <string name="start">START</string>
     <string name="title_activity_stopactivity" translatable="false">StopActivity</string>
 
-    <string name="recording_is_running_ntap_to_end_and_save_data">Recording is running. Tap to end and save data</string>
+    <string name="recording_is_running_tap_to_end_and_save_data">Recording is running.\nTap to end and save data</string>
     <string name="error_toast">Something went wrong</string>
     <string name="at_least_one">Pick at least one sensor</string>
     <string name="go_to_phone_to_sync">Saving - to get the data, go to phone</string>
@@ -65,5 +108,16 @@
     <string name="sensor_registration_failure">Sensor failed</string>
     <string name="pause_graph">You can pause with double tap</string>
     <string name="Notification">Sensors are running</string>
+
+
+    <!--POLICIES-->
+    <string name="link_terms">https://creativemotion.app/terms_and_conditions.html"</string>
+    <string name="link_privacy_policy">https://creativemotion.app/privacy_policy_sensorbox.html</string>
+
+
+    <string name="back">Back</string>
+    <string name="ok">OK</string>
+    <string name="image_description_menu">Image describing tab in menu</string>
+
 
 </resources>

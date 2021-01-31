@@ -13,7 +13,7 @@ import java.io.File
 
 object DataSync {
     private const val TAG = "DataSync"
-    private val permittedValues = arrayOf("ACG.csv", "ACC.csv", "GYRO.csv", "MAGNET.csv", "extra.json")
+    private val permittedValues = arrayOf("ACG.csv", "ACC.csv", "GYRO.csv", "MAGNET.csv", "HEART_RATE.csv", "GPS.csv", "extra.json")
 
     /**
      * deletes all the files in internal storage

@@ -8,10 +8,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.activities.MainSettings
-import com.motionapps.sensorbox.activities.MoveToMain
-import com.motionapps.sensorbox.activities.PickSensorMeasure
-import com.motionapps.sensorbox.activities.PickSensorShow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.*
@@ -32,6 +28,8 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
             add(R.string.activity_view_sensor)
             add(R.string.activity_info_phone)
             add(R.string.activity_settings)
+            add(R.string.activity_privacy_policy)
+            add(R.string.activity_terms_of_use)
         }
     }
     // icons to inflate
@@ -39,17 +37,21 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
         init {
             add(R.drawable.ic_archive)
             add(R.drawable.ic_poll)
-            add(android.R.drawable.ic_dialog_info)
+            add(R.drawable.ic_info)
             add(R.drawable.ic_more_horiz_24dp_wht)
+            add(R.drawable.ic_incognito)
+            add(R.drawable.ic_policy)
         }
     }
     // classes to use
-    private val classes: ArrayList<Class<*>> = object : ArrayList<Class<*>>() {
+    private val actions: ArrayList<Int> = object : ArrayList<Int>() {
         init {
-            add(PickSensorMeasure::class.java)
-            add(PickSensorShow::class.java)
-            add(MoveToMain::class.java)
-            add(MainSettings::class.java)
+            add(SENSOR_MEASUREMENT)
+            add(SENSOR_SHOW)
+            add(PHONE_INFO)
+            add(SETTINGS)
+            add(PRIVACY_POLICY)
+            add(TERMS)
         }
     }
 
@@ -82,7 +84,7 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
     }
 
     override fun getItemCount(): Int {
-        return classes.size
+        return actions.size
     }
 
     /**
@@ -94,7 +96,7 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         override fun onClick(view: View) {
             if (clickListener != null) {
-                clickListener!!.onClick(classes[adapterPosition])
+                clickListener!!.onClick(actions[adapterPosition])
             }
         }
 
@@ -108,7 +110,19 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
      *
      */
     interface ClickListenerInterface {
-        fun onClick(c: Class<*>?)
+        fun onClick(action: Int)
+    }
+
+    companion object{
+
+        const val SENSOR_MEASUREMENT = 0
+        const val SENSOR_SHOW = 1
+        const val PHONE_INFO = 3
+        const val SETTINGS  = 2
+        const val PRIVACY_POLICY = 4
+        const val TERMS = 5
+
+
     }
 
 }

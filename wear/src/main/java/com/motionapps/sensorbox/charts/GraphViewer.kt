@@ -9,15 +9,17 @@ import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.support.wearable.activity.WearableActivity
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.wear.ambient.AmbientModeSupport
 import com.jjoe64.graphview.GraphView
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.activities.PickSensorShow
 import kotlinx.coroutines.*
+
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
@@ -25,7 +27,7 @@ import kotlinx.coroutines.*
  * passes sensorEvents to GraphHandler with use of the HandlerThread
  *
  */
-class GraphViewer : WearableActivity(), SensorEventListener {
+class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport.AmbientCallbackProvider {
 
     private var mSensorThread: HandlerThread? = null
     private var mSensorHandler: Handler? = null
@@ -33,6 +35,8 @@ class GraphViewer : WearableActivity(), SensorEventListener {
     private var sensorManager: SensorManager? = null
     private var sensorType = 0
     var paused = false
+
+    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,7 +96,7 @@ class GraphViewer : WearableActivity(), SensorEventListener {
 
         // sensor registration
         registerSensor()
-        setAmbientEnabled()
+        ambientController = AmbientModeSupport.attach(this)
     }
 
     /**
@@ -141,4 +145,20 @@ class GraphViewer : WearableActivity(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
+    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback = MyAmbientCallback()
+
+    inner class MyAmbientCallback : AmbientModeSupport.AmbientCallback() {
+
+        override fun onEnterAmbient(ambientDetails: Bundle?) {
+            unregisterSensor()
+        }
+
+        override fun onExitAmbient() {
+            registerSensor()
+        }
+
+        override fun onUpdateAmbient() {
+
+        }
+    }
 }

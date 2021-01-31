@@ -1,10 +1,13 @@
 package com.motionapps.sensorbox.communication
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.util.Log
-import com.motionapps.wearoslib.WearOsConstants.SEND_WEAR_SENSOR_INFO
+import androidx.core.content.ContextCompat
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.*
@@ -28,7 +31,8 @@ object SensorTools {
         Sensor.TYPE_ACCELEROMETER,
         Sensor.TYPE_LINEAR_ACCELERATION,
         Sensor.TYPE_GYROSCOPE,
-        Sensor.TYPE_MAGNETIC_FIELD
+        Sensor.TYPE_MAGNETIC_FIELD,
+        Sensor.TYPE_HEART_RATE
     )
 
     /**
@@ -39,7 +43,7 @@ object SensorTools {
      */
     fun getSensorInfo(context: Context): String {
         val stringBuilder = StringBuilder()
-        stringBuilder.append(SEND_WEAR_SENSOR_INFO).append(";") // adding main message for phone
+        stringBuilder.append(WEAR_SEND_SENSOR_INFO).append(";") // adding main message for phone
 
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         for (id in sensorTypes) {
@@ -49,6 +53,15 @@ object SensorTools {
             }
         }
         return stringBuilder.toString()
+    }
+
+    fun isHeartRatePermissionRequired(context: Context): Boolean{
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
+        if(sensor != null){
+            return ContextCompat.checkSelfPermission(context, Manifest.permission.BODY_SENSORS) == PackageManager.PERMISSION_DENIED
+        }
+        return false
     }
 
     /**

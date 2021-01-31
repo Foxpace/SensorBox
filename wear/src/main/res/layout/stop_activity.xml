@@ -22,7 +22,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:text="@string/recording_is_running_ntap_to_end_and_save_data"
+            android:text="@string/recording_is_running_tap_to_end_and_save_data"
             android:textColor="@color/white"
             android:textSize="16sp"
             android:gravity="center"

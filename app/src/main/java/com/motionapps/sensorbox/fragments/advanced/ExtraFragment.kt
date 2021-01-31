@@ -1,27 +1,35 @@
 package com.motionapps.sensorbox.fragments.advanced
 
+import android.Manifest
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.hardware.Sensor
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
+import androidx.core.widget.CompoundButtonCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
+import com.afollestad.materialdialogs.MaterialDialog
 import com.jaredrummler.materialspinner.MaterialSpinner
 import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.advanced.extrahandlers.AlarmHandler
 import com.motionapps.sensorbox.activities.MeasurementActivity
+import com.motionapps.sensorbox.uiHandlers.PermissionHandler
 import com.motionapps.sensorbox.viewmodels.MainViewModel
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
@@ -34,7 +42,6 @@ import kotlinx.coroutines.*
 @AndroidEntryPoint
 class ExtraFragment : Fragment(){
 
-
     /**
      * Adds more specifications to advanced measurement like custom name, speed of sensors, alarms,
      * notes and other
@@ -44,11 +51,13 @@ class ExtraFragment : Fragment(){
     private val mainViewModel: MainViewModel by viewModels(ownerProducer = {requireActivity()})
     private val args: ExtraFragmentArgs by navArgs()
     private var dialog: Dialog? = null
+    private var materialDialog: MaterialDialog? = null
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         // FolderName
         val view: View = inflater.inflate(R.layout.fragment_extra, container, false)
@@ -104,10 +113,9 @@ class ExtraFragment : Fragment(){
                         dialog = null
                         startMeasurement()
                     }
+                    else -> {}
                 }
             })
-
-
         }
 
         // check significant motion
@@ -116,7 +124,78 @@ class ExtraFragment : Fragment(){
             view.findViewById<CheckBox>(R.id.extra_checkbox_significant_motion).visibility = GONE
         }
 
+        // if the permission for the activity recognition is missing
+        if(Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT){
+            if(ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
+                val checkBox = view.findViewById<CheckBox>(R.id.extra_checkbox_activity)
+                checkBox.text = getString(R.string.extra_activity_recognition_checkbox_no_permission)
+                checkBox.isChecked = false
+                checkBox.isEnabled = false
+
+                val gray = ContextCompat.getColor(requireContext(), R.color.colorGray)
+                checkBox.setTextColor(gray)
+
+                if (Build.VERSION.SDK_INT < 21) {
+                    CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(gray))
+                } else {
+                    checkBox.buttonTintList = ColorStateList.valueOf(gray)
+                }
+
+                view.findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
+                    it.visibility = VISIBLE
+                    it.setOnClickListener {
+                        requestPermissions(arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
+                            PERMISSION_RECOGNITION)
+                    }
+                }
+            }
+        }
+
         return view
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+            val rational = shouldShowRequestPermissionRationale(permissions[0])
+
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                view?.findViewById<CheckBox>(R.id.extra_checkbox_activity)?.let{checkBox ->
+                    checkBox.text = getString(R.string.extra_activity_recognition_checkbox)
+                    checkBox.isChecked = true
+                    checkBox.isEnabled = true
+
+                    val white = ContextCompat.getColor(requireContext(), R.color.colorWhite)
+                    checkBox.setTextColor(white)
+
+                    if (Build.VERSION.SDK_INT < 21) {
+                        CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(white))
+                    } else {
+                        checkBox.buttonTintList = ColorStateList.valueOf(white)
+                    }
+                }
+                view?.findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
+                    it.visibility = GONE
+                    it.setOnClickListener {}
+                }
+
+            } else {
+                materialDialog = PermissionHandler.showPermissionSettings(
+                    this,
+                    R.string.advanced_recognition_permission,
+                    arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
+                    PERMISSION_RECOGNITION,
+                    rational
+                )
+            }
+        }
+
+
     }
 
     /**
@@ -134,6 +213,11 @@ class ExtraFragment : Fragment(){
         }else{
             startMeasurement()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        materialDialog?.dismiss()
     }
 
 
@@ -260,6 +344,10 @@ class ExtraFragment : Fragment(){
         }
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+    }
+
+    companion object{
+        const val PERMISSION_RECOGNITION = 198
     }
 
 

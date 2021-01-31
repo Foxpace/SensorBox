@@ -1,6 +1,7 @@
 package com.motionapps.sensorbox.adapters
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,28 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
     private var mClickListener: ItemClickListener? = null
     private val availableSensors: MutableList<Int> = ArrayList()
     private val availableSensorsString: MutableList<Int> = ArrayList()
+
+    // data is passed into the constructor
+    init {
+        for (i in data.indices) {
+            if (sensorTypes.contains(data[i].type)) {
+                availableSensors.add(data[i].type)
+                availableSensorsString.add(pickString(data[i].type, sensorTypes, sensorTypesString))
+            }
+        }
+        // check if GPS is specified
+        context?.let {
+            addGPS(it)
+        }
+    }
+
+    private fun addGPS(context: Context){
+        // check if GPS is specified
+        if (context.packageManager?.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS) == true) {
+            availableSensors.add(-1) // adding it as sensor with negative number
+            availableSensorsString.add(R.string.gps)
+        }
+    }
 
     /**
      * inflates rows for the sensor
@@ -55,7 +78,7 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
     private inner class ViewHolder(itemView: View) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         override fun onClick(view: View) {
-            if (mClickListener != null) mClickListener!!.onItemClick(view, adapterPosition)
+            if (mClickListener != null) mClickListener!!.onItemClick(view, adapterPosition, availableSensors[adapterPosition])
         }
 
         init {
@@ -79,7 +102,7 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
 
     // parent activity will implement this method to respond to click events
     interface ItemClickListener {
-        fun onItemClick(view: View?, position: Int)
+        fun onItemClick(view: View?, position: Int, sensorId: Int)
     }
 
     companion object {
@@ -89,6 +112,8 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
                 add(Sensor.TYPE_LINEAR_ACCELERATION)
                 add(Sensor.TYPE_GYROSCOPE)
                 add(Sensor.TYPE_MAGNETIC_FIELD)
+                add(Sensor.TYPE_HEART_RATE)
+                add(-1)
             }
         }
         var sensorTypesString: List<Int> = object : ArrayList<Int>() {
@@ -97,6 +122,8 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
                 add(R.string.sensor_linear_acceleration)
                 add(R.string.sensor_gyroscope)
                 add(R.string.sensor_magnet)
+                add(R.string.heart_rate)
+                add(R.string.gps)
             }
         }
 
@@ -110,13 +137,5 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
         }
     }
 
-    // data is passed into the constructor
-    init {
-        for (i in data.indices) {
-            if (sensorTypes.contains(data[i].type)) {
-                availableSensors.add(data[i].type)
-                availableSensorsString.add(pickString(data[i].type, sensorTypes, sensorTypesString))
-            }
-        }
-    }
+
 }

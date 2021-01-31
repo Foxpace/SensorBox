@@ -25,5 +25,6 @@ enum class SensorResources(val icon: Int, val title: Int) {
     ACG_WEAR(R.drawable.ic_acceleration_icon, R.string.acg_name_wear),
     ACC_WEAR(R.drawable.ic_linear_acceleration_icon, R.string.acc_name_wear),
     GYRO_WEAR(R.drawable.ic_gyroscope_icon, R.string.gyro_name_wear),
-    MAGNET_WEAR(R.drawable.ic_magnet, R.string.magnet_name_wear);
+    MAGNET_WEAR(R.drawable.ic_magnet, R.string.magnet_name_wear),
+    HEART_RATE_WEAR(R.drawable.ic_heart_rate, R.string.heart_rate_wear);
 }

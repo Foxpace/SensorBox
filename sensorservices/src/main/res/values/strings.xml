@@ -23,6 +23,7 @@
     <string name="temp_name">Temperature</string>
     <string name="pressure_name">Pressure</string>
     <string name="humi_name">Humidity</string>
+    <string name="heart_rate">Heart rate</string>
     <string name="rotation_name">Rotation\nvector</string>
     <string name="step_counter_name">Step\ncounter</string>
     <string name="step_detector_name">Step\ndetector</string>
@@ -30,6 +31,7 @@
     <string name="acc_name_wear">Linear\nacceleration\nWear Os</string>
     <string name="gyro_name_wear">Gyroscope\nWear Os</string>
     <string name="magnet_name_wear">Magnetic\ninduction\nWear Os</string>
+    <string name="heart_rate_wear">Heart rate\nWear Os</string>
 
 
     <string name="no_path">No path</string>
