@@ -37,12 +37,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
 
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
-@AndroidEntryPoint
+
 /**
  * Main fragment to choose sensors and picking them to measure
  */
+@ExperimentalCoroutinesApi
+@InternalCoroutinesApi
+@AndroidEntryPoint
 open class HomeFragment : Fragment() {
 
     private var container: LinearLayout ?= null
@@ -355,7 +356,7 @@ open class HomeFragment : Fragment() {
             // with fine location you can see location and log data under Android Q
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                     if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW,
+                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_show, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW,
                             shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
                         return@setOnClickListener
                     }

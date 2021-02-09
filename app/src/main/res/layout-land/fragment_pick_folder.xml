@@ -10,7 +10,7 @@
     tools:background="@color/colorBlack">
 
     <TextView
-        android:id="@+id/title"
+        android:id="@+id/folder_pick_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -43,7 +43,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/midline"
-        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:layout_constraintTop_toBottomOf="@+id/folder_pick_title"
         tools:text="@string/intro_pick_folder_description" />
 
     <androidx.constraintlayout.widget.Guideline

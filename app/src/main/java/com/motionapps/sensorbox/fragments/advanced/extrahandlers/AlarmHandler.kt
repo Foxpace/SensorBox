@@ -15,6 +15,7 @@ import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.shawnlin.numberpicker.NumberPicker
 import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.concurrent.TimeUnit
@@ -23,7 +24,7 @@ import javax.inject.Inject
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-@ActivityRetainedScoped
+@ViewModelScoped
 /**
  * Handles custom alarms during measurement
  * Handles not only time points, but also UI - dialogs

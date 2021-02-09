@@ -68,8 +68,8 @@
     <string name="sensor_info_float">%.2f</string>
 
     <!--GPS-->
-    <string name="permission_gps_show">to show your location, the permission for location is required</string>
-    <string name="permission_gps_background">To save data from GPS to csv file, the permission for location is required</string>
+    <string name="permission_gps_show">To show your location, the permission for foreground location access is required</string>
+    <string name="permission_gps_background">To save location data to csv file at background, the permission for location is required</string>
     <string name="gps">GPS</string>
     <string name="sensor_info_GPS_latitude">Latitude</string>
     <string name="sensor_info_GPS_longitude">Longitude</string>
@@ -113,7 +113,7 @@
     <string name="settings_custom_annots">Customize annotations</string>
     <string name="settings_csv_formatting">CSV formatting</string>
     <string name="settings_csv_formatting_text">Every CSV file is composed of header, where you can find time as \"t\",
-        values of specific sensor and accuracy of the sensor as \"a\".\n\nTimestamps across sensors are in nanoseconds of Android system time. GPS, activity recognition,
+        values of specific sensor and accuracy of the sensor as \"a\".\n\nTimestamps across sensors and activity transitions are in nanoseconds of Android system time. GPS, periodic activity recognition,
         significant motion and other use UNIX time.\n\nTo convert sensor timestamps to UNIX time follow these steps:\n\n
         \u2022 subtract from column nanos field from "extra.json" - this is starting time of measurement in Android system time\n\n
         \u2022 convert nanoseconds to milliseconds\n\n
@@ -132,18 +132,16 @@
     <string name="settings_activity_recognition_title">About activity recognition</string>
     <string name="settings_activity_recognition_text">SensorBox uses Activity Recognition Client, Google\'s API, which is native tool for
     activity recognition for Android. The client is capable to provide basic information about movement status of a phone,
-    whether it is in a vehicle, with a person or stationary placed. \n\nThe client can recognize changes among this activities:\n\n
-    \u2022 In vehicle\n
-    \u2022 On foot - running/walking\n
-    \u2022 Running\n
-    \u2022 Walking\n
-    \u2022 On Bicycle\n
-    \u2022 Still - device is not moving\n\n
-        This data will be stored in "activity_changes.txt" with a appropriate timestamp.\n\n
-        With the customizable frequency of updates, you can get an actual confidence of each activity in %. This data will
-    be stored in "activity_confidence.csv". There are also available this activities:\n\n
-    \u2022 Tilting - device angle relative to gravity changed significantly\n
-    \u2022 Unknown - unable to detect activity\n\nSum of activities do not equal to 100%, because some activities are not exclusive
+    whether it is in a vehicle, with a person or stationary placed. \n\nThe client can recognize changes among these activities:\n\n
+        \u2022 In vehicle - 0\n
+        \u2022 On Bicycle - 1\n
+        \u2022 On foot - running/walking - 2\n
+        \u2022 Still - device is not moving - 3\n
+        \u2022 Walking - 7\n
+        \u2022 Running - 8\n\nThese data will be stored in "activity_changes.csv" with a appropriate timestamp in NANOseconds of system time. Numbers beside the activities are used to encode them in csv file. Last column "enter_exit" describes, if the activity was entered (0) or exited (1).\n\nWith the customizable frequency of updates, you can get an actual confidence of each activity in %. This data will
+    be stored in "activity_confidence.csv" with timestamps in MILLIseconds - UNIX time. There are also available this activities:\n\n
+    \u2022 Tilting - device angle relative to gravity changed significantly - 5\n
+    \u2022 Unknown - unable to detect activity - 4\n\nSum of activities do not equal to 100%, because some activities are not exclusive
         (on foot is generalization of walking and running).
         Moreover, the frequency of updates do not need to be precise, due to a battery optimizations of system.
     </string>
@@ -203,7 +201,7 @@
     <string name="intro_policy_button">Privacy policy</string>
     <string name="intro_terms_button">Terms of use</string>
     <string name="intro_permission">Permissions</string>
-    <string name="intro_permission_description">In order to use save files, use GPS and use activity recognition API, we need you to give us all these permissions.</string>
+    <string name="intro_permission_description">In order to use save files, use location (in background) and use activity recognition, we need you to give the app permissions.</string>
     <string name="intro_allow">Allow</string>
     <string name="intro_life_cycle_problem">App problem</string>
     <string name="intro_battery_description">Due to the Android power saving routines, the app does not need to work properly. For example after the screen turns off, sensors can too or app gets killed by the system. Some routines are from manufacturer itself. </string>

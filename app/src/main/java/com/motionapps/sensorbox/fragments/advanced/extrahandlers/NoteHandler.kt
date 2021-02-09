@@ -5,13 +5,14 @@ import android.view.View
 import android.widget.*
 import com.motionapps.sensorbox.R
 import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import javax.inject.Inject
 
 @InternalCoroutinesApi
 @ExperimentalCoroutinesApi
-@ActivityRetainedScoped
+@ViewModelScoped
 
 /**
  * Simple to use class for storage of custom Strings - notes for the measurement

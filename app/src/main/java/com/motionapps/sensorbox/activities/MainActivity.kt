@@ -26,16 +26,17 @@ import com.motionapps.sensorbox.fragments.settings.SettingsFragment.Companion.PO
 import com.motionapps.sensorbox.intro.IntroActivity
 import com.motionapps.sensorbox.viewmodels.MainViewModel
 import com.motionapps.sensorservices.services.MeasurementService
-import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
-import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO_EXTRA
 import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
 import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
+import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO_EXTRA
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS_EXTRA
 import com.motionapps.wearoslib.WearOsStates
 import com.motionapps.wearoslib.WearOsSyncService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+
 
 /**
  * Covers all the main functionality
@@ -112,19 +113,27 @@ class MainActivity : AppCompatActivity() {
             intent?.action?.let {
                 when(it){
                     WEAR_SEND_SENSOR_INFO -> { // SensorInfo are divided by "\n" and specific parameters by "|"
-                        mainViewModel.onWearOsProperties(context, intent.getStringExtra(WEAR_SEND_SENSOR_INFO_EXTRA))
+                        mainViewModel.onWearOsProperties(
+                            context, intent.getStringExtra(
+                                WEAR_SEND_SENSOR_INFO_EXTRA
+                            )
+                        )
                         wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
                     }
-                    WEAR_STATUS ->{
+                    WEAR_STATUS -> {
                         // Wear status is one line, which consists number of
                         // measurements, files total size, number of files, and if the measurement
                         // is running on the wearable
                         mainViewModel.onWearOsStatus(intent.getStringExtra(WEAR_STATUS_EXTRA))
                     }
-                    WEAR_HEART_RATE_PERMISSION_REQUIRED ->{
+                    WEAR_HEART_RATE_PERMISSION_REQUIRED -> {
                         // hear rate sensor needs permission in order to get data - this
                         mainViewModel.onWearOsHearRatePermissionRequired(
-                            intent.getBooleanExtra(WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN, false))
+                            intent.getBooleanExtra(
+                                WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN,
+                                false
+                            )
+                        )
                     }
 
                     MeasurementService.RUNNING -> {
@@ -141,7 +150,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         checkFirstUsage()
 
         // UI stuff
@@ -152,12 +160,14 @@ class MainActivity : AppCompatActivity() {
         val navView: NavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment)
 
-        appBarConfiguration = AppBarConfiguration(setOf(
-            R.id.nav_home,
-            R.id.nav_advanced,
-            R.id.nav_settings,
-            R.id.nav_about
-        ), drawerLayout)
+        appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.nav_home,
+                R.id.nav_advanced,
+                R.id.nav_settings,
+                R.id.nav_about
+            ), drawerLayout
+        )
 
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
@@ -289,23 +299,24 @@ class MainActivity : AppCompatActivity() {
 
         // show Wear Os button
         mainViewModel.wearOsPresence.observe(this, { wearOsState ->
-            when(wearOsState){
+            when (wearOsState) {
                 is WearOsStates.PresenceResult -> {
                     wearOsMenuItemPresence?.isEnabled = wearOsState.present
                     wearOsMenuItemPresence?.isVisible = wearOsState.present
                 }
-                else -> {}
+                else -> {
+                }
             }
         })
 
         // Wear Os sensors synced
         mainViewModel.wearOsContacted.observe(this, { data ->
-            if(data.isNullOrEmpty()){
+            if (data.isNullOrEmpty()) {
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_off)
                 wearOsMenuItemPresence?.isEnabled = true
 
 
-            }else{
+            } else {
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
                 wearOsMenuItemPresence?.isEnabled = true
             }
@@ -313,7 +324,7 @@ class MainActivity : AppCompatActivity() {
 
         // status of Wear Os and reaction to it
         mainViewModel.wearOsStatus.observe(this, { status ->
-            when(status){
+            when (status) {
                 is WearOsStates.AwaitResult -> {
                     wearOsMenuItemPresence?.isEnabled = false
                 }
@@ -324,15 +335,16 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is WearOsStates.Status -> {
-                    if(!status.running && status.totalNumberOfFiles > 0){
+                    if (!status.running && status.totalNumberOfFiles > 0) {
                         wearOsMenuItemSync?.isEnabled = true
                         wearOsMenuItemSync?.isVisible = true
-                    }else{
+                    } else {
                         wearOsMenuItemSync?.isEnabled = false
                         wearOsMenuItemSync?.isVisible = false
                     }
                 }
-                else -> {}
+                else -> {
+                }
             }
         })
 
@@ -354,14 +366,21 @@ class MainActivity : AppCompatActivity() {
         }
         R.id.wear_os_action_sync -> {
             Intent(this, WearOsSyncService::class.java).also { intent ->
-                bindService(intent, object: ServiceConnection{ // checks if sync is not running
-                    override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
-                        if(!(binder as WearOsSyncService.WearOsSyncServiceBinder).getService().running){
+                bindService(intent, object : ServiceConnection { // checks if sync is not running
+                    override fun onServiceConnected(
+                        componentName: ComponentName?,
+                        binder: IBinder?
+                    ) {
+                        if (!(binder as WearOsSyncService.WearOsSyncServiceBinder).getService().running) {
                             mainViewModel.onWearSyncClick(this@MainActivity)?.let {
                                 dialog = it
                             }
-                        }else{
-                            Toast.makeText(this@MainActivity, getString(R.string.wear_os_sync_in_progress), Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.wear_os_sync_in_progress),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                         unbindService(this)
                     }

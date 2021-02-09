@@ -35,8 +35,11 @@ import kotlinx.coroutines.withContext
  * Interaction of MainActivity and its fragments with main objects to handle start of the measurement
  *
  * @property repository - consists -sensorViewHandler, countDownMain, noteHandler, alarmHandler, wearOsHandler
- * @property savedStateHandle
  */
+
+//TODO change ViewModelInject to HiltViewModel
+//TODO remove Assisted
+//TODO apply only @inject
 class MainViewModel
 @ViewModelInject constructor(
     private val repository: MainRepository,
@@ -132,9 +135,11 @@ class MainViewModel
      * @param linearLayout - linearLayout to which the view will be added
      * @param layoutInflater
      */
-    fun onAddNote(s: String,
-                  linearLayout: LinearLayout,
-                  layoutInflater: LayoutInflater){
+    fun onAddNote(
+        s: String,
+        linearLayout: LinearLayout,
+        layoutInflater: LayoutInflater
+    ){
 
         repository.noteHandler.addNote(s, linearLayout, layoutInflater, true)
 
@@ -148,7 +153,12 @@ class MainViewModel
      * @param layoutInflater
      * @param args - needs to distinguish Long and Short measurement
      */
-    fun refreshNotesAndAlarms(alarmLayout: LinearLayout, notesLayout: LinearLayout, layoutInflater: LayoutInflater, args: ExtraFragmentArgs) {
+    fun refreshNotesAndAlarms(
+        alarmLayout: LinearLayout,
+        notesLayout: LinearLayout,
+        layoutInflater: LayoutInflater,
+        args: ExtraFragmentArgs
+    ) {
         repository.noteHandler.refreshLayout(notesLayout, layoutInflater)
         repository.alarmHandler.refreshLayout(alarmLayout, layoutInflater, args)
     }
@@ -191,7 +201,11 @@ class MainViewModel
             onWearOsStates(WearOsStates.PresenceResult(true))
 
         }else{
-            repository.wearOsHandler.searchForWearOs(context, this, WearOsConstants.WEAR_APP_CAPABILITY)
+            repository.wearOsHandler.searchForWearOs(
+                context,
+                this,
+                WearOsConstants.WEAR_APP_CAPABILITY
+            )
         }
     }
 
@@ -205,7 +219,7 @@ class MainViewModel
             _wearOsPresence.value = wearOsStates
             when(wearOsStates){
                 is WearOsStates.PresenceResult -> {
-                    if(!wearOsStates.present){
+                    if (!wearOsStates.present) {
                         _wearOsContacted.value = hashMapOf()
                     }
                 }
@@ -222,7 +236,11 @@ class MainViewModel
     fun onWearPresentClick(context: Context) {
         if(_wearOsContacted.value.isNullOrEmpty()){
             _wearOsStatus.value = WearOsStates.AwaitResult
-            repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.WEAR_SEND_SENSOR_INFO)
+            repository.wearOsHandler.sendMsg(
+                context,
+                WEAR_MESSAGE_PATH,
+                WearOsConstants.WEAR_SEND_SENSOR_INFO
+            )
         }else{
             onRemoveWearOs(context)
         }
@@ -255,7 +273,11 @@ class MainViewModel
             wearOsDialog.showStatus(wearOsStatus.value as WearOsStates.Status)
             return wearOsDialog
         }
-        Toast.makeText(context, context.getString(R.string.wear_os_sync_unavailable_restart), Toast.LENGTH_LONG).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.wear_os_sync_unavailable_restart),
+            Toast.LENGTH_LONG
+        ).show()
         return null
     }
 
@@ -298,7 +320,11 @@ class MainViewModel
      * @param id - id of the sensor to broadcast
      */
     fun startWearOsSensor(context: Context, id: Int) {
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, "${WearOsConstants.WEAR_START_SENSOR_REAL_TIME};$id")
+        repository.wearOsHandler.sendMsg(
+            context,
+            WEAR_MESSAGE_PATH,
+            "${WearOsConstants.WEAR_START_SENSOR_REAL_TIME};$id"
+        )
     }
 
     /**
@@ -307,7 +333,11 @@ class MainViewModel
      * @param context
      */
     fun stopWearOsSensor(context: Context) {
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WearOsConstants.WEAR_END_SENSOR_REAL_TIME)
+        repository.wearOsHandler.sendMsg(
+            context,
+            WEAR_MESSAGE_PATH,
+            WearOsConstants.WEAR_END_SENSOR_REAL_TIME
+        )
     }
 
     /**
@@ -318,7 +348,12 @@ class MainViewModel
     fun onWearOsStatus(stringExtra: String?){
         stringExtra?.let{
             val values = it.split("|")
-            _wearOsStatus.value = WearOsStates.Status(values[0] == "1", values[1].toInt(), values[2].toDouble(), values[3].toInt())
+            _wearOsStatus.value = WearOsStates.Status(
+                values[0] == "1",
+                values[1].toInt(),
+                values[2].toDouble(),
+                values[3].toInt()
+            )
         }
     }
 
@@ -331,11 +366,21 @@ class MainViewModel
      * @param sensors - intArray, which is merged by |
      */
     fun startWearOsMeasurement(context: Context, path: String, sensors: IntArray) {
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, "$START_MEASUREMENT;$path;${sensors.joinToString("|")}")
+        repository.wearOsHandler.sendMsg(
+            context, WEAR_MESSAGE_PATH, "$START_MEASUREMENT;$path;${
+                sensors.joinToString(
+                    "|"
+                )
+            }"
+        )
     }
 
     fun askHeartRatePermission(context: Context){
-        repository.wearOsHandler.sendMsg(context, WEAR_MESSAGE_PATH, WEAR_HEART_RATE_PERMISSION_REQUIRED)
+        repository.wearOsHandler.sendMsg(
+            context,
+            WEAR_MESSAGE_PATH,
+            WEAR_HEART_RATE_PERMISSION_REQUIRED
+        )
     }
 
     /**

@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import com.google.android.gms.location.*
@@ -39,12 +38,9 @@ class ActivityRecognition : MeasurementInterface {
                         if (ActivityTransitionResult.hasResult(intent)) {
                             ActivityTransitionResult.extractResult(intent)?.let {
                                 // parsing info to csv
-                                val time: Long = System.currentTimeMillis()
-                                val from: String =
-                                    convertTransitionToString(it.transitionEvents[0].activityType)
-                                val to: String =
-                                    convertTransitionToString(it.transitionEvents[1].activityType)
-                                outputStreamTransitions?.write("$time;$from;$to\n".toByteArray())
+                                for(transition in it.transitionEvents){
+                                    outputStreamTransitions?.write("${transition.elapsedRealTimeNanos};${transition.activityType};${transition.transitionType}\n".toByteArray())
+                                }
                             }
                         }
                     }
@@ -53,7 +49,7 @@ class ActivityRecognition : MeasurementInterface {
                         if (ActivityRecognitionResult.hasResult(intent)) {
                             ActivityRecognitionResult.extractResult(intent)?.let {
                                 // parsing info to csv
-                                var row: String = System.currentTimeMillis().toString() + ";"
+                                var row: String = it.elapsedRealtimeMillis.toString() + ";"
                                 for (activity in ALL_ACTIVITIES) {
                                     row += it.getActivityConfidence(activity).toString()
                                     if (DetectedActivity.TILTING != activity) {
@@ -89,7 +85,7 @@ class ActivityRecognition : MeasurementInterface {
     private var outputStreamUpdates: OutputStream? = null
 
     // headers
-    private val transitionHeader: String = "t;from;to\n"
+    private val transitionHeader: String = "t;activity;enter_exit\n"
     private val updateHeader: String = "t;still;on_foot;walking;running;vehicle;bike;unknown;tilting\n"
 
     /**

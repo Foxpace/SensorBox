@@ -6,12 +6,13 @@ import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import javax.inject.Inject
 
-@ActivityScoped
+
 /**
  * Works with HomeFragment - stores sensors of the devices, which will be measured
  *
  * @param context
  */
+@ActivityScoped
 class SensorViewHandler @Inject constructor(@ActivityContext context: Context) {
 
     val sensorsToRecord: HashMap<Int, Boolean> = HashMap()

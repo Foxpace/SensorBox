@@ -17,26 +17,39 @@ class PermissionActivityForResult : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_permission)
-
-        findViewById<TextView>(R.id.permission_text).apply {
-            text = getString(R.string.permission_show_gps_only)
-        }
-
         if(intent.extras == null){
             goBack()
         }else{
             permissionPick = intent.extras!!.getString(GPS_INTENT, GPS_SHOW)
         }
 
+
+        findViewById<TextView>(R.id.permission_text).apply {
+            text = if(Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
+                getString(R.string.permission_show_gps_under_Q)
+            }else{
+                if (permissionPick == GPS_SHOW) {
+                    getString(R.string.permission_show_gps_only)
+                } else {
+                    getString(R.string.permission_show_gps_background)
+                }
+            }
+        }
+
+
         findViewById<TextView>(R.id.permission_button).setOnClickListener{
 
             if(permissionPick == GPS_SHOW || Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
             }else{
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                    GPS_REQUEST)
+                if(permissionPick == GPS_SHOW){
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
+                }else{
+                    ActivityCompat.requestPermissions(this,
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                        GPS_REQUEST)
+                }
             }
         }
     }
