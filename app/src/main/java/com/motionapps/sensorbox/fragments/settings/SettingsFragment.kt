@@ -125,6 +125,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     companion object{
         const val APP_FIRST_TIME = "APP_FIRST_TIME"
+        const val APP_GPS_NOT_ASKED_FOREGROUND = "APP_GPS_NOT_ASKED_FOREGROUND"
+        const val APP_GPS_NOT_ASKED_BACKGROUND = "APP_GPS_NOT_ASKED_BACKGROUND"
         const val POLICY_AGREED = "POLICY_AGREED"
     }
 

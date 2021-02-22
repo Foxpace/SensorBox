@@ -139,7 +139,7 @@ class About : Fragment() {
      */
     private fun githubElement(): Element{
         val gitHubElement = Element()
-        val id = "Creative-Motion-Apps"
+        val id = "https://github.com/Foxpace/SensorBox"
         gitHubElement.title = getString(mehdi.sakout.aboutpage.R.string.about_github)
         gitHubElement.iconDrawable =
             R.drawable.ic_github
@@ -149,7 +149,7 @@ class About : Fragment() {
         val intent = Intent()
         intent.action = Intent.ACTION_VIEW
         intent.addCategory(Intent.CATEGORY_BROWSABLE)
-        intent.data = Uri.parse(String.format("https://github.com/%s", id))
+        intent.data = Uri.parse(id)
 
         gitHubElement.intent = intent
         return gitHubElement

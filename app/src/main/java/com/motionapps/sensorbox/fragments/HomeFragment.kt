@@ -1,7 +1,10 @@
 package com.motionapps.sensorbox.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.hardware.Sensor
@@ -18,10 +21,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
+import androidx.preference.PreferenceManager
 import com.afollestad.materialdialogs.MaterialDialog
 import com.motionapps.sensorbox.activities.MainActivity
 import com.motionapps.sensorbox.activities.MeasurementActivity
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.fragments.settings.SettingsFragment
 import com.motionapps.sensorbox.types.SensorResources
 import com.motionapps.sensorbox.uiHandlers.PermissionHandler
 import com.motionapps.sensorbox.uiHandlers.SensorViewHandler
@@ -37,7 +42,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
 
-
 /**
  * Main fragment to choose sensors and picking them to measure
  */
@@ -46,19 +50,19 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @AndroidEntryPoint
 open class HomeFragment : Fragment() {
 
-    private var container: LinearLayout ?= null
-    var mainButton: Button ?= null
+    private var container: LinearLayout? = null
+    var mainButton: Button? = null
 
     private var dialog: MaterialDialog? = null
     private val wearOsViews: ArrayList<View> = ArrayList() // storing Wear Os views - can be deleted
-    private val mainViewModel: MainViewModel by viewModels(ownerProducer = {requireActivity()})
+    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() })
 
     private var wearShown = false
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         val root: View = inflater.inflate(R.layout.fragment_home, container, false)
         this.container = root.findViewById(R.id.home_container)
@@ -86,52 +90,77 @@ open class HomeFragment : Fragment() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val rational =  shouldShowRequestPermissionRationale(permissions[0])
+        val rational = shouldShowRequestPermissionRationale(permissions[0])
         val granted = PackageManager.PERMISSION_GRANTED == grantResults[0]
 
-        when(requestCode){
+        when (requestCode) {
             PERMISSION_STORAGE -> {
-                if(granted){
+                if (granted) {
+                    checkMainFolder()
                     mainButton?.callOnClick()
-                }else{
+                } else {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val action: NavDirections = HomeFragmentDirections.actionNavHomeToPickFolderFragment(Color.BLACK)
+                        val action: NavDirections =
+                            HomeFragmentDirections.actionNavHomeToPickFolderFragment(Color.BLACK)
                         Navigation.findNavController(requireView()).navigate(action)
-                    }else{
-                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_storage, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_STORAGE,rational)
+                    } else {
+                        dialog = PermissionHandler.showPermissionSettings(
+                            fragment = this,
+                            text = R.string.permission_storage,
+                            toastText = R.string.permission_storage,
+                            preferenceSetting = null,
+                            permission = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                            requestCode = PERMISSION_STORAGE,
+                            icon = R.drawable.ic_baseline_folder,
+                            rational = rational
+                        )
                     }
 
                 }
             }
             PERMISSION_GPS_SHOW -> {
-                if(granted){
-                    val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
+                if (granted) {
+                    val action: NavDirections =
+                        HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
                     Navigation.findNavController(requireView()).navigate(action)
-                }else{
-                    if(rational){
-                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW, rational)
-                    }else{
-                        Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                } else {
+                    if (rational) {
+                        dialog = getDialogFineLocation(PERMISSION_GPS_SHOW, rational)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.permission_gps_show,
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
                         PermissionHandler.showSettings(requireContext())
                     }
                 }
             }
             PERMISSION_GPS_LOG -> {
-                if(!granted){
+                if (!granted) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        if(rational){
-                            dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_GPS_LOG, rational)
+                        if (rational) {
+                            dialog = getDialogBackgroundLocation(PERMISSION_GPS_LOG, rational)
 
-                        }else{
-                            Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(
+                                requireContext(),
+                                R.string.permission_gps_show,
+                                Toast.LENGTH_LONG
+                            ).show()
                             PermissionHandler.showSettings(requireContext())
                         }
 
-                    }else{
-                        if(rational){
-                            dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_background, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_LOG, rational)
-                        }else{
-                            Toast.makeText(requireContext(), R.string.permission_gps_background, Toast.LENGTH_LONG).show()
+                    } else {
+                        if (rational) {
+                            dialog = getDialogFineLocation(PERMISSION_GPS_LOG, rational)
+                        } else {
+                            Toast.makeText(
+                                requireContext(),
+                                R.string.permission_gps_show,
+                                Toast.LENGTH_LONG
+                            ).show()
                             PermissionHandler.showSettings(requireContext())
                         }
                     }
@@ -141,21 +170,22 @@ open class HomeFragment : Fragment() {
     }
 
 
-
     /**
      * Checks if the main folder exists
      * in Android Oreo, is required permission from the user, so he is prompted to pick folder, if
      * the saved one is not available
      * in lower versions, this is automatic
      */
-    private fun checkMainFolder(){
-        if(!StorageHandler.isFolder(requireContext())){
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+    private fun checkMainFolder() {
+        if (!StorageHandler.isFolder(requireContext())) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 Navigation.findNavController(requireView()).navigate(
                     HomeFragmentDirections.actionNavHomeToPickFolderFragment(
-                        ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)))
+                        ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)
+                    )
+                )
                 return
-            }else{
+            } else {
                 StorageHandler.createMainFolder(requireContext(), null)
             }
         }
@@ -169,7 +199,7 @@ open class HomeFragment : Fragment() {
         mainViewModel.wearOsContacted.observe(requireActivity(), { info ->
             if (info.isNotEmpty()) {
                 createWearViews(info, inflater)
-            }else{
+            } else {
                 removeWearOs()
             }
         })
@@ -182,7 +212,7 @@ open class HomeFragment : Fragment() {
      */
     private fun createWearViews(info: HashMap<Int, List<String>>, inflater: LayoutInflater) {
 
-        if(wearOsViews.size > 0){
+        if (wearOsViews.size > 0) {
             removeWearOs()
         }
 
@@ -201,8 +231,8 @@ open class HomeFragment : Fragment() {
             // specific object for Wear Os sensors
             val imageButton = view.findViewById<ImageButton>(R.id.sensorrow_save)
             imageButton.setOnClickListener {
-                
-                if(sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
+
+                if (sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
                     dialog = MaterialDialog(requireContext()).show {
                         title(R.string.heart_rate_permission_title)
                         message(R.string.heart_rate_permission_text)
@@ -271,7 +301,10 @@ open class HomeFragment : Fragment() {
      * @param sensorsNeeds - list of all available sensors - SensorNeeds objects
      * @return list of buttons
      */
-    private fun inflateSensorsViews(sensorsNeeds: ArrayList<SensorNeeds>, inflater: LayoutInflater): ArrayList<ImageButton> {
+    private fun inflateSensorsViews(
+        sensorsNeeds: ArrayList<SensorNeeds>,
+        inflater: LayoutInflater
+    ): ArrayList<ImageButton> {
 
         val sensorButtons: ArrayList<ImageButton> = ArrayList()
         for (sensorNeeds: SensorNeeds in sensorsNeeds) {
@@ -304,9 +337,9 @@ open class HomeFragment : Fragment() {
         textView.setText(resources.title)
 
         val infoButton: ImageButton = view.findViewById(R.id.sensorrow_info)
-        if(wearOs){ // Wear Os has its own displayer
+        if (wearOs) { // Wear Os has its own displayer
             infoButton.setOnClickListener {
-                if(sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
+                if (sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
                     dialog = MaterialDialog(requireContext()).show {
                         title(R.string.heart_rate_permission_title)
                         message(R.string.heart_rate_permission_text)
@@ -318,11 +351,12 @@ open class HomeFragment : Fragment() {
                     }
                     return@setOnClickListener
                 }
-                val action: NavDirections = HomeFragmentDirections.actionNavHomeToNavWearOsInfo(resourceName)
+                val action: NavDirections =
+                    HomeFragmentDirections.actionNavHomeToNavWearOsInfo(resourceName)
                 Navigation.findNavController(requireView()).navigate(action)
 
             }
-        }else{
+        } else {
             infoButton.setOnClickListener {
                 val action: NavDirections = HomeFragmentDirections.homeInfoAction(resourceName)
                 Navigation.findNavController(requireView()).navigate(action)
@@ -353,11 +387,17 @@ open class HomeFragment : Fragment() {
             val infoButton: ImageButton = view.findViewById(R.id.sensorrow_info)
 
             infoButton.setOnClickListener {
-            // with fine location you can see location and log data under Android Q
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                    if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                        dialog = PermissionHandler.showPermissionSettings(this, R.string.permission_gps_show, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_GPS_SHOW,
-                            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
+                // with fine location you can see location and log data under Android Q
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (ActivityCompat.checkSelfPermission(
+                            requireContext(),
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        dialog = getDialogFineLocation(
+                            PERMISSION_GPS_SHOW,
+                            isRationalPermissionGPS(requireContext(), true)
+                        )
                         return@setOnClickListener
                     }
                 }
@@ -377,25 +417,31 @@ open class HomeFragment : Fragment() {
             imageButton.setOnClickListener {
 
                 // if the SDK is higher then or equal Q - check background GPS
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                    if(ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (ActivityCompat.checkSelfPermission(
+                            requireContext(),
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
 
-                        dialog = PermissionHandler.showPermissionSettings(this,
-                            R.string.permission_gps_background,
-                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                            PERMISSION_GPS_LOG, shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+                        dialog = getDialogBackgroundLocation(
+                            PERMISSION_GPS_LOG,
+                            isRationalPermissionGPS(requireContext(), false)
+                        )
                         return@setOnClickListener
                     }
                 }
                 // if the SDK is higher then or equal M - check if the permission is ok
-                else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                    if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                        dialog = PermissionHandler.showPermissionSettings(this,
-                            R.string.permission_gps_background,
-                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                            PERMISSION_GPS_LOG, shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
-
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (ActivityCompat.checkSelfPermission(
+                            requireContext(),
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        dialog = getDialogFineLocation(
+                            PERMISSION_GPS_LOG,
+                            isRationalPermissionGPS(requireContext(), true)
+                        )
                         return@setOnClickListener
                     }
                 }
@@ -414,29 +460,110 @@ open class HomeFragment : Fragment() {
     }
 
     /**
+     * Creates prominent disclosure for GPS for apps under Android Q
+     *
+     * @param requestCode - code for result
+     * @param rational - if it should ask for permission - true
+     * @return material dialog
+     */
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun getDialogFineLocation(requestCode: Int, rational: Boolean): MaterialDialog {
+        return PermissionHandler.showPermissionSettings(
+            fragment = this,
+            text = R.string.permission_gps,
+            toastText = R.string.permission_gps_show,
+            preferenceSetting = SettingsFragment.APP_GPS_NOT_ASKED_FOREGROUND,
+            permission = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            requestCode = requestCode,
+            rational = rational,
+            icon = R.drawable.ic_baseline_location
+        )
+    }
+
+    /**
+     * Creates prominent disclosure for GPS for apps for Android Q and above
+     *
+     * @param requestCode - code for result
+     * @param rational - if it should ask for permission - true
+     * @return material dialog
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun getDialogBackgroundLocation(requestCode: Int, rational: Boolean): MaterialDialog {
+        return PermissionHandler.showPermissionSettings(
+            fragment = this,
+            text = R.string.permission_gps,
+            toastText = R.string.permission_gps_show,
+            preferenceSetting = SettingsFragment.APP_GPS_NOT_ASKED_BACKGROUND,
+            permission = arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ),
+            icon = R.drawable.ic_baseline_location,
+            requestCode = requestCode,
+            rational = rational
+        )
+    }
+
+    /**
+     * checks rational if the app needs permission for the firs time - sharedPreferences key
+     *
+     * @param context - of the app
+     * @param fineLocation - if you want to ask only for fine location - foreground permission / under Android Q
+     * @return boolean - True - ask for permission, False - show settings
+     */
+    @SuppressLint("InlinedApi")
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun isRationalPermissionGPS(context: Context, fineLocation: Boolean): Boolean {
+        val sharedPreferences: SharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(context)
+
+        return if (fineLocation) {
+            if (sharedPreferences.getBoolean(SettingsFragment.APP_GPS_NOT_ASKED_FOREGROUND, true)) {
+                return true
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        } else {
+            if (sharedPreferences.getBoolean(SettingsFragment.APP_GPS_NOT_ASKED_BACKGROUND, true)) {
+                return true
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
+
+    /**
      * Inits all the checks before measurement takes place and sends the MeasurementService intent
      * to start service and MeasurementActivity
-     *
      */
     open fun initMainButton() {
         mainButton?.setOnClickListener {
 
-            if(!StorageHandler.isAccess(requireContext())){
-                if(Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT){
+            if (!StorageHandler.isAccess(requireContext())) {
+                if (Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT) {
                     Navigation.findNavController(requireView()).navigate(
                         HomeFragmentDirections.actionNavHomeToPickFolderFragment(
-                        ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)))
+                            ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)
+                        )
+                    )
                     return@setOnClickListener
-                }else{
-                    requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_STORAGE)
+                } else {
+                    requestPermissions(
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        PERMISSION_STORAGE
+                    )
                     return@setOnClickListener
                 }
             }
 
             val status = mainViewModel.wearOsStatus.value
-            if(status is WearOsStates.Status){ // stops, if the wear os is measuring
-                if(status.running){
-                    Toast.makeText(requireContext(), getString(R.string.wear_os_active), Toast.LENGTH_LONG).show()
+            if (status is WearOsStates.Status) { // stops, if the wear os is measuring
+                if (status.running) {
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.wear_os_active),
+                        Toast.LENGTH_LONG
+                    ).show()
                     return@setOnClickListener
                 }
             }
@@ -447,7 +574,13 @@ open class HomeFragment : Fragment() {
 
             // Wear Os - sends message to Wearable to start measurement
             val wearOsSensors = mainViewModel.getSensorView().getWearOsToMeasure()
-            wearOsSensors?.let {sensors -> mainViewModel.startWearOsMeasurement(requireContext(), folderName, sensors) }
+            wearOsSensors?.let { sensors ->
+                mainViewModel.startWearOsMeasurement(
+                    requireContext(),
+                    folderName,
+                    sensors
+                )
+            }
 
             MeasurementService.addExtraToIntentBasic(
                 serviceIntent,
@@ -513,7 +646,7 @@ open class HomeFragment : Fragment() {
         }
     }
 
-    companion object{
+    companion object {
 
         const val PERMISSION_GPS_LOG = 155
         const val PERMISSION_GPS_SHOW = 153

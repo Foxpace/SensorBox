@@ -126,8 +126,6 @@ class IntroActivity: AppIntro() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 askForPermissions(
                     permissions = arrayOf(
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACTIVITY_RECOGNITION
                     ),
                     slideNumber = 4,
@@ -137,7 +135,6 @@ class IntroActivity: AppIntro() {
                 askForPermissions(
                     permissions = arrayOf(
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.ACCESS_FINE_LOCATION
                     ),
                     slideNumber = 4,
                     required = false

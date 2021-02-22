@@ -68,8 +68,12 @@
     <string name="sensor_info_float">%.2f</string>
 
     <!--GPS-->
-    <string name="permission_gps_show">To show your location, the permission for foreground location access is required</string>
-    <string name="permission_gps_background">To save location data to csv file at background, the permission for location is required</string>
+    <string name="permission_gps_show">To show your location, the permission for location access is required</string>
+    <string name="permission_gps">In order to save GPS coordinates on your phone in form of csv, location services have to be enabled in the background.
+        \nList of features with usage of location:\n\n
+        \u2022 Save coordinates to csv file\n\n
+        \u2022 Show your current location on map (only in foreground)\n\nThe location is accessed in the background only during the measurement, while the notification is visible.
+        Therefore, you have to give permissions to use mentioned features.</string>
     <string name="gps">GPS</string>
     <string name="sensor_info_GPS_latitude">Latitude</string>
     <string name="sensor_info_GPS_longitude">Longitude</string>
@@ -201,7 +205,7 @@
     <string name="intro_policy_button">Privacy policy</string>
     <string name="intro_terms_button">Terms of use</string>
     <string name="intro_permission">Permissions</string>
-    <string name="intro_permission_description">In order to use save files, use location (in background) and use activity recognition, we need you to give the app permissions.</string>
+    <string name="intro_permission_description">In order to save files or use activity recognition, we need you to give the app permissions.</string>
     <string name="intro_allow">Allow</string>
     <string name="intro_life_cycle_problem">App problem</string>
     <string name="intro_battery_description">Due to the Android power saving routines, the app does not need to work properly. For example after the screen turns off, sensors can too or app gets killed by the system. Some routines are from manufacturer itself. </string>

@@ -22,11 +22,16 @@
     <string name="permission_rejected_gps">To use GPS, the permission is required. To allow, go to settings.</string>
     <string name="permission_rejected_body">To use this sensor, the permission is required. To allow, go to settings.</string>
     <string name="permission_body_sensor">To see and record the Heart rate, you need to provide the app to monitor Body sensor.</string>
-    <string name="permission_show">The app needs Body sensor and Location permission to work properly. All the data are stored only locally. If you do not see permission, click the button bellow.</string>
-    <string name="permission_show_gps_background">The app needs Location permission to log coordinates to csv file at the background. All the data are stored only locally. Measurement is only taken, when you start to measure.</string>
-    <string name="permission_show_gps_only">The app needs Location permission to show map at the foreground. </string>
-    <string name="permission_show_gps_under_Q">The app needs Location permission to show map at the foreground / log coordinates to csv files at the background. </string>
+    <string name="permission_show">The app needs Body sensor permission to gather heart rate information. All the data are stored only locally. If you do not see permission, click the button bellow.</string>
+<!--    <string name="permission_show_gps_background">The app needs Location permission to log coordinates to csv file at the background. All the data are stored only locally. Measurement is only taken, when you start to measure.</string>-->
+<!--    <string name="permission_show_gps_only">The app needs Location permission to show map at the foreground.</string>-->
+<!--    <string name="permission_show_gps_under_Q">In order to save GPS coordinates on your watches in form of csv, location services have to be enabled in the background. The location is accessed only during measurement, which is visible in the app. Therefore, you have to give them permissions in the next steps.</string>-->
 
+    <string name="permission_gps">In order to save GPS coordinates on your watches in form of csv, location services have to be enabled in the background.
+        \nList of features with usage of location:\n\n
+        \u2022 Save coordinates to csv file\n\n
+        \u2022 Show your current location on map (only in foreground)\n\nThe location is accessed in the background only during the measurement. The app will show UI specific to measurement.
+        Therefore, you have to give permissions to use mentioned features.</string>
     <string name="permission_toast">To save location and body sensors, permit the required permissions</string>
     <string name="title_activity_permission">PermissionActivity</string>
     <string name="permission_button">Show permission</string>

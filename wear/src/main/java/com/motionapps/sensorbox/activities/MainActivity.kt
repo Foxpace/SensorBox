@@ -79,19 +79,23 @@ class MainActivity: AppCompatActivity(), ClickListenerInterface {
             PHONE_INFO -> startActivity(Intent(this, MoveToMain::class.java))
             SETTINGS -> startActivity( Intent(this, MainSettings::class.java))
             PRIVACY_POLICY -> {
-                startBrowser(R.string.link_privacy_policy)
+                startBrowser(this, R.string.link_privacy_policy)
             }
             TERMS -> {
-                startBrowser(R.string.link_terms)
+                startBrowser(this, R.string.link_terms)
             }
         }
     }
 
-    private fun startBrowser(urlID: Int){
-        val intent = Intent(Intent.ACTION_VIEW)
-            .addCategory(Intent.CATEGORY_BROWSABLE)
-            .setData( Uri.parse(getString(urlID)))
-        RemoteIntent.startRemoteActivity(this, intent, null)
-        Toast.makeText(this, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
+
+
+    companion object{
+        fun startBrowser(context: Context, urlID: Int){
+            val intent = Intent(Intent.ACTION_VIEW)
+                .addCategory(Intent.CATEGORY_BROWSABLE)
+                .setData( Uri.parse(context.getString(urlID)))
+            RemoteIntent.startRemoteActivity(context, intent, null)
+            Toast.makeText(context, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
+        }
     }
 }

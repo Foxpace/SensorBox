@@ -188,8 +188,11 @@ class ExtraFragment : Fragment(){
                 materialDialog = PermissionHandler.showPermissionSettings(
                     this,
                     R.string.advanced_recognition_permission,
+                    R.string.advanced_recognition_permission,
+                    null,
                     arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
                     PERMISSION_RECOGNITION,
+                    icon = R.drawable.ic_baseline_run,
                     rational
                 )
             }

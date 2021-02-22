@@ -25,15 +25,18 @@ class PermissionActivityForResult : AppCompatActivity() {
 
 
         findViewById<TextView>(R.id.permission_text).apply {
-            text = if(Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
-                getString(R.string.permission_show_gps_under_Q)
-            }else{
-                if (permissionPick == GPS_SHOW) {
-                    getString(R.string.permission_show_gps_only)
-                } else {
-                    getString(R.string.permission_show_gps_background)
-                }
-            }
+//            text = if(Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
+//                getString(R.string.permission_show_gps_under_Q)
+//            }else{
+//                if (permissionPick == GPS_SHOW) {
+//                    getString(R.string.permission_show_gps_only)
+//                } else {
+//                    getString(R.string.permission_show_gps_background)
+//                }
+//            }
+            text = getString(R.string.permission_gps)
+
+
         }
 
 
