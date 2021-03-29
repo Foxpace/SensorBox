@@ -58,9 +58,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/intro_pick_folder"
-        android:textColor="@color/colorWhite"
+        android:textColor="@color/colorBlack"
         android:padding="16dp"
-        android:background="@drawable/rounded_transparent_outline"
+        android:background="@drawable/rounded_white"
         app:layout_constraintBottom_toBottomOf="@+id/image"
         app:layout_constraintEnd_toStartOf="@+id/midline"
         app:layout_constraintStart_toStartOf="parent" />

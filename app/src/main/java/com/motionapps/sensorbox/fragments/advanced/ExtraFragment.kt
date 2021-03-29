@@ -164,7 +164,7 @@ class ExtraFragment : Fragment(){
 
             val rational = shouldShowRequestPermissionRationale(permissions[0])
 
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 view?.findViewById<CheckBox>(R.id.extra_checkbox_activity)?.let{checkBox ->
                     checkBox.text = getString(R.string.extra_activity_recognition_checkbox)
                     checkBox.isChecked = true

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.location.Location
+import android.os.Looper
 import android.util.Log
 import androidx.preference.PreferenceManager
 
@@ -31,7 +32,7 @@ class GPSHandler : LocationCallback() {
 
     private var registered: Boolean = false
     private var firstInit: Boolean = false
-    private val TAG = "GPS_location"
+    private val tag = "GPS_location"
 
     /**
      * creation of the request and locationClient
@@ -62,7 +63,7 @@ class GPSHandler : LocationCallback() {
             callback!!.onLastLocationSuccess(null)
         }
 
-        locationClient.requestLocationUpdates(request, this, null)
+        locationClient.requestLocationUpdates(request, this, Looper.getMainLooper())
         registered = true
     }
 
@@ -86,7 +87,7 @@ class GPSHandler : LocationCallback() {
      *
      * @param locationAvailability
      */
-    override fun onLocationAvailability(locationAvailability: LocationAvailability?) {
+    override fun onLocationAvailability(locationAvailability: LocationAvailability) {
         super.onLocationAvailability(locationAvailability)
         this.locationAvailability = locationAvailability
         callback?.onAvailabilityChanged(locationAvailability)
@@ -98,7 +99,7 @@ class GPSHandler : LocationCallback() {
      */
     fun gpsOff() {
         if(registered){
-            Log.i(TAG, "Logging off location")
+            Log.i(tag, "Logging off location")
             locationClient.removeLocationUpdates(this)
         }
         registered = false
@@ -113,20 +114,19 @@ class GPSHandler : LocationCallback() {
     private fun createRequest(context: Context): LocationRequest {
 
         val sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val locationRequest = LocationRequest()
-        try {
-            locationRequest.interval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-            locationRequest.fastestInterval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-            locationRequest.smallestDisplacement = sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat()
-            locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }catch (e: ClassCastException){
-            locationRequest.interval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
-            locationRequest.fastestInterval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
-            locationRequest.smallestDisplacement = sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat()
-            locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        val locationRequest = LocationRequest.create().apply {
+            try {
+                this.interval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
+                this.fastestInterval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
+                this.smallestDisplacement = sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat()
+                this.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }catch (e: ClassCastException){
+                this.interval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
+                this.fastestInterval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
+                this.smallestDisplacement = sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat()
+                this.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }
         }
-
-
         //registering GPS
         Log.i("GPS", "location request created")
         return locationRequest

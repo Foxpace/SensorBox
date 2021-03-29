@@ -91,7 +91,7 @@ open class HomeFragment : Fragment() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         val rational = shouldShowRequestPermissionRationale(permissions[0])
-        val granted = PackageManager.PERMISSION_GRANTED == grantResults[0]
+        val granted = PackageManager.PERMISSION_GRANTED == grantResults[0] && permissions.isNotEmpty()
 
         when (requestCode) {
             PERMISSION_STORAGE -> {
@@ -363,9 +363,6 @@ open class HomeFragment : Fragment() {
             }
         }
 
-
-
-
         container?.addView(view)
         return view
     }
@@ -417,6 +414,8 @@ open class HomeFragment : Fragment() {
             imageButton.setOnClickListener {
 
                 // if the SDK is higher then or equal Q - check background GPS
+                // TODO Android 11 - ask firstly for foreground permission and than
+                // TODO extract all permission handlers to standalone files
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     if (ActivityCompat.checkSelfPermission(
                             requireContext(),

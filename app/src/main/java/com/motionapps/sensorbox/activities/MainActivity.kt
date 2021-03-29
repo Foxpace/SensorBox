@@ -183,7 +183,9 @@ class MainActivity : AppCompatActivity() {
         val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         if(!preferences.getBoolean(SettingsFragment.APP_FIRST_TIME, false)){
             finish()
-            startActivity(Intent(this, IntroActivity::class.java))
+            Intent(this@MainActivity, IntroActivity::class.java).apply {
+                startActivity(this)
+            }
             return
         }
     }

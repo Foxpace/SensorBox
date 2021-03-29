@@ -208,11 +208,12 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == GPS_REQUEST) {
-            onPermission(permissions[0], grantResults, R.string.permission_rejected_gps)
-        }else if(requestCode == BODY_REQUEST){
-            onPermission(permissions[0], grantResults, R.string.permission_rejected_body)
+        if (permissions.isNotEmpty()) {
+            if (requestCode == GPS_REQUEST) {
+                onPermission(permissions[0], grantResults, R.string.permission_rejected_gps)
+            } else if (requestCode == BODY_REQUEST) {
+                onPermission(permissions[0], grantResults, R.string.permission_rejected_body)
+            }
         }
     }
 

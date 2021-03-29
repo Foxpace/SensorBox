@@ -76,9 +76,9 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
 
             if(sensorId == Sensor.TYPE_HEART_RATE){
                 if(ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED){
+                    tempIntent = intent
                     ActivityCompat.requestPermissions(this@PickSensorShow,
                         arrayOf(Manifest.permission.BODY_SENSORS), PERMISSION_RESULT_BODY)
-                    tempIntent = intent
                     return
                 }
             }
@@ -101,7 +101,7 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if(requestCode == PERMISSION_RESULT_BODY || requestCode == PERMISSION_RESULT_GPS){
-            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            if ((permissions.isNotEmpty() && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 startActivity(tempIntent)
             } else {
                 when(requestCode){
@@ -114,16 +114,20 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
 //                        }
 //                    }
                     PERMISSION_RESULT_BODY -> {
-                        if(shouldShowRequestPermissionRationale(permissions[0])){
-                            Toast.makeText(this, R.string.permission_rejected_body, Toast.LENGTH_LONG).show()
-                        }else{
-                            finish()
-                            startActivity(Intent(this, PermissionActivity::class.java))
+                        if(permissions.isNotEmpty()) {
+                            if (shouldShowRequestPermissionRationale(permissions[0])) {
+                                Toast.makeText(
+                                    this,
+                                    R.string.permission_rejected_body,
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                finish()
+                                startActivity(Intent(this, PermissionActivity::class.java))
+                            }
                         }
-
                     }
                 }
-
             }
         }
     }

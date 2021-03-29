@@ -45,7 +45,6 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
         // Inflate the layout for this fragment
         val view: View = inflater.inflate(R.layout.fragment_pick_folder, container, false)
         view.setBackgroundColor(defaultBackgroundColor)
-
         // folder can be changed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             (view.findViewById<Button>(R.id.intro_pick_folder_button)).apply {
@@ -55,9 +54,10 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
                     this@PickFolderFragment.startActivityForResult(i, NEW_FOLDER_REQUEST_CODE)
                 }
                 (view.findViewById<TextView>(R.id.description)).apply {
-                    text = getString(R.string.intro_pick_folder_description).format(
-                        StorageHandler.getFolderName(requireContext())
-                    )
+                    text =
+                        requireActivity().getString(R.string.intro_pick_folder_description).format(
+                            StorageHandler.getFolderName(requireContext())
+                        )
                 }
             }
             updateText(view)
@@ -65,20 +65,20 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
             // automatic creation of the folder
         } else {
             (view.findViewById<TextView>(R.id.description)).apply {
-                text = getString(R.string.intro_pick_folder_description_under_Q)
+                text = requireActivity().getString(R.string.intro_pick_folder_description_under_Q)
             }
 
-            (view.findViewById<TextView>(R.id.folder_pick_title)).apply{
-                text = getString(R.string.intro_pick_folder_placement)
+            (view.findViewById<TextView>(R.id.folder_pick_title)).apply {
+                text = requireActivity().getString(R.string.intro_pick_folder_placement)
             }
 
             (view.findViewById<Button>(R.id.intro_pick_folder_button)).apply {
                 visibility = GONE
             }
 
-            isPath = if(StorageHandler.isFolder(requireContext())){
+            isPath = if (StorageHandler.isFolder(requireContext())) {
                 StorageHandler.createMainFolder(requireContext(), null)
-            }else{
+            } else {
                 true
             }
 
@@ -86,8 +86,6 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
 
         return view
     }
-
-
 
     // default colour of the background
     override val defaultBackgroundColor: Int
@@ -123,9 +121,10 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
     }
 
 
-    private fun updateText(view: View){
+    private fun updateText(view: View) {
         (view.findViewById<TextView>(R.id.description)).apply {
-            text = getString(R.string.intro_pick_folder_description).format(StorageHandler.getFolderName(requireContext()))
+            text = requireActivity().getString(R.string.intro_pick_folder_description)
+                .format(StorageHandler.getFolderName(requireContext()))
         }
     }
 
@@ -133,12 +132,16 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
         const val BACKGROUND_COLOR: String = "BackgroundParameter"
         const val NEW_FOLDER_REQUEST_CODE: Int = 982
 
-        fun newInstance(param: Int) =
-            PickFolderFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(BACKGROUND_COLOR, param)
-                }
+        @JvmStatic
+        fun newInstance(param: Int): PickFolderFragment {
+            val fragment = PickFolderFragment()
+            val arguments = Bundle().apply {
+                putInt(BACKGROUND_COLOR, param)
             }
+            fragment.arguments = arguments
+            return fragment
+
+        }
     }
 
     override val isPolicyRespected: Boolean
@@ -147,8 +150,9 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
     override fun onUserIllegallyRequestedNextPage() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Toast.makeText(
-                requireContext(),
-                getString(R.string.intro_condition_folder),
+                this@PickFolderFragment.requireActivity(),
+                this@PickFolderFragment.requireActivity()
+                    .getString(R.string.intro_condition_folder),
                 Toast.LENGTH_LONG
             ).show()
         }

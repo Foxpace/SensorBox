@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.github.appintro.AppIntro
 import com.github.appintro.AppIntroFragment
-import com.github.appintro.AppIntroPageTransformerType
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.activities.MainActivity
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment
@@ -35,16 +34,6 @@ class IntroActivity: AppIntro() {
         isSystemBackButtonLocked = true
         isIndicatorEnabled = true
         isColorTransitionsEnabled = true
-
-
-
-        setTransformer(
-            AppIntroPageTransformerType.Parallax(
-                titleParallaxFactor = 1.0,
-                imageParallaxFactor = -1.0,
-                descriptionParallaxFactor = 2.0
-            )
-        )
 
         setIndicatorColor(
             selectedIndicatorColor = ContextCompat.getColor(

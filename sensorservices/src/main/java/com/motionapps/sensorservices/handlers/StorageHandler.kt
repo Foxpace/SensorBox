@@ -58,6 +58,12 @@ object StorageHandler {
         }
             val f: DocumentFile = root?.toRootDirectory(context) ?: return false
             try {
+                f.findFile(context.getString(R.string.app_name))?.let {
+                    if(it.exists()){
+                        return true
+                    }
+                }
+
                 f.createDirectory(context.getString(R.string.app_name))
                 return true
             } catch (e: OperationFailedException) {

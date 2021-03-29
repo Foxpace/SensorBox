@@ -185,13 +185,13 @@ class ActivityRecognition : MeasurementInterface {
      */
     private fun onDestroy() {
         if(running) {
-            if (pendingIntentTransition != null) {
-                activityRecognitionClient.removeActivityTransitionUpdates(pendingIntentTransition)
+            pendingIntentTransition?.let{
+                activityRecognitionClient.removeActivityTransitionUpdates(it)
                 pendingIntentTransition = null
             }
 
-            if (pendingIntentUpdates != null) {
-                activityRecognitionClient.removeActivityUpdates(pendingIntentUpdates)
+            pendingIntentUpdates?.let{
+                activityRecognitionClient.removeActivityUpdates(it)
                 pendingIntentUpdates = null
             }
             running = false
@@ -231,19 +231,21 @@ class ActivityRecognition : MeasurementInterface {
     private fun registerTransitions(context: Context, activities: IntArray) {
 
         pendingIntentTransition = getPendingIntentTransition(context)
-
-        activityRecognitionClient.requestActivityTransitionUpdates(
-            ActivityTransitionRequest(
-            getTransitions(activities)),
-            pendingIntentTransition
-        ).addOnSuccessListener {
-            OnSuccessListener<Void> {
-                Log.i(TAG, "successfully registered activity transitions")
+        pendingIntentTransition?.let {
+            activityRecognitionClient.requestActivityTransitionUpdates(
+                ActivityTransitionRequest(
+                    getTransitions(activities)),
+                it
+            ).addOnSuccessListener {
+                OnSuccessListener<Void> {
+                    Log.i(TAG, "successfully registered activity transitions")
+                }
+            }.addOnFailureListener {
+                pendingIntentTransition = null
+                Log.w(TAG, "Registration of activity transitions failed")
             }
-        }.addOnFailureListener {
-            pendingIntentTransition = null
-            Log.w(TAG, "Registration of activity transitions failed")
         }
+
     }
 
     private fun getTransitions(activities: IntArray): ArrayList<ActivityTransition>{
@@ -278,15 +280,16 @@ class ActivityRecognition : MeasurementInterface {
     private fun registerUpdates(context: Context, timeToUpdate: Long) {
 
         pendingIntentUpdates = getPendingIntentUpdates(context)
-
-        activityRecognitionClient.requestActivityUpdates(timeToUpdate, pendingIntentUpdates).
-        addOnSuccessListener {
-            OnSuccessListener<Void> {
-                Log.i(TAG, "successfully registered activity updates")
+        pendingIntentUpdates?.let{
+            activityRecognitionClient.requestActivityUpdates(timeToUpdate, it).
+            addOnSuccessListener {
+                OnSuccessListener<Void> {
+                    Log.i(TAG, "successfully registered activity updates")
+                }
+            }.addOnFailureListener {
+                pendingIntentUpdates = null
+                Log.w(TAG, "Registration of activity updates failed")
             }
-        }.addOnFailureListener {
-            pendingIntentUpdates = null
-            Log.w(TAG, "Registration of activity updates failed")
         }
     }
 
@@ -327,19 +330,19 @@ class ActivityRecognition : MeasurementInterface {
 
         )
 
-        fun convertTransitionToString(transition: Int): String {
-            return when (transition) {
-                DetectedActivity.IN_VEHICLE -> "Vehicle"
-                DetectedActivity.ON_BICYCLE -> "Bike"
-                DetectedActivity.ON_FOOT -> "Foot"
-                DetectedActivity.STILL -> "Still"
-                DetectedActivity.WALKING -> "Walking"
-                DetectedActivity.RUNNING -> "Run"
-                DetectedActivity.UNKNOWN -> "Unknown"
-                DetectedActivity.TILTING -> "Tilting"
-                else -> "Not classified"
-            }
-        }
+//        fun convertTransitionToString(transition: Int): String {
+//            return when (transition) {
+//                DetectedActivity.IN_VEHICLE -> "Vehicle"
+//                DetectedActivity.ON_BICYCLE -> "Bike"
+//                DetectedActivity.ON_FOOT -> "Foot"
+//                DetectedActivity.STILL -> "Still"
+//                DetectedActivity.WALKING -> "Walking"
+//                DetectedActivity.RUNNING -> "Run"
+//                DetectedActivity.UNKNOWN -> "Unknown"
+//                DetectedActivity.TILTING -> "Tilting"
+//                else -> "Not classified"
+//            }
+//        }
 
         private const val TAG: String = "ActivityManager"
         private const val REQUEST_CODE_TRANSITION = 1654

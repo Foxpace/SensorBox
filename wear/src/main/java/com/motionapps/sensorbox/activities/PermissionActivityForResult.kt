@@ -68,10 +68,11 @@ class PermissionActivityForResult : AppCompatActivity() {
             if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 goBack()
             }else{
-                val rational = shouldShowRequestPermissionRationale(permissions[0])
-
-                if(!rational){
-                    PermissionActivity.showSettings(this)
+                if(permissions.isNotEmpty()){
+                    val rational = shouldShowRequestPermissionRationale(permissions[0])
+                    if(!rational){
+                        PermissionActivity.showSettings(this)
+                    }
                 }
             }
         }

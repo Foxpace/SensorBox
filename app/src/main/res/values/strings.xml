@@ -215,7 +215,7 @@
     <string name="intro_ignore_optimizations">Click to\nignore\noptimizations</string>
     <string name="intro_ignored_optimisations">Optimisations are ignored</string>
     <string name="intro_ignored_optimisations_error">Device does not support this option</string>
-    <string name="intro_pick_folder">Pick folder</string>
+    <string name="intro_pick_folder">Click to pick folder</string>
     <string name="intro_pick_folder_placement">Placement of folder</string>
     <string name="intro_pick_folder_description">Here you can pick folder, where to store all the files. Picked folder is:\n\n%s</string>
     <string name="intro_pick_folder_description_under_Q">SensorBox folder will be created in your root directory.</string>
