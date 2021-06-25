@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
@@ -14,6 +13,7 @@ import com.github.appintro.AppIntroFragment
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.activities.MainActivity
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -78,21 +78,21 @@ class IntroActivity: AppIntro() {
 
         // permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            addSlide(
-                AppIntroFragment.newInstance(
-                    title = getString(R.string.intro_permission),
-                    description = getString(R.string.intro_permission_description),
-                    imageDrawable = R.drawable.ic_ok_big,
-                    titleColor = Color.WHITE,
-                    descriptionColor = Color.WHITE,
-                    backgroundColor = ContextCompat.getColor(
-                        this,
-                        R.color.colorDarkGreen
-                    ),
-                    titleTypefaceFontRes = R.font.roboto_regular,
-                    descriptionTypefaceFontRes = R.font.roboto_regular
-                )
-            )
+//            addSlide(
+//                AppIntroFragment.newInstance(
+//                    title = getString(R.string.intro_permission),
+//                    description = getString(R.string.intro_permission_description),
+//                    imageDrawable = R.drawable.ic_ok_big,
+//                    titleColor = Color.WHITE,
+//                    descriptionColor = Color.WHITE,
+//                    backgroundColor = ContextCompat.getColor(
+//                        this,
+//                        R.color.colorDarkGreen
+//                    ),
+//                    titleTypefaceFontRes = R.font.roboto_regular,
+//                    descriptionTypefaceFontRes = R.font.roboto_regular
+//                )
+//            )
 
             // warning about battery drainage
             addSlide(PowerSaverExplanationFragment())
@@ -110,26 +110,30 @@ class IntroActivity: AppIntro() {
             )
         )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // android Q requires Background GPS access and activity recognition
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                askForPermissions(
-                    permissions = arrayOf(
-                        Manifest.permission.ACTIVITY_RECOGNITION
-                    ),
-                    slideNumber = 4,
-                    required = false
-                )
-            } else {
-                askForPermissions(
-                    permissions = arrayOf(
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    ),
-                    slideNumber = 4,
-                    required = false
-                )
-            }
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            // android Q requires Background GPS access and activity recognition
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                askForPermissions(
+//                    permissions = arrayOf(
+//                        Manifest.permission.ACTIVITY_RECOGNITION,
+//                        Manifest.permission.BODY_SENSORS,
+//                        Manifest.permission.ACCESS_FINE_LOCATION
+//                    ),
+//                    slideNumber = 4,
+//                    required = false
+//                )
+//            } else {
+//                askForPermissions(
+//                    permissions = arrayOf(
+//                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+//                        Manifest.permission.BODY_SENSORS,
+//                        Manifest.permission.ACCESS_FINE_LOCATION
+//                    ),
+//                    slideNumber = 4,
+//                    required = false
+//                )
+//            }
+//        }
 
     }
 
@@ -145,7 +149,7 @@ class IntroActivity: AppIntro() {
     override fun onUserDisabledPermission(permissionName: String) {
         // User pressed "Deny" + "Don't ask again" on the permission dialog
         if(slideNum == 3){
-            Toast.makeText(this, getString(R.string.intro_deny_dont_ask), Toast.LENGTH_LONG).show()
+            Toasty.error(this, getString(R.string.intro_deny_dont_ask), Toasty.LENGTH_LONG, true).show()
             goToNextSlide()
         }
     }

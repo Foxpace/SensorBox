@@ -28,14 +28,14 @@ class About : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         // android version tab
         val versionElement = Element()
         versionElement.iconDrawable =
             R.drawable.ic_android
         versionElement.iconTint = R.color.colorWhite
-        versionElement.title = "Version: %s".format(BuildConfig.VERSION_NAME)
+        versionElement.title = getString(R.string.app_version).format(BuildConfig.VERSION_NAME)
 
         // license dialog show tab
         val licences = Element()
@@ -47,9 +47,8 @@ class About : Fragment() {
         }
 
         // creation of Aboutpage with all the other elements
-        return AboutPage(requireContext())
+        return AboutPage(requireContext(), true)
             .isRTL(false)
-            .enableDarkMode(true)
             .setCustomFont(ResourcesCompat.getFont(requireContext(),
                 R.font.roboto_family
             ))
@@ -81,7 +80,7 @@ class About : Fragment() {
      * @return About page Element
      */
     private fun websiteElement(): Element{
-        var url = "https://creativemotion.app/"
+        var url = getString(R.string.creative_motion_web)
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             url = "http://$url"
         }
@@ -102,14 +101,13 @@ class About : Fragment() {
      */
     private fun googlePlay(): Element {
         val playStoreElement = Element()
-        val id = "motionapps.sensorbox"
         playStoreElement.title = getString(R.string.about_play_store)
         playStoreElement.iconDrawable = mehdi.sakout.aboutpage.R.drawable.about_icon_google_play
         playStoreElement.iconTint = R.color.colorWhite
-        playStoreElement.value = id
+        playStoreElement.value = BuildConfig.APPLICATION_ID
 
         val uri =
-            Uri.parse("https://play.google.com/store/apps/details?id=$id")
+            Uri.parse(getString(R.string.google_play_link).format(BuildConfig.APPLICATION_ID))
         val goToMarket = Intent(Intent.ACTION_VIEW, uri)
         playStoreElement.intent = goToMarket
 
@@ -121,7 +119,7 @@ class About : Fragment() {
      * @return About page Element
      */
     private fun emailElement(): Element{
-        val email = "support@creativemotion.app"
+        val email = getString(R.string.creative_motion_mail)
         val emailElement = Element()
         emailElement.title = getString(R.string.about_title_email)
         emailElement.iconDrawable = R.drawable.ic_mail
@@ -139,7 +137,7 @@ class About : Fragment() {
      */
     private fun githubElement(): Element{
         val gitHubElement = Element()
-        val id = "https://github.com/Foxpace/SensorBox"
+        val id = getString(R.string.github_page)
         gitHubElement.title = getString(mehdi.sakout.aboutpage.R.string.about_github)
         gitHubElement.iconDrawable =
             R.drawable.ic_github

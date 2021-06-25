@@ -88,7 +88,7 @@ object GraphHandler {
         graph.viewport.setMinX(0.0)
         graph.viewport.setMaxX(10000.0)
         //padding and formatting
-        graph.gridLabelRenderer.padding = 32
+        graph.gridLabelRenderer.padding = 96
         graph.gridLabelRenderer.labelFormatter = object : LabelFormatter {
             override fun formatLabel(value: Double, isValueX: Boolean): String {
                 return if (isValueX) {
@@ -127,7 +127,7 @@ object GraphHandler {
         graph.viewport.setMinX(0.0)
         graph.viewport.setMaxX(10000.0)
 
-        graph.gridLabelRenderer.padding = 32
+        graph.gridLabelRenderer.padding = 96
         graph.legendRenderer.isVisible = false
 
         for(d in data){
@@ -136,5 +136,5 @@ object GraphHandler {
     }
 
     const val INFO_VIEW = 0
-    const val MEASUREMENT = 1
+    private const val MEASUREMENT = 1
 }

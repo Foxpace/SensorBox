@@ -30,9 +30,16 @@
 
 
     <string name="activity_permissions_no">SensorBox will not be fully functional without permissions. If you need to change permissions, visit settings of the app.</string>
-    <string name="permission_storage">To store csv files, the app requires storage permission to access memory</string>
+    <string name="permission_storage">To store csv files, the app requires storage permission to access memory.\n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
+    <string name="permission_storage_toast">To store csv files, the app requires storage permission to access memory</string>
     <string name="show_permission">Show permission</string>
+    <string name="show_permission_settings">Open settings - give permission</string>
     <string name="permission">Permission</string>
+    <string name="heart_rate_permission_text">
+        In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\".
+        \n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
+    <string name="heart_rate_permission_rational">To use heart rate - Body sensors permission is required</string>
+
 
     <!-- Sensor names -->
     <string name="agg_name">Gravity</string>
@@ -66,14 +73,28 @@
     <string name="sensor_info_min_delay">Minimal\ndelay [µs]</string>
     <string name="sensor_info_max_delay">Maximal\ndelay [µs]</string>
     <string name="sensor_info_float">%.2f</string>
+    <string name="zero">0</string>
 
     <!--GPS-->
     <string name="permission_gps_show">To show your location, the permission for location access is required</string>
     <string name="permission_gps">In order to save GPS coordinates on your phone in form of csv, location services have to be enabled in the background.
         \nList of features with usage of location:\n\n
         \u2022 Save coordinates to csv file\n\n
-        \u2022 Show your current location on map (only in foreground)\n\nThe location is accessed in the background only during the measurement, while the notification is visible.
-        Therefore, you have to give permissions to use mentioned features.</string>
+        \u2022 Show your current location on map (only in foreground)\n\n
+        The location is accessed in the background only during the measurement, while the notification is visible.
+        Therefore, you have to give permissions to use mentioned features.
+        \n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.
+    </string>
+    <string name="permission_gps_android_Q">In order to save GPS coordinates on your phone in form of csv, location services have to be enabled in the background.
+        \nList of features with usage of location:\n\n
+        \u2022 Save coordinates to csv file\n\n
+        \u2022 Show your current location on map (only in foreground)\n\n
+        The location is accessed in the background only during the measurement, while the notification is visible.
+        Therefore, you have to give permissions to use mentioned features.\n\n
+        You will be moved to settings, where you have to give unlimited access to location to the app.
+        Unfortunately, Android 10 and higher stops GPS updates, after certain period of time due to the battery restrictions.
+        Otherwise, the GPS recording would be redundant.
+    </string>
     <string name="gps">GPS</string>
     <string name="sensor_info_GPS_latitude">Latitude</string>
     <string name="sensor_info_GPS_longitude">Longitude</string>
@@ -105,7 +126,7 @@
     <string name="advanced_minutes">Minutes</string>
     <string name="advanced_setup_time">Set up time</string>
     <string name="advanced_time_pass_limit">Unreachable time</string>
-    <string name="advanced_recognition_permission">To log movement recognition changes to csv files, the app requires permission for this kind of recognition</string>
+    <string name="advanced_recognition_permission">To log movement recognition changes to csv files, the app requires permission for this kind of recognition.\n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
 
     <!--SETTINGS-->
     <string name="settings_storage">Storage</string>
@@ -125,6 +146,10 @@
 
 
     </string>
+    <string name="settings_android">Android settings</string>
+    <string name="settings_android_open">Open the app in settings</string>
+    <string name="settings_android_battery_optimization">Ignore battery optimization</string>
+    <string name="settings_no_optimisations_required">No optimisations required under Android M</string>
     <string name="settings_annotations">Annotations</string>
     <string name="settings_csv">Data format</string>
     <string name="settings_version">Version of the app</string>
@@ -157,12 +182,23 @@
         <item>Normal - 200 ms</item>
     </string-array>
 
+    <!--SETTINGS KEYS-->
+    <string name="settings_key_folder_change">folder_change</string>
+    <string name="settings_key_gps_distance">gps_distance</string>
+    <string name="settings_key_gps_time">gps_time</string>
+    <string name="settings_key_activity_recognition_period">activity_recognition_period</string>
+    <string name="settings_key_about_activity_recognition">about_activity_recognition</string>
+    <string name="settings_key_annots">annots</string>
+    <string name="settings_key_storage_details">storage_details</string>
+    <string name="settings_key_android_settings">android_settings</string>
+    <string name="settings_key_battery_settings">battery_settings</string>
+
     <!--EXTRA-->
     <string name="extra_name_folder">Name of\nthe folder:</string>
     <string name="extra_edittext_hint">Optional</string>
     <string name="extra_pick_sensor">Max delay\nfor sensors:</string>
     <string name="extra_custom_notes">Add custom notes to JSON file</string>
-    <string name="extra_note">Note</string>
+    <string name="extra_note">Note - optional</string>
     <string name="add_custom_noise_alarms_during_measurement">Add custom noise alarms during measurement</string>
     <string name="extra_other_options">Other options</string>
     <string name="extra_activity_recognition_checkbox">Use activity recognition</string>
@@ -205,7 +241,7 @@
     <string name="intro_policy_button">Privacy policy</string>
     <string name="intro_terms_button">Terms of use</string>
     <string name="intro_permission">Permissions</string>
-    <string name="intro_permission_description">In order to save files or use activity recognition, we need you to give the app permissions.</string>
+    <string name="intro_permission_description">In order to save files or use activity recognition, GPS, we need you to give the app permissions.</string>
     <string name="intro_allow">Allow</string>
     <string name="intro_life_cycle_problem">App problem</string>
     <string name="intro_battery_description">Due to the Android power saving routines, the app does not need to work properly. For example after the screen turns off, sensors can too or app gets killed by the system. Some routines are from manufacturer itself. </string>
@@ -238,13 +274,21 @@
     <string name="wear_os_presence">Wear Os presence</string>
     <string name="title_activity_main2">MainActivity</string>
     <string name="action_settings">Settings</string>
+    <string name="app_version">Version: %s</string>
+
+    <string name="google_play_link">https://play.google.com/store/apps/details?id=%s</string>
+    <string name="github_page">https://github.com/Foxpace/SensorBox</string>
+    <string name="creative_motion_mail">support@creativemotion.app</string>
+    <string name="creative_motion_web">https://creativemotion.app/</string>
 
     <!--Wear OS-->
     <string name="wear_os_sync_unavailable_restart">Synchronization is not available - restart connection</string>
     <string name="wear_os_sync_in_progress">Synchronization in progress</string>
     <string name="wear_os_active">Turn off Wear Os active measurement</string>
     <string name="heart_rate_permission_title">Heart rate permission</string>
-    <string name="heart_rate_permission_text">In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\" permission for Wear Os. The permission will be shown at your smartwatch after clicking the button.</string>
+    <string name="heart_rate_permission_text_wear_os">In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\" permission for Wear Os. The permission will be shown at your smartwatch after clicking the button.</string>
+    <string name="wear_os_active_measurement">Turn off Wear Os active measurement</string>
+    <string name="measurement_active">Measuring</string>
 
 
 

@@ -1,12 +1,7 @@
 package com.motionapps.sensorbox.fragments
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.hardware.Sensor
 import android.os.Build
 import android.os.Bundle
@@ -14,30 +9,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
-import androidx.preference.PreferenceManager
 import com.afollestad.materialdialogs.MaterialDialog
-import com.motionapps.sensorbox.activities.MainActivity
 import com.motionapps.sensorbox.activities.MeasurementActivity
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.fragments.settings.SettingsFragment
 import com.motionapps.sensorbox.types.SensorResources
-import com.motionapps.sensorbox.uiHandlers.PermissionHandler
+import com.motionapps.sensorbox.permissions.PermissionHandler
 import com.motionapps.sensorbox.uiHandlers.SensorViewHandler
+import com.motionapps.sensorbox.uiHandlers.StorageFunctions
 import com.motionapps.sensorbox.viewmodels.MainViewModel
-import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.types.SensorNeeds
 import com.motionapps.sensorservices.types.SensorNeeds.Companion.getSensorByIdWearOs
 import com.motionapps.sensorservices.types.SensorNeeds.Companion.getSensors
 import com.motionapps.wearoslib.WearOsStates
 import dagger.hilt.android.AndroidEntryPoint
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -45,6 +36,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 /**
  * Main fragment to choose sensors and picking them to measure
  */
+
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
 @AndroidEntryPoint
@@ -55,8 +47,8 @@ open class HomeFragment : Fragment() {
 
     private var dialog: MaterialDialog? = null
     private val wearOsViews: ArrayList<View> = ArrayList() // storing Wear Os views - can be deleted
-    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() })
-
+    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() }) //
+    protected lateinit var permissionHandler: PermissionHandler
     private var wearShown = false
 
     override fun onCreateView(
@@ -64,6 +56,7 @@ open class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         val root: View = inflater.inflate(R.layout.fragment_home, container, false)
         this.container = root.findViewById(R.id.home_container)
         this.mainButton = root.findViewById(R.id.home_mainbutton)
@@ -75,120 +68,16 @@ open class HomeFragment : Fragment() {
         setObservers(inflater)
         mainViewModel.clearHandlers()
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            permissionHandler = PermissionHandler(this)
+        }
+
         return root
     }
 
     override fun onResume() {
         super.onResume()
-        checkMainFolder()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val rational = shouldShowRequestPermissionRationale(permissions[0])
-        val granted = PackageManager.PERMISSION_GRANTED == grantResults[0] && permissions.isNotEmpty()
-
-        when (requestCode) {
-            PERMISSION_STORAGE -> {
-                if (granted) {
-                    checkMainFolder()
-                    mainButton?.callOnClick()
-                } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val action: NavDirections =
-                            HomeFragmentDirections.actionNavHomeToPickFolderFragment(Color.BLACK)
-                        Navigation.findNavController(requireView()).navigate(action)
-                    } else {
-                        dialog = PermissionHandler.showPermissionSettings(
-                            fragment = this,
-                            text = R.string.permission_storage,
-                            toastText = R.string.permission_storage,
-                            preferenceSetting = null,
-                            permission = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                            requestCode = PERMISSION_STORAGE,
-                            icon = R.drawable.ic_baseline_folder,
-                            rational = rational
-                        )
-                    }
-
-                }
-            }
-            PERMISSION_GPS_SHOW -> {
-                if (granted) {
-                    val action: NavDirections =
-                        HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
-                    Navigation.findNavController(requireView()).navigate(action)
-                } else {
-                    if (rational) {
-                        dialog = getDialogFineLocation(PERMISSION_GPS_SHOW, rational)
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            R.string.permission_gps_show,
-                            Toast.LENGTH_LONG
-                        )
-                            .show()
-                        PermissionHandler.showSettings(requireContext())
-                    }
-                }
-            }
-            PERMISSION_GPS_LOG -> {
-                if (!granted) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        if (rational) {
-                            dialog = getDialogBackgroundLocation(PERMISSION_GPS_LOG, rational)
-
-                        } else {
-                            Toast.makeText(
-                                requireContext(),
-                                R.string.permission_gps_show,
-                                Toast.LENGTH_LONG
-                            ).show()
-                            PermissionHandler.showSettings(requireContext())
-                        }
-
-                    } else {
-                        if (rational) {
-                            dialog = getDialogFineLocation(PERMISSION_GPS_LOG, rational)
-                        } else {
-                            Toast.makeText(
-                                requireContext(),
-                                R.string.permission_gps_show,
-                                Toast.LENGTH_LONG
-                            ).show()
-                            PermissionHandler.showSettings(requireContext())
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    /**
-     * Checks if the main folder exists
-     * in Android Oreo, is required permission from the user, so he is prompted to pick folder, if
-     * the saved one is not available
-     * in lower versions, this is automatic
-     */
-    private fun checkMainFolder() {
-        if (!StorageHandler.isFolder(requireContext())) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Navigation.findNavController(requireView()).navigate(
-                    HomeFragmentDirections.actionNavHomeToPickFolderFragment(
-                        ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)
-                    )
-                )
-                return
-            } else {
-                StorageHandler.createMainFolder(requireContext(), null)
-            }
-        }
+        StorageFunctions.checkMainFolder(requireContext(), requireView())
     }
 
     /**
@@ -206,64 +95,6 @@ open class HomeFragment : Fragment() {
     }
 
     /**
-     * inflate views for the Wear Os
-     * data are obtained from Enumeration of basic sensor
-     * @param info - hashMap <if of the sensor, list with attributes>
-     */
-    private fun createWearViews(info: HashMap<Int, List<String>>, inflater: LayoutInflater) {
-
-        if (wearOsViews.size > 0) {
-            removeWearOs()
-        }
-
-        val sensorViewHandler: SensorViewHandler = mainViewModel.getSensorView()
-
-        for (key in info.keys) {
-            val properties = info[key]
-            val sensorNeeds = getSensorByIdWearOs(properties!![0].toInt())
-            val view = inflateOneSensor(sensorNeeds, inflater, true)
-
-            wearOsViews.add(view)
-            sensorViewHandler.addWearOsSensor(sensorNeeds)
-
-            // handling the button to add or remove to sensor for measurement
-            // sensorViewHandler manages all sensors to measure
-            // specific object for Wear Os sensors
-            val imageButton = view.findViewById<ImageButton>(R.id.sensorrow_save)
-            imageButton.setOnClickListener {
-
-                if (sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
-                    dialog = MaterialDialog(requireContext()).show {
-                        title(R.string.heart_rate_permission_title)
-                        message(R.string.heart_rate_permission_text)
-                        positiveButton(R.string.show_permission) {
-                            mainViewModel.askHeartRatePermission(requireContext())
-                            dismiss()
-                        }
-                    }
-                    return@setOnClickListener
-                }
-
-                sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id] =
-                    !sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!
-                if (sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!) {
-                    imageButton.setImageResource(R.drawable.ic_ok)
-                } else {
-                    imageButton.setImageResource(R.drawable.ic_circle)
-                }
-                checkSensorsToMeasure()
-            }
-
-            // for refresh reasons - button is updated by sensorViewHandler from ViewModel
-            if (sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!) {
-                imageButton.setImageResource(R.drawable.ic_ok)
-            } else {
-                imageButton.setImageResource(R.drawable.ic_circle)
-            }
-        }
-    }
-
-    /**
      * Gathers all the sensors, inflates views and manages buttons
      */
     private fun initSensorViews(inflater: LayoutInflater) {
@@ -276,6 +107,11 @@ open class HomeFragment : Fragment() {
             // handling the button to add or remove to sensor for measurement
             // sensorViewHandler manages all sensors to measure
             imageButtons[i].setOnClickListener {
+
+                if(permissionHandler.checkHeartRateSensor(this, sensorsNeeds[i].id )){
+                    return@setOnClickListener
+                }
+
                 sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id] =
                     !sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!
                 if (sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!) {
@@ -340,15 +176,7 @@ open class HomeFragment : Fragment() {
         if (wearOs) { // Wear Os has its own displayer
             infoButton.setOnClickListener {
                 if (sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
-                    dialog = MaterialDialog(requireContext()).show {
-                        title(R.string.heart_rate_permission_title)
-                        message(R.string.heart_rate_permission_text)
-                        positiveButton(R.string.show_permission) {
-                            mainViewModel.askHeartRatePermission(requireContext())
-                            dismiss()
-                        }
-                        cornerRadius(16f)
-                    }
+                    dialog = mainViewModel.showDialogForHearRatePermissionWearOs(requireContext())
                     return@setOnClickListener
                 }
                 val action: NavDirections =
@@ -358,6 +186,9 @@ open class HomeFragment : Fragment() {
             }
         } else {
             infoButton.setOnClickListener {
+                if(permissionHandler.checkHeartRateSensor(this, sensorNeeds.id)){
+                    return@setOnClickListener
+                }
                 val action: NavDirections = HomeFragmentDirections.homeInfoAction(resourceName)
                 Navigation.findNavController(requireView()).navigate(action)
             }
@@ -384,19 +215,9 @@ open class HomeFragment : Fragment() {
             val infoButton: ImageButton = view.findViewById(R.id.sensorrow_info)
 
             infoButton.setOnClickListener {
-                // with fine location you can see location and log data under Android Q
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (ActivityCompat.checkSelfPermission(
-                            requireContext(),
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        dialog = getDialogFineLocation(
-                            PERMISSION_GPS_SHOW,
-                            isRationalPermissionGPS(requireContext(), true)
-                        )
-                        return@setOnClickListener
-                    }
+
+                if(permissionHandler.checkGPSPermission(this)){
+                    return@setOnClickListener
                 }
                 val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
                 Navigation.findNavController(requireView()).navigate(action)
@@ -413,36 +234,8 @@ open class HomeFragment : Fragment() {
 
             imageButton.setOnClickListener {
 
-                // if the SDK is higher then or equal Q - check background GPS
-                // TODO Android 11 - ask firstly for foreground permission and than
-                // TODO extract all permission handlers to standalone files
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    if (ActivityCompat.checkSelfPermission(
-                            requireContext(),
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-
-                        dialog = getDialogBackgroundLocation(
-                            PERMISSION_GPS_LOG,
-                            isRationalPermissionGPS(requireContext(), false)
-                        )
-                        return@setOnClickListener
-                    }
-                }
-                // if the SDK is higher then or equal M - check if the permission is ok
-                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (ActivityCompat.checkSelfPermission(
-                            requireContext(),
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        dialog = getDialogFineLocation(
-                            PERMISSION_GPS_LOG,
-                            isRationalPermissionGPS(requireContext(), true)
-                        )
-                        return@setOnClickListener
-                    }
+                if(permissionHandler.checkGPSPermission(this)){
+                    return@setOnClickListener
                 }
 
                 sensorViewHandler.gpsMeasurement = !sensorViewHandler.gpsMeasurement
@@ -458,77 +251,7 @@ open class HomeFragment : Fragment() {
         }
     }
 
-    /**
-     * Creates prominent disclosure for GPS for apps under Android Q
-     *
-     * @param requestCode - code for result
-     * @param rational - if it should ask for permission - true
-     * @return material dialog
-     */
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun getDialogFineLocation(requestCode: Int, rational: Boolean): MaterialDialog {
-        return PermissionHandler.showPermissionSettings(
-            fragment = this,
-            text = R.string.permission_gps,
-            toastText = R.string.permission_gps_show,
-            preferenceSetting = SettingsFragment.APP_GPS_NOT_ASKED_FOREGROUND,
-            permission = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            requestCode = requestCode,
-            rational = rational,
-            icon = R.drawable.ic_baseline_location
-        )
-    }
 
-    /**
-     * Creates prominent disclosure for GPS for apps for Android Q and above
-     *
-     * @param requestCode - code for result
-     * @param rational - if it should ask for permission - true
-     * @return material dialog
-     */
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun getDialogBackgroundLocation(requestCode: Int, rational: Boolean): MaterialDialog {
-        return PermissionHandler.showPermissionSettings(
-            fragment = this,
-            text = R.string.permission_gps,
-            toastText = R.string.permission_gps_show,
-            preferenceSetting = SettingsFragment.APP_GPS_NOT_ASKED_BACKGROUND,
-            permission = arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            ),
-            icon = R.drawable.ic_baseline_location,
-            requestCode = requestCode,
-            rational = rational
-        )
-    }
-
-    /**
-     * checks rational if the app needs permission for the firs time - sharedPreferences key
-     *
-     * @param context - of the app
-     * @param fineLocation - if you want to ask only for fine location - foreground permission / under Android Q
-     * @return boolean - True - ask for permission, False - show settings
-     */
-    @SuppressLint("InlinedApi")
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun isRationalPermissionGPS(context: Context, fineLocation: Boolean): Boolean {
-        val sharedPreferences: SharedPreferences =
-            PreferenceManager.getDefaultSharedPreferences(context)
-
-        return if (fineLocation) {
-            if (sharedPreferences.getBoolean(SettingsFragment.APP_GPS_NOT_ASKED_FOREGROUND, true)) {
-                return true
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
-
-        } else {
-            if (sharedPreferences.getBoolean(SettingsFragment.APP_GPS_NOT_ASKED_BACKGROUND, true)) {
-                return true
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-    }
 
 
     /**
@@ -538,30 +261,17 @@ open class HomeFragment : Fragment() {
     open fun initMainButton() {
         mainButton?.setOnClickListener {
 
-            if (!StorageHandler.isAccess(requireContext())) {
-                if (Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT) {
-                    Navigation.findNavController(requireView()).navigate(
-                        HomeFragmentDirections.actionNavHomeToPickFolderFragment(
-                            ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)
-                        )
-                    )
-                    return@setOnClickListener
-                } else {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        PERMISSION_STORAGE
-                    )
-                    return@setOnClickListener
-                }
+            if(StorageFunctions.checkStorageAccess(this, permissionHandler)){
+                return@setOnClickListener
             }
 
             val status = mainViewModel.wearOsStatus.value
             if (status is WearOsStates.Status) { // stops, if the wear os is measuring
                 if (status.running) {
-                    Toast.makeText(
+                    Toasty.info(
                         requireContext(),
                         getString(R.string.wear_os_active),
-                        Toast.LENGTH_LONG
+                        Toasty.LENGTH_LONG
                     ).show()
                     return@setOnClickListener
                 }
@@ -590,33 +300,20 @@ open class HomeFragment : Fragment() {
                 wearOsSensors // Wear Os sensors - can be null
             )
 
-            val mainActivity = requireActivity() as MainActivity
-            mainActivity.finish()
+            requireActivity().finish()
 
-            val activityIntent = Intent(requireContext(), MeasurementActivity::class.java)
-            activityIntent.putExtras(serviceIntent)
-
-            ContextCompat.startForegroundService(requireContext(), serviceIntent)
-            startActivity(activityIntent)
+            Intent(requireContext(), MeasurementActivity::class.java).let {
+                it.putExtras(serviceIntent)
+                ContextCompat.startForegroundService(requireContext(), serviceIntent)
+                startActivity(it)
+            }
         }
-    }
-
-    /**
-     * removes WearOs views
-     *
-     */
-    private fun removeWearOs() {
-        for (v in wearOsViews) {
-            container?.removeView(v)
-        }
-        wearOsViews.clear()
-        wearShown = false
-        checkSensorsToMeasure()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         removeWearOs()
+        permissionHandler.onDestroy()
         dialog?.dismiss()
 
         dialog = null
@@ -626,6 +323,9 @@ open class HomeFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
+        if(this::permissionHandler.isInitialized){
+            permissionHandler.onDestroy()
+        }
         removeWearOs()
     }
 
@@ -645,11 +345,72 @@ open class HomeFragment : Fragment() {
         }
     }
 
-    companion object {
 
-        const val PERMISSION_GPS_LOG = 155
-        const val PERMISSION_GPS_SHOW = 153
-        const val PERMISSION_STORAGE = 156
+    // WEAR OS VIEWS
 
+    /**
+     * inflate views for the Wear Os
+     * data are obtained from Enumeration of basic sensor
+     * @param info - hashMap <if of the sensor, list with attributes>
+     */
+    private fun createWearViews(info: HashMap<Int, List<String>>, inflater: LayoutInflater) {
+
+        if (wearOsViews.size > 0) {
+            removeWearOs()
+        }
+
+        val sensorViewHandler: SensorViewHandler = mainViewModel.getSensorView()
+
+        for (key in info.keys) {
+            val properties = info[key]
+            val sensorNeeds = getSensorByIdWearOs(properties!![0].toInt())
+            val view = inflateOneSensor(sensorNeeds, inflater, true)
+
+            wearOsViews.add(view)
+            sensorViewHandler.addWearOsSensor(sensorNeeds)
+
+            // handling the button to add or remove to sensor for measurement
+            // sensorViewHandler manages all sensors to measure
+            // specific object for Wear Os sensors
+            val imageButton = view.findViewById<ImageButton>(R.id.sensorrow_save)
+            imageButton.setOnClickListener {
+
+                if (sensorNeeds.id == Sensor.TYPE_HEART_RATE && mainViewModel.isHeartRatePermissionRequired) {
+                    dialog = mainViewModel.showDialogForHearRatePermissionWearOs(requireContext())
+                    return@setOnClickListener
+                }
+
+                sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id] =
+                    !sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!
+                if (sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!) {
+                    imageButton.setImageResource(R.drawable.ic_ok)
+                } else {
+                    imageButton.setImageResource(R.drawable.ic_circle)
+                }
+                checkSensorsToMeasure()
+            }
+
+            // for refresh reasons - button is updated by sensorViewHandler from ViewModel
+            if (sensorViewHandler.sensorsWearOsToRecord[sensorNeeds.id]!!) {
+                imageButton.setImageResource(R.drawable.ic_ok)
+            } else {
+                imageButton.setImageResource(R.drawable.ic_circle)
+            }
+        }
     }
+
+
+    /**
+     * removes WearOs views
+     *
+     */
+    private fun removeWearOs() {
+        for (v in wearOsViews) {
+            container?.removeView(v)
+        }
+        wearOsViews.clear()
+        wearShown = false
+        checkSensorsToMeasure()
+    }
+
 }

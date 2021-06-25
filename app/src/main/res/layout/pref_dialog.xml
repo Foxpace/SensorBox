@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/colorAccent"
             app:backgroundTint="@color/colorAccent"
-            />
+            android:importantForAutofill="no" />
 
     </LinearLayout>
 </ScrollView>

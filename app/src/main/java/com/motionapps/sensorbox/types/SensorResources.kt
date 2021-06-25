@@ -22,6 +22,7 @@ enum class SensorResources(val icon: Int, val title: Int) {
     TEMP(R.drawable.ic_temperature, R.string.temp_name),
     STEP_COUNTER(R.drawable.ic_steps, R.string.step_counter_name),
     STEP_DETECTOR(R.drawable.ic_steps_detector,R.string.step_detector_name),
+    HEART_RATE(R.drawable.ic_heart_rate, R.string.heart_rate),
     ACG_WEAR(R.drawable.ic_acceleration_icon, R.string.acg_name_wear),
     ACC_WEAR(R.drawable.ic_linear_acceleration_icon, R.string.acc_name_wear),
     GYRO_WEAR(R.drawable.ic_gyroscope_icon, R.string.gyro_name_wear),

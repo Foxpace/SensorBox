@@ -66,7 +66,7 @@ class GPSDisplayer(context: Context, private val gpsHandler: GPSHandler) : Displ
         this.mapView?.onStart()
         this.mapView?.onResume()
 
-        // inflate attribues
+        // inflate attributes
         val linearLayout: LinearLayout = view.findViewById(R.id.sensorinfo_container)
         for(attr: SensorInfoView in attrs){
             val row: View = inflater.inflate(R.layout.item_layout_sensorrow_info, null)

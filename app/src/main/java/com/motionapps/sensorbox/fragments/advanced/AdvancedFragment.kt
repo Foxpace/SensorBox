@@ -35,10 +35,7 @@ class AdvancedFragment : HomeFragment() {
                     )
                     return@setOnClickListener
                 } else {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        PERMISSION_STORAGE
-                    )
+                    permissionHandler.storageCallback.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     return@setOnClickListener
                 }
             }

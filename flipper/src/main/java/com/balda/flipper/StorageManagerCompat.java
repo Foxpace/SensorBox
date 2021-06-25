@@ -51,11 +51,11 @@ public class StorageManagerCompat {
     private static final String PREF_ROOTS = "flipper.roots";
     public static final String DEF_MAIN_ROOT = "defroot";
     public static final String DEF_SD_ROOT = "defsdcard";
-    private Set<Root> roots = new HashSet<>();
+    private final Set<Root> roots = new HashSet<>();
 
     public StorageManagerCompat(@NonNull Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        Set<String> roots = prefs.getStringSet(PREF_ROOTS, new HashSet<String>());
+        Set<String> roots = prefs.getStringSet(PREF_ROOTS, new HashSet<>());
         for (String r : roots) {
             try {
                 this.roots.add(Root.fromJson(r));
@@ -127,14 +127,11 @@ public class StorageManagerCompat {
      * @param context The context
      * @param name    A generic name assigned to the root, ex. MyRoot
      * @param file    A file path
-     * @return The root object
      */
-    @Nullable
-    public Root addRoot(@NonNull Context context, @NonNull String name, @NonNull File file) {
+    public void addRoot(@NonNull Context context, @NonNull String name, @NonNull File file) {
         Root r = new Root(name, file);
         roots.add(r);
         saveRoots(context);
-        return r;
     }
 
     /**

@@ -55,11 +55,19 @@
     </notice>
 
     <notice>
+        <name>Toasty</name>
+        <url>https://github.com/GrenderG/Toasty</url>
+        <copyright>Copyright (c) 2021 GrenderG</copyright>
+        <license>GNU General Public License 3.0</license>
+    </notice>
+
+    <notice>
         <name>Water drop icon</name>
         <url>https://www.iconfinder.com/icons/1054937/drop_water_icon</url>
         <copyright>Copyright (c) 2020 Nick Roach</copyright>
         <license>GNU General Public License 3.0</license>
     </notice>
+
     <notice>
         <name>Step icon</name>
         <url>https://www.iconfinder.com/icons/1086668/feet_foot_footprint_human_login_quest_step_icon</url>

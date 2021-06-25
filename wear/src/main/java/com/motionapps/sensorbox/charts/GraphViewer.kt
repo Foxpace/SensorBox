@@ -12,12 +12,12 @@ import android.os.HandlerThread
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.wear.ambient.AmbientModeSupport
 import com.jjoe64.graphview.GraphView
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.activities.PickSensorShow
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 
 
@@ -48,7 +48,7 @@ class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport
         if (sensorManager != null) {
             registerSensor()
         } else {
-            Toast.makeText(this, R.string.sensor_registration_failure, Toast.LENGTH_SHORT).show()
+            Toasty.error(this, R.string.sensor_registration_failure, Toasty.LENGTH_SHORT, true).show()
             startActivity(Intent(this, PickSensorShow::class.java))
         }
 
@@ -92,7 +92,7 @@ class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport
             gd.onTouchEvent(event)
             true
         }
-        Toast.makeText(this, R.string.pause_graph, Toast.LENGTH_LONG).show()
+        Toasty.info(this, R.string.pause_graph, Toasty.LENGTH_LONG, true).show()
 
         // sensor registration
         registerSensor()

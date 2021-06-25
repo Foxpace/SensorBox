@@ -72,3 +72,5 @@ Thanks goes to:
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 * [Licenses dialog](https://github.com/PSDev/LicensesDialog) - dialog to aggreate all licences - check out for the full licenses
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+* [Toasty](https://github.com/GrenderG/Toasty) - The usual Toast, but with steroids 💪 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)

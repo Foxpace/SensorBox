@@ -10,7 +10,7 @@ import android.view.View.GONE
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
@@ -19,6 +19,7 @@ import com.github.appintro.SlideBackgroundColorHolder
 import com.github.appintro.SlidePolicy
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorservices.handlers.StorageHandler
+import es.dmoral.toasty.Toasty
 
 /**
  * can pick folder to store all the data
@@ -30,6 +31,13 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
     private var backgroundColour: Int? = null
     private var isPath: Boolean = false
     private val args: PickFolderFragmentArgs by navArgs()
+    private val resultLauncher = this@PickFolderFragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+            result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            isPath = StorageHandler.createMainFolder(requireContext(), result.data) // creates folder
+            updateText(requireView()) // updates text in fragment with path
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +59,7 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
                 setOnClickListener {
                     val manager = StorageManagerCompat(requireContext())
                     val i: Intent = manager.requireExternalAccess(requireContext())!!
-                    this@PickFolderFragment.startActivityForResult(i, NEW_FOLDER_REQUEST_CODE)
+                    resultLauncher.launch(i)
                 }
                 (view.findViewById<TextView>(R.id.description)).apply {
                     text =
@@ -105,22 +113,6 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
 
     override fun setBackgroundColor(backgroundColor: Int) {}
 
-    /**
-     * Pick of the folder requires System folder activity, where user can pick path
-     *
-     * @param requestCode
-     * @param resultCode
-     * @param data
-     */
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK && requestCode == NEW_FOLDER_REQUEST_CODE && data != null) {
-            isPath = StorageHandler.createMainFolder(requireContext(), data) // creates folder
-            updateText(requireView()) // updates text in fragment with path
-        }
-    }
-
-
     private fun updateText(view: View) {
         (view.findViewById<TextView>(R.id.description)).apply {
             text = requireActivity().getString(R.string.intro_pick_folder_description)
@@ -130,7 +122,6 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
 
     companion object {
         const val BACKGROUND_COLOR: String = "BackgroundParameter"
-        const val NEW_FOLDER_REQUEST_CODE: Int = 982
 
         @JvmStatic
         fun newInstance(param: Int): PickFolderFragment {
@@ -149,11 +140,11 @@ class PickFolderFragment : Fragment(), SlideBackgroundColorHolder, SlidePolicy {
 
     override fun onUserIllegallyRequestedNextPage() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Toast.makeText(
+            Toasty.warning(
                 this@PickFolderFragment.requireActivity(),
                 this@PickFolderFragment.requireActivity()
                     .getString(R.string.intro_condition_folder),
-                Toast.LENGTH_LONG
+                Toasty.LENGTH_LONG
             ).show()
         }
     }

@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
-import androidx.hilt.Assisted
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
@@ -22,22 +20,24 @@ import com.motionapps.sensorservices.types.SensorNeeds
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.scopes.ActivityRetainedScoped
 import kotlinx.coroutines.*
+import javax.inject.Inject
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-@ActivityRetainedScoped
 /**
  * Communicates with MeasurementActivity and stores required values
  *
  * @property repository
  * @property savedStateHandle
  */
-class MeasurementViewModel
-@ViewModelInject constructor(
+
+@HiltViewModel
+class MeasurementViewModel @Inject constructor(
     private val repository: MeasurementRepository,
-    @Assisted private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel(), CountDownInterface, MeasurementService.OnMeasurementStateListener, WearOsListener {
 
     // data for the chart

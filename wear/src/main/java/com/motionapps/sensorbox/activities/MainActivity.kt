@@ -4,7 +4,6 @@ import android.content.*
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
@@ -20,12 +19,14 @@ import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.SETTINGS
 import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.TERMS
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.MeasurementBinder
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
+
 /**
  * MainActivity for Wear os - let you choose from activities
  */
@@ -78,12 +79,8 @@ class MainActivity: AppCompatActivity(), ClickListenerInterface {
             SENSOR_SHOW -> startActivity(Intent(this, PickSensorShow::class.java))
             PHONE_INFO -> startActivity(Intent(this, MoveToMain::class.java))
             SETTINGS -> startActivity( Intent(this, MainSettings::class.java))
-            PRIVACY_POLICY -> {
-                startBrowser(this, R.string.link_privacy_policy)
-            }
-            TERMS -> {
-                startBrowser(this, R.string.link_terms)
-            }
+            PRIVACY_POLICY -> startBrowser(this, R.string.link_privacy_policy)
+            TERMS -> startBrowser(this, R.string.link_terms)
         }
     }
 
@@ -95,7 +92,7 @@ class MainActivity: AppCompatActivity(), ClickListenerInterface {
                 .addCategory(Intent.CATEGORY_BROWSABLE)
                 .setData( Uri.parse(context.getString(urlID)))
             RemoteIntent.startRemoteActivity(context, intent, null)
-            Toast.makeText(context, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
+            Toasty.info(context, R.string.open_phone_browser, Toasty.LENGTH_SHORT, true).show()
         }
     }
 }

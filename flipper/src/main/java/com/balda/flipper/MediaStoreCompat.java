@@ -46,8 +46,8 @@ import static com.balda.flipper.MediaStoreCompat.Status.DELETE;
 @SuppressWarnings("unused")
 public class MediaStoreCompat {
 
-    private Context context;
-    private String folder;
+    private final Context context;
+    private final String folder;
     private String subFolder;
 
     @IntDef({Status.DONE, DELETE, Status.ASYNC})

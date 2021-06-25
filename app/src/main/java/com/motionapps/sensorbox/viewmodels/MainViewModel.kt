@@ -5,10 +5,8 @@ import android.content.Context
 import android.hardware.SensorManager
 import android.view.LayoutInflater
 import android.widget.LinearLayout
-import android.widget.Toast
-import androidx.hilt.Assisted
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
+import com.afollestad.materialdialogs.MaterialDialog
 import com.motionapps.countdowndialog.CountDownInterface
 import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
@@ -23,10 +21,13 @@ import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
 import com.motionapps.wearoslib.WearOsSyncDialog
+import dagger.hilt.android.lifecycle.HiltViewModel
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 
 @InternalCoroutinesApi
@@ -37,13 +38,11 @@ import kotlinx.coroutines.withContext
  * @property repository - consists -sensorViewHandler, countDownMain, noteHandler, alarmHandler, wearOsHandler
  */
 
-//TODO change ViewModelInject to HiltViewModel
-//TODO remove Assisted
-//TODO apply only @inject
-class MainViewModel
-@ViewModelInject constructor(
-    private val repository: MainRepository,
-    @Assisted private val savedStateHandle: SavedStateHandle
+
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    private val repository: MainRepository
 ) : ViewModel(), CountDownInterface, WearOsListener {
 
     // index of speed to use
@@ -273,10 +272,11 @@ class MainViewModel
             wearOsDialog.showStatus(wearOsStatus.value as WearOsStates.Status)
             return wearOsDialog
         }
-        Toast.makeText(
+        Toasty.warning(
             context,
             context.getString(R.string.wear_os_sync_unavailable_restart),
-            Toast.LENGTH_LONG
+            Toasty.LENGTH_LONG,
+            true
         ).show()
         return null
     }
@@ -375,7 +375,19 @@ class MainViewModel
         )
     }
 
-    fun askHeartRatePermission(context: Context){
+    fun showDialogForHearRatePermissionWearOs(context: Context): MaterialDialog{
+         return MaterialDialog(context).show {
+            title(R.string.heart_rate_permission_title)
+            cornerRadius(16f)
+            message(R.string.heart_rate_permission_text_wear_os)
+            positiveButton(R.string.show_permission) {
+                askHeartRatePermission(context)
+                dismiss()
+            }
+        }
+    }
+
+    private fun askHeartRatePermission(context: Context){
         repository.wearOsHandler.sendMsg(
             context,
             WEAR_MESSAGE_PATH,

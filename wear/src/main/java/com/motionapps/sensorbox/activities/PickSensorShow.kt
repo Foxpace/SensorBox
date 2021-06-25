@@ -8,7 +8,6 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,6 +17,7 @@ import com.motionapps.sensorbox.charts.GraphViewer
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.SensorBasicAdapter
 import com.motionapps.sensorbox.adapters.SensorBasicAdapter.ItemClickListener
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -44,7 +44,7 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
             adapter!!.setClickListener(this)
             view.adapter = adapter
         } else {
-            Toast.makeText(this, R.string.nosensors, Toast.LENGTH_SHORT).show()
+            Toasty.error(this, R.string.nosensors, Toasty.LENGTH_SHORT, true).show()
             finish()
             startActivity(Intent(this, MainActivity::class.java))
         }
@@ -116,10 +116,10 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
                     PERMISSION_RESULT_BODY -> {
                         if(permissions.isNotEmpty()) {
                             if (shouldShowRequestPermissionRationale(permissions[0])) {
-                                Toast.makeText(
+                                Toasty.error(
                                     this,
                                     R.string.permission_rejected_body,
-                                    Toast.LENGTH_LONG
+                                    Toasty.LENGTH_LONG
                                 ).show()
                             } else {
                                 finish()

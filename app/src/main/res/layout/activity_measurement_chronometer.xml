@@ -24,7 +24,8 @@
             android:layout_margin="8dp"
             android:layout_weight="1"
             android:text="@string/measurement_stop_button"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            style="?android:attr/buttonBarButtonStyle" />
 
         <Button
             android:id="@+id/measurement_annotation_button"
@@ -35,7 +36,8 @@
             android:layout_margin="8dp"
             android:layout_weight="1"
             android:text="@string/measurement_add_annotation"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            style="?android:attr/buttonBarButtonStyle" />
     </LinearLayout>
 
     <com.jjoe64.graphview.GraphView

@@ -42,7 +42,7 @@
     <style name="custom_preference">
         <item name="android:layout">@layout/pref_preference</item>
         <item name="allowDividerAbove">false</item>
-        <item name="allowDividerBelow">true</item>
+        <item name="allowDividerBelow">false</item>
         <item name="singleLineTitle">false</item>
         <item name="iconSpaceReserved">true</item>
     </style>

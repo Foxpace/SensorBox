@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.wear.ambient.AmbientModeSupport
@@ -18,6 +17,7 @@ import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 
 @ExperimentalCoroutinesApi
@@ -53,7 +53,7 @@ class StopActivity : AppCompatActivity(), WearOsListener, AmbientModeSupport.Amb
             // stops the MeasurementActivity
             var intent = Intent(MeasurementService.STOP_SERVICE)
             sendBroadcast(intent)
-            Toast.makeText(this, R.string.go_to_phone_to_sync, Toast.LENGTH_LONG).show()
+            Toasty.info(this, R.string.go_to_phone_to_sync, Toasty.LENGTH_LONG).show()
             intent = Intent(this, MainActivity::class.java)
 
             job?.cancel()

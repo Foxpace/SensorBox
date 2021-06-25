@@ -14,7 +14,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import androidx.wear.widget.WearableLinearLayoutManager
@@ -29,6 +28,7 @@ import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -92,7 +92,7 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
         val sensors = sensorManager.getSensorList(Sensor.TYPE_ALL)
 
         if (sensors.isNullOrEmpty()) {
-            Toast.makeText(this, R.string.nosensors, Toast.LENGTH_SHORT).show()
+            Toasty.error(this, R.string.nosensors, Toasty.LENGTH_SHORT, true).show()
             finish()
             startActivity(Intent(this, MainActivity::class.java))
             return
@@ -181,7 +181,7 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
 
         // low battery toast
         if (onLowBattery) {
-            Toast.makeText(this@PickSensorMeasure, R.string.low_battery, Toast.LENGTH_SHORT).show()
+            Toasty.warning(this@PickSensorMeasure, R.string.low_battery, Toasty.LENGTH_SHORT, true).show()
             return
         }
 
@@ -222,7 +222,7 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
             selectSensor(tempPosition)
         } else {
             if(shouldShowRequestPermissionRationale(permission)){
-                Toast.makeText(this, toastText, Toast.LENGTH_LONG).show()
+                Toasty.error(this, toastText, Toasty.LENGTH_LONG, true).show()
             }else{
                 finish()
                 startActivity(Intent(this, PermissionActivity::class.java))
@@ -270,7 +270,7 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
             startActivity(intent)
             finish()
         } else {
-            Toast.makeText(this, R.string.at_least_one, Toast.LENGTH_SHORT).show()
+            Toasty.warning(this, R.string.at_least_one, Toasty.LENGTH_SHORT, true).show()
         }
     }
 

@@ -14,8 +14,8 @@ import com.motionapps.sensorservices.services.MeasurementService.Companion.ENDLE
 import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.shawnlin.numberpicker.NumberPicker
-import dagger.hilt.android.scopes.ActivityRetainedScoped
 import dagger.hilt.android.scopes.ViewModelScoped
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.concurrent.TimeUnit
@@ -176,10 +176,11 @@ class AlarmHandler @Inject constructor() {
                 it.setOnClickListener {
                     // checks if the time is not registered already
                     if (numberPicker.value in alarmHandler.alarmsList) {
-                        Toast.makeText(
+                        Toasty.info(
                             context,
                             context.getString(R.string.extra_alarm_registered),
-                            Toast.LENGTH_LONG
+                            Toasty.LENGTH_LONG,
+                            true
                         ).show()
                         return@setOnClickListener
                     }
@@ -214,26 +215,29 @@ class AlarmHandler @Inject constructor() {
 
                     // checks if the time is not registered already
                     if ((leftNumberPicker.value * 3600 + rightNumberPicker.value * 60) in alarmHandler.alarmsList) {
-                        Toast.makeText(
+                        Toasty.info(
                             context,
                             context.getString(R.string.extra_alarm_registered),
-                            Toast.LENGTH_LONG
+                            Toasty.LENGTH_LONG,
+                            true
                         ).show()
                         return@setOnClickListener
                         // time was not set
                     } else if (leftNumberPicker.value == 0 && rightNumberPicker.value == 0) {
-                        Toast.makeText(
+                        Toasty.info(
                             context,
                             context.getString(R.string.advanced_setup_time),
-                            Toast.LENGTH_LONG
+                            Toasty.LENGTH_LONG,
+                            true
                         ).show()
                         return@setOnClickListener
                         // time is beyond stated time for measurement
                     } else if((leftNumberPicker.value * 3600 + rightNumberPicker.value * 60) > (args.firstTime*3600 + args.secondTime*60) && args.typeMeasurement == LONG){
-                        Toast.makeText(
+                        Toasty.error(
                             context,
                             context.getString(R.string.advanced_time_pass_limit),
-                            Toast.LENGTH_LONG
+                            Toasty.LENGTH_LONG,
+                            true
                         ).show()
                         return@setOnClickListener
                     }

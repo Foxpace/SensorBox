@@ -41,7 +41,8 @@
             android:padding="16dp"
             android:layout_margin="8dp"
             android:text="@string/intro_policy_button"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            style="?android:attr/buttonBarButtonStyle" />
 
         <Button
             android:id="@+id/intro_terms"
@@ -52,7 +53,8 @@
             android:background="@drawable/rounded_transparent_outline"
             android:padding="16dp"
             android:text="@string/intro_terms_button"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            style="?android:attr/buttonBarButtonStyle" />
     </LinearLayout>
 
     <ImageView

@@ -2,13 +2,13 @@ package com.motionapps.sensorbox.activities
 
 import android.os.Bundle
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.motionapps.sensorbox.R
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,10 +33,10 @@ class MoveToMain: AppCompatActivity(), WearOsListener {
             imageButton?.isClickable = false
             // if phone device is available - sends message to open MainActivity
             if (!present) {
-                Toast.makeText(this, R.string.norespond, Toast.LENGTH_LONG).show()
+                Toasty.info(this, R.string.norespond, Toasty.LENGTH_LONG, true).show()
             }else{
                 wearOsHandler.sendMsg(this, WearOsConstants.PHONE_MESSAGE_PATH, WearOsConstants.START_MAIN_ACTIVITY, true)
-                Toast.makeText(this, R.string.open_module, Toast.LENGTH_LONG).show()
+                Toasty.info(this, R.string.open_module, Toasty.LENGTH_LONG, true).show()
             }
             imageButton?.isClickable = true
         }

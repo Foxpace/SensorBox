@@ -68,7 +68,7 @@ public class FileUtils {
                     final Uri contentUri =
                             ContentUris.withAppendedId(parse("content://downloads" +
                                     "/public_downloads"), Long
-                            .valueOf(id));
+                            .parseLong(id));
                     return getDataColumn(context, contentUri, null, null);
                 }
                 // MediaProvider

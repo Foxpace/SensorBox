@@ -5,10 +5,10 @@ import android.content.*
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.concurrent.ExecutionException
@@ -39,14 +39,15 @@ class WearOsSyncService : Service(), DataClient.OnDataChangedListener, WearOsLis
                     pathsToExport = data.split("|") // they are divided by |
 
                     if (pathsToExport!!.size - 1 != totalCount) { // number of them must equal with status report
-                        Toast.makeText(context, R.string.sync_failed_restart, Toast.LENGTH_LONG)
+                        Toasty.error(context, R.string.sync_failed_restart, Toasty.LENGTH_LONG, true)
                             .show()
                         stopSelf()
                     } else {
                         sendMsgToSendFile() // requests first file to send
                     }
                 } else {
-                    Toast.makeText(context, R.string.sync_failed_restart, Toast.LENGTH_LONG).show()
+                    Toasty.error(context, R.string.sync_failed_restart, Toasty.LENGTH_LONG, true)
+                        .show()
                     stopSelf()
                 }
             }

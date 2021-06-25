@@ -6,9 +6,7 @@
     android:layout_height="wrap_content"
     android:padding="16dp"
     android:background="@drawable/rounded_black"
-
     >
-<!--      android:background="@color/colorPrimary"  -->
 
 
     <ImageView
@@ -29,7 +27,7 @@
         android:layout_marginStart="8dp"
         android:fontFamily="@font/roboto_family"
         android:gravity="center"
-        android:text="TextView"
+        tools:text="TextView"
         android:textColor="@color/colorAccent"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -43,7 +41,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/roboto_family"
         android:gravity="center"
-        android:text="TextView"
+        tools:text="TextView"
         android:textColor="@color/colorAccent"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -18,6 +18,8 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.widget.CompoundButtonCompat
 import androidx.fragment.app.Fragment
@@ -29,18 +31,19 @@ import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.advanced.extrahandlers.AlarmHandler
 import com.motionapps.sensorbox.activities.MeasurementActivity
-import com.motionapps.sensorbox.uiHandlers.PermissionHandler
+import com.motionapps.sensorbox.permissions.PermissionSettingsDialog
 import com.motionapps.sensorbox.viewmodels.MainViewModel
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.motionapps.wearoslib.WearOsStates
 import dagger.hilt.android.AndroidEntryPoint
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 
 @InternalCoroutinesApi
 @ExperimentalCoroutinesApi
 @AndroidEntryPoint
-class ExtraFragment : Fragment(){
+class ExtraFragment : Fragment() {
 
     /**
      * Adds more specifications to advanced measurement like custom name, speed of sensors, alarms,
@@ -48,10 +51,42 @@ class ExtraFragment : Fragment(){
      */
 
     // uses viewmodel from MainActivity and data from previous fragments
-    private val mainViewModel: MainViewModel by viewModels(ownerProducer = {requireActivity()})
+    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() })
     private val args: ExtraFragmentArgs by navArgs()
     private var dialog: Dialog? = null
     private var materialDialog: MaterialDialog? = null
+    private var activityRecognitionBoolean = false
+    private val activityRecognitionPermissionCallback =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (isGranted) {
+                    makeActivityRecognitionCheckEnabled(true)
+                    activityRecognitionBoolean = true
+                } else {
+                    val rational =
+                        shouldShowRequestPermissionRationale(Manifest.permission.ACTIVITY_RECOGNITION)
+                    if (rational) {
+                        showPermissionDialog()
+                    } else {
+                        PermissionSettingsDialog.showSettings(requireContext())
+                    }
+                }
+            }
+        }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun showPermissionDialog() {
+        materialDialog = PermissionSettingsDialog.showPermissionRational(
+            activityRecognitionPermissionCallback,
+            this,
+            R.string.advanced_recognition_permission,
+            Manifest.permission.ACTIVITY_RECOGNITION,
+            icon = R.drawable.ic_baseline_run
+        )
+    }
 
 
     override fun onCreateView(
@@ -66,11 +101,13 @@ class ExtraFragment : Fragment(){
 
         // sensorSpeed spinner setup
         val spinner = view.findViewById(R.id.spinner) as MaterialSpinner
-        val items = requireContext().resources.getStringArray(R.array.sensor_speeds) as Array<String>
+        val items =
+            requireContext().resources.getStringArray(R.array.sensor_speeds) as Array<String>
         spinner.setItems(items.toList())
         spinner.setOnItemSelectedListener { _, position, _, _ ->
 
-            mainViewModel.positionSensorSpeed = arrayOf(SensorManager.SENSOR_DELAY_FASTEST,
+            mainViewModel.positionSensorSpeed = arrayOf(
+                SensorManager.SENSOR_DELAY_FASTEST,
                 SensorManager.SENSOR_DELAY_GAME,
                 SensorManager.SENSOR_DELAY_UI,
                 SensorManager.SENSOR_DELAY_NORMAL
@@ -85,14 +122,14 @@ class ExtraFragment : Fragment(){
         }
 
 
-        if(args.typeMeasurement != SHORT){
+        if (args.typeMeasurement != SHORT) {
             // repeated measurement is only available with short measurement
             view.findViewById<CheckBox>(R.id.extra_checkbox_repeat).visibility = GONE
-        }else{
+        } else {
             // sets up countdown
             dialog = mainViewModel.startCountdown(requireContext(), -1)
             dialog?.show()
-            dialog?.findViewById<Button>(R.id.dialog_button_cancel)?.setOnClickListener{
+            dialog?.findViewById<Button>(R.id.dialog_button_cancel)?.setOnClickListener {
                 mainViewModel.cancelCountDown()
                 dialog?.dismiss()
             }
@@ -113,107 +150,103 @@ class ExtraFragment : Fragment(){
                         dialog = null
                         startMeasurement()
                     }
-                    else -> {}
+                    else -> {
+                    }
                 }
             })
         }
 
         // check significant motion
-        val mSensorManager = requireContext().getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        if (mSensorManager.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION) == null){
+        val mSensorManager =
+            requireContext().getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        if (mSensorManager.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION) == null) {
             view.findViewById<CheckBox>(R.id.extra_checkbox_significant_motion).visibility = GONE
-        }
-
-        // if the permission for the activity recognition is missing
-        if(Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT){
-            if(ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
-                val checkBox = view.findViewById<CheckBox>(R.id.extra_checkbox_activity)
-                checkBox.text = getString(R.string.extra_activity_recognition_checkbox_no_permission)
-                checkBox.isChecked = false
-                checkBox.isEnabled = false
-
-                val gray = ContextCompat.getColor(requireContext(), R.color.colorGray)
-                checkBox.setTextColor(gray)
-
-                if (Build.VERSION.SDK_INT < 21) {
-                    CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(gray))
-                } else {
-                    checkBox.buttonTintList = ColorStateList.valueOf(gray)
-                }
-
-                view.findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
-                    it.visibility = VISIBLE
-                    it.setOnClickListener {
-                        requestPermissions(arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
-                            PERMISSION_RECOGNITION)
-                    }
-                }
-            }
         }
 
         return view
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-            val rational = shouldShowRequestPermissionRationale(permissions[0])
-
-            if (permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                view?.findViewById<CheckBox>(R.id.extra_checkbox_activity)?.let{checkBox ->
-                    checkBox.text = getString(R.string.extra_activity_recognition_checkbox)
-                    checkBox.isChecked = true
-                    checkBox.isEnabled = true
-
-                    val white = ContextCompat.getColor(requireContext(), R.color.colorWhite)
-                    checkBox.setTextColor(white)
-
-                    if (Build.VERSION.SDK_INT < 21) {
-                        CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(white))
-                    } else {
-                        checkBox.buttonTintList = ColorStateList.valueOf(white)
-                    }
-                }
-                view?.findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
-                    it.visibility = GONE
-                    it.setOnClickListener {}
-                }
-
+    override fun onResume() {
+        super.onResume()
+        // if the permission for the activity recognition is missing
+        if (Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                makeActivityRecognitionCheckDisabled()
             } else {
-                materialDialog = PermissionHandler.showPermissionSettings(
-                    this,
-                    R.string.advanced_recognition_permission,
-                    R.string.advanced_recognition_permission,
-                    null,
-                    arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
-                    PERMISSION_RECOGNITION,
-                    icon = R.drawable.ic_baseline_run,
-                    rational
-                )
+                makeActivityRecognitionCheckEnabled(activityRecognitionBoolean)
             }
         }
+    }
 
+    private fun makeActivityRecognitionCheckEnabled(checked: Boolean) {
+        requireView().findViewById<CheckBox>(R.id.extra_checkbox_activity)?.let { checkBox ->
+            checkBox.text = getString(R.string.extra_activity_recognition_checkbox)
+            checkBox.isChecked = checked
+            checkBox.isEnabled = true
+            checkBox.setOnCheckedChangeListener{ _, click ->
+                activityRecognitionBoolean = click
+            }
 
+            val white = ContextCompat.getColor(requireContext(), R.color.colorWhite)
+            checkBox.setTextColor(white)
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                CompoundButtonCompat.setButtonTintList(
+                    checkBox,
+                    ColorStateList.valueOf(white)
+                )
+            } else {
+                checkBox.buttonTintList = ColorStateList.valueOf(white)
+            }
+        }
+        requireView().findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
+            it.visibility = GONE
+            it.setOnClickListener {}
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun makeActivityRecognitionCheckDisabled() {
+        val checkBox = requireView().findViewById<CheckBox>(R.id.extra_checkbox_activity)
+        checkBox.text =
+            getString(R.string.extra_activity_recognition_checkbox_no_permission)
+        checkBox.isChecked = false
+        checkBox.isEnabled = false
+
+        val gray = ContextCompat.getColor(requireContext(), R.color.colorGray)
+        checkBox.setTextColor(gray)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(gray))
+        } else {
+            checkBox.buttonTintList = ColorStateList.valueOf(gray)
+            requireView().findViewById<Button>(R.id.extra_button_activity_recognition_permission)
+                ?.let {
+                    it.visibility = VISIBLE
+                    it.setOnClickListener {
+                        showPermissionDialog()
+                    }
+                }
+        }
     }
 
     /**
      * Starts dialog for Short or measurement for other types
      */
-    private fun onStartClick(){
+    private fun onStartClick() {
         if (args.typeMeasurement == SHORT) {
             dialog = mainViewModel.startCountdown(requireContext(), interval = args.firstTime)
             dialog?.show()
-            dialog?.findViewById<Button>(R.id.dialog_button_cancel)?.setOnClickListener{
+            dialog?.findViewById<Button>(R.id.dialog_button_cancel)?.setOnClickListener {
                 mainViewModel.cancelCountDown()
                 dialog?.dismiss()
                 dialog = null
             }
-        }else{
+        } else {
             startMeasurement()
         }
     }
@@ -228,22 +261,34 @@ class ExtraFragment : Fragment(){
      * creates intents for service and MeasurementActivity from gather info from previous fragment
      * and this one
      */
-    private fun startMeasurement(){
+    private fun startMeasurement() {
 
         val status = mainViewModel.wearOsStatus.value
-        if(status is WearOsStates.Status){
-            if(status.running){
-                Toast.makeText(requireContext(), "Turn off Wear Os active measurement", Toast.LENGTH_LONG).show()
+        if (status is WearOsStates.Status) {
+            if (status.running) {
+                Toasty.warning(
+                    requireContext(),
+                    getString(R.string.wear_os_active_measurement),
+                    Toasty.LENGTH_LONG,
+                    true
+                ).show()
                 return
             }
         }
 
         val serviceIntent = Intent(requireActivity(), MeasurementService::class.java)
-        val customName = requireView().findViewById<EditText>(R.id.extra_name_folder).text.toString()
+        val customName =
+            requireView().findViewById<EditText>(R.id.extra_name_folder).text.toString()
         val folderName = MeasurementService.generateFolderName(args.typeMeasurement, customName)
 
         val wearOsSensors = mainViewModel.getSensorView().getWearOsToMeasure()
-        wearOsSensors?.let {sensors -> mainViewModel.startWearOsMeasurement(requireContext(), folderName, sensors) }
+        wearOsSensors?.let { sensors ->
+            mainViewModel.startWearOsMeasurement(
+                requireContext(),
+                folderName,
+                sensors
+            )
+        }
 
         MeasurementService.addExtraToIntentAdvanced(
             folder = folderName,
@@ -283,7 +328,8 @@ class ExtraFragment : Fragment(){
         mainViewModel.refreshNotesAndAlarms(
             requireView().findViewById(R.id.extra_container_alarms),
             requireView().findViewById(R.id.extra_container_notes),
-            layoutInflater, args)
+            layoutInflater, args
+        )
     }
 
     /**
@@ -300,12 +346,12 @@ class ExtraFragment : Fragment(){
      * manges EditText, which result is added to viewModel
      *
      */
-    private fun manageNoteViews(){
+    private fun manageNoteViews() {
         val editText = requireView().findViewById<EditText>(R.id.extra_edittext_notes)
         editText.addTextChangedListener(CustomTextWatcher())
-        requireView().findViewById<Button>(R.id.extra_button_notes).setOnClickListener{
+        requireView().findViewById<Button>(R.id.extra_button_notes).setOnClickListener {
             val s = editText.text.toString()
-            if(s != ""){
+            if (s != "") {
                 mainViewModel.onAddNote(
                     s,
                     requireView().findViewById(R.id.extra_container_notes),
@@ -321,7 +367,7 @@ class ExtraFragment : Fragment(){
      *
      * @return {Movement Activity, significant motion, battery log, lock CPU, repeating}
      */
-    private fun checkCheckBoxes(): Array<Boolean>{
+    private fun checkCheckBoxes(): Array<Boolean> {
         return arrayOf(
             requireView().findViewById<CheckBox>(R.id.extra_checkbox_activity).isChecked,
             requireView().findViewById<CheckBox>(R.id.extra_checkbox_significant_motion).isChecked,
@@ -337,21 +383,22 @@ class ExtraFragment : Fragment(){
      * Only letters and underscores are permitted at custom name of the folder
      *
      */
-    inner class CustomTextWatcher: TextWatcher {
+    inner class CustomTextWatcher : TextWatcher {
         private val re: Regex = "^[\\p{L}0-9_]*\$".toRegex()
         override fun afterTextChanged(s: Editable) {
-            if(!re.matches(s.toString())){
-                s.delete(s.length-1, s.length)
-                Toast.makeText(this@ExtraFragment.requireContext(), R.string.extra_only_letters, Toast.LENGTH_LONG).show()
+            if (!re.matches(s.toString())) {
+                s.delete(s.length - 1, s.length)
+                Toasty.warning(
+                    this@ExtraFragment.requireContext(),
+                    R.string.extra_only_letters,
+                    Toasty.LENGTH_LONG,
+                    true
+                ).show()
             }
         }
+
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
     }
-
-    companion object{
-        const val PERMISSION_RECOGNITION = 198
-    }
-
 
 }

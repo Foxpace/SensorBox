@@ -4,6 +4,7 @@ import android.content.Context
 import com.motionapps.sensorservices.types.SensorNeeds
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
+import dagger.hilt.android.scopes.ViewModelScoped
 import javax.inject.Inject
 
 
@@ -12,7 +13,7 @@ import javax.inject.Inject
  *
  * @param context
  */
-@ActivityScoped
+@ViewModelScoped
 class SensorViewHandler @Inject constructor(@ActivityContext context: Context) {
 
     val sensorsToRecord: HashMap<Int, Boolean> = HashMap()

@@ -129,7 +129,6 @@ public class Root implements Parcelable, Comparable<Root> {
      */
     public DocumentFile toRootDirectory(Context context) {
         if (ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
-            //noinspection ConstantConditions
             return DocumentFile.fromFile(new File(uri.getPath()));
         } else {
             return DocumentFile.fromTreeUri(context, uri);

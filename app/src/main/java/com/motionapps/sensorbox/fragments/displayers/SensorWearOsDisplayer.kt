@@ -214,19 +214,19 @@ class SensorWearOsDisplayer(private val mainViewModel: MainViewModel) : Displaye
                 }
 
                 // unwrap values
-                val values = dataMap.getFloatArray(SAMPLE_PATH_VALUE)
-
-                if (idView == R.layout.fragment_info_sensor) {
-                    for (i in 0 until values.size - 2) {
-                        chartData[i].appendData(
-                            DataPoint(
-                                (System.currentTimeMillis() - startTime).toDouble(),
-                                values[i].toDouble()
-                            ), true, maxSensorPoints
-                        )
+                dataMap.getFloatArray(SAMPLE_PATH_VALUE)?.let {
+                    if (idView == R.layout.fragment_info_sensor) {
+                        for (i in 0 until it.size - 2) {
+                            chartData[i].appendData(
+                                DataPoint(
+                                    (System.currentTimeMillis() - startTime).toDouble(),
+                                    it[i].toDouble()
+                                ), true, maxSensorPoints
+                            )
+                        }
+                    } else {
+                        onTextUpdate("%d %s".format(it[0].toInt(), "bpm"))
                     }
-                } else {
-                    onTextUpdate("%d %s".format(values[0].toInt(), "bpm"))
                 }
             }
         }

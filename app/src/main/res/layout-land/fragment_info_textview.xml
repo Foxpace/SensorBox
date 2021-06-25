@@ -34,7 +34,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:gravity="center"
-        android:text="0"
+        android:text="@string/zero"
         android:textSize="60sp"
         android:fontFamily="@font/roboto_family"
         android:textColor="@color/colorAccent"

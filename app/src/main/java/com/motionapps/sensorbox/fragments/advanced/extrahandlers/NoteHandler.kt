@@ -2,9 +2,10 @@ package com.motionapps.sensorbox.fragments.advanced.extrahandlers
 
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.*
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.motionapps.sensorbox.R
-import dagger.hilt.android.scopes.ActivityRetainedScoped
 import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi

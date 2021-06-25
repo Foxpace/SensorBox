@@ -17,7 +17,7 @@
         android:layout_marginBottom="8dp"
         android:gravity="center"
         android:textSize="15sp"
-        android:text="TextView"
+        tools:text="TextView"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline14"
         app:layout_constraintStart_toStartOf="parent"

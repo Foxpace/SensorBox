@@ -2,13 +2,13 @@ package com.motionapps.wearoslib
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 import java.lang.Exception
 import java.util.concurrent.ExecutionException
@@ -52,7 +52,7 @@ class WearOsHandler {
     }
 
     /**
-     * Uses RunBlocking to send message - avoid to put it into UI thread ot the activity
+     * Uses RunBlocking to send message - avoid to put it into UI thread of the activity
      *
      * @param context
      * @param capability - Wearable or phone capability from XML
@@ -189,16 +189,17 @@ class WearOsHandler {
     fun sendMsg(context: Context, path: String, msg: String, silent: Boolean = false) {
         nodeId?.let { nodeString ->
             val sendTask =
-                Wearable.getMessageClient(context)?.sendMessage(nodeString, path, msg.toByteArray())
-            sendTask?.addOnSuccessListener {
+                Wearable.getMessageClient(context).sendMessage(nodeString, path, msg.toByteArray())
+            sendTask.addOnSuccessListener {
                 Log.i(TAG, "sendMsg: Successful $msg")
             }
-            sendTask?.addOnFailureListener {
+            sendTask.addOnFailureListener {
                 if (silent) {
-                    Toast.makeText(
+                    Toasty.error(
                         context,
                         R.string.sync_failed_restart,
-                        Toast.LENGTH_SHORT
+                        Toasty.LENGTH_SHORT,
+                        true
                     ).show()
                 }
                 it.printStackTrace()

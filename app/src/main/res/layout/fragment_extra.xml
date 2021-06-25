@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -101,7 +102,8 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_bias="0.272"
                     app:layout_constraintStart_toStartOf="@+id/guideline10"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:importantForAutofill="no" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -198,7 +200,8 @@
                             android:textColor="@color/colorWhite"
                             android:textColorHint="@color/colorGray"
                             android:textSize="15sp"
-                            app:backgroundTint="@color/colorAccent" />
+                            app:backgroundTint="@color/colorAccent"
+                            android:importantForAutofill="no" />
 
                         <Button
                             android:id="@+id/extra_button_notes"
@@ -215,8 +218,8 @@
 
                     <ScrollView
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
+                        android:layout_height="match_parent"
+                        tools:ignore="NestedScrolling">
                         <LinearLayout
                             android:id="@+id/extra_container_notes"
                             android:layout_width="match_parent"
@@ -264,8 +267,8 @@
 
                 <ScrollView
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
+                    android:layout_height="match_parent"
+                    tools:ignore="NestedScrolling">
                     <LinearLayout
                         android:id="@+id/extra_container_alarms"
                         android:layout_width="match_parent"

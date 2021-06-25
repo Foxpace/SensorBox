@@ -9,7 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.motionapps.sensorbox.R
@@ -18,6 +17,7 @@ import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -188,7 +188,7 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
 
         fun showSettings(activity: Activity){
             activity.finish()
-            Toast.makeText(activity, R.string.permission_toast, Toast.LENGTH_LONG).show()
+            Toasty.warning(activity, R.string.permission_toast, Toasty.LENGTH_LONG, true).show()
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri: Uri = Uri.fromParts("package", activity.packageName, null)
             intent.data = uri

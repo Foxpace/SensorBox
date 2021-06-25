@@ -8,7 +8,7 @@
         >
 
         <Preference
-            app:key="folder_change"
+            app:key="@string/settings_key_folder_change"
             app:title="@string/settings_folder_change" />
 
     </PreferenceCategory>
@@ -22,7 +22,7 @@
             android:inputType="number"
             android:digits="0123456789"
             app:layout="@layout/pref_preference"
-            app:key="gps_distance"
+            app:key="@string/settings_key_gps_distance"
             app:title="@string/settings_interval_distance"
             app:defaultValue="12"
             app:useSimpleSummaryProvider="true" />
@@ -30,7 +30,7 @@
             android:inputType="number"
             android:digits="0123456789"
             app:layout="@layout/pref_preference"
-            app:key="gps_time"
+            app:key="@string/settings_key_gps_time"
             app:defaultValue="10"
             app:title="@string/settings_interval_time"
             app:useSimpleSummaryProvider="true" />
@@ -46,12 +46,12 @@
             android:digits="0123456789"
             android:inputType="number"
             app:layout="@layout/pref_preference"
-            app:defaultValue="60"
-            app:key="activity_recognition_period"
+            app:defaultValue="30"
+            app:key="@string/settings_key_activity_recognition_period"
             app:title="@string/settings_interval_time"
             app:useSimpleSummaryProvider="true" />
         <Preference
-            app:key="about_activity_recognition"
+            app:key="@string/settings_key_about_activity_recognition"
             app:title="@string/settings_activity_recognition_preference" />
 
     </PreferenceCategory>
@@ -61,7 +61,7 @@
         app:icon="@drawable/ic_pen"
         app:layout="@layout/pref_category">
         <Preference
-            app:key="annots"
+            app:key="@string/settings_key_annots"
             app:title="@string/settings_custom_annots" />
     </PreferenceCategory>
     <PreferenceCategory
@@ -69,7 +69,19 @@
         app:layout="@layout/pref_category"
         app:title="@string/settings_csv">
         <Preference
-            app:key="storage_details"
+            app:key="@string/settings_key_storage_details"
             app:title="@string/settings_csv_formatting" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/ic_android"
+        app:layout="@layout/pref_category"
+        app:title="@string/settings_android">
+        <Preference
+            app:key="@string/settings_key_android_settings"
+            app:title="@string/settings_android_open" />
+        <Preference
+            app:key="battery_settings"
+            app:title="@string/settings_android_battery_optimization" />
     </PreferenceCategory>
 </PreferenceScreen>

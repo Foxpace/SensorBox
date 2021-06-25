@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.balda.flipper.DocumentFileCompat
@@ -13,6 +12,7 @@ import com.balda.flipper.OperationFailedException
 import com.balda.flipper.Root
 import com.balda.flipper.StorageManagerCompat
 import com.motionapps.sensorservices.R
+import es.dmoral.toasty.Toasty
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -68,7 +68,7 @@ object StorageHandler {
                 return true
             } catch (e: OperationFailedException) {
                 e.printStackTrace()
-                Toast.makeText(context, context.getString(R.string.intro_error), Toast.LENGTH_LONG).show()
+                Toasty.error(context, context.getString(R.string.intro_error), Toasty.LENGTH_LONG, true).show()
             }
         return false
     }

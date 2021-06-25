@@ -1,5 +1,7 @@
 package com.motionapps.sensorbox.fragments.settings
 
+import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import androidx.core.content.ContextCompat
@@ -10,10 +12,13 @@ import androidx.preference.PreferenceFragmentCompat
 import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.snackbar.Snackbar
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.permissions.PermissionSettingsDialog
+import com.motionapps.sensorbox.uiHandlers.PowerManagement
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ACTIVITY_RECOGNITION_PERIOD
 import com.motionapps.sensorservices.services.MeasurementService.Companion.GPS_DISTANCE
 import com.motionapps.sensorservices.services.MeasurementService.Companion.GPS_TIME
 import com.motionapps.sensorservices.services.MeasurementService.Companion.PREFS
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -28,7 +33,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
         // preference to open fragment to change saving folder
-        val storage: Preference ?= findPreference("folder_change")
+        val storage: Preference ?= findPreference(FOLDER_CHANGE)
         storage?.setOnPreferenceClickListener {
             Navigation.findNavController(requireView()).navigate(SettingsFragmentDirections.actionNavSettingsToPickFolderFragment(
                 ContextCompat.getColor(requireContext(), R.color.colorPrimaryDark)))
@@ -36,13 +41,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // preference to open fragment to change annotations
-        val annotations: Preference ?= findPreference("annots")
+        val annotations: Preference ?= findPreference(ANNOTS)
         annotations?.setOnPreferenceClickListener {
             Navigation.findNavController(requireView()).navigate(SettingsFragmentDirections.actionNavSettingsToAnnotationFragment())
             true
         }
         // preference to open dialog about Google's activity regognition system
-        val recognition: Preference? = findPreference("about_activity_recognition")
+        val recognition: Preference? = findPreference(ABOUT_ACTIVITY_RECOGNITION)
         recognition?.setOnPreferenceClickListener {
             dialog = MaterialDialog(this@SettingsFragment.requireContext()).show{
                 cornerRadius(16f)
@@ -55,7 +60,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        val storageDetails: Preference? = findPreference("storage_details")
+        val storageDetails: Preference? = findPreference(STORAGE_DETAILS)
         storageDetails?.setOnPreferenceClickListener {
             dialog = MaterialDialog(this@SettingsFragment.requireContext()).show{
                 cornerRadius(16f)
@@ -78,6 +83,28 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 editText.inputType = InputType.TYPE_CLASS_NUMBER // only numbers
             }
         }
+
+        val androidSettings: Preference? = findPreference(ANDROID_SETTINGS)
+        androidSettings?.let {
+            it.setOnPreferenceClickListener {
+                PermissionSettingsDialog.showSettings(this@SettingsFragment.requireContext())
+                true
+            }
+        }
+
+        val batterySettings: Preference? = findPreference(BATTERY_SETTINGS)
+        batterySettings?.let {
+            it.setOnPreferenceClickListener {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PowerManagement.checkOptimisation(this@SettingsFragment.requireActivity())
+                } else{
+                    Toasty.info(requireContext(), R.string.settings_no_optimisations_required, Toasty.LENGTH_LONG).show()
+                }
+                true
+            }
+        }
+
+
     }
 
     /**
@@ -125,9 +152,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     companion object{
         const val APP_FIRST_TIME = "APP_FIRST_TIME"
-        const val APP_GPS_NOT_ASKED_FOREGROUND = "APP_GPS_NOT_ASKED_FOREGROUND"
-        const val APP_GPS_NOT_ASKED_BACKGROUND = "APP_GPS_NOT_ASKED_BACKGROUND"
         const val POLICY_AGREED = "POLICY_AGREED"
+        const val FOLDER_CHANGE = "folder_change"
+        const val ABOUT_ACTIVITY_RECOGNITION = "about_activity_recognition"
+        const val ANNOTS = "annots"
+        const val STORAGE_DETAILS = "storage_details"
+        const val ANDROID_SETTINGS = "android_settings"
+        const val BATTERY_SETTINGS = "battery_settings"
     }
 
 }

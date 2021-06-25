@@ -51,7 +51,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
     override fun onMapReady(googleMap: GoogleMap) {
         this.googleMap = googleMap
         googleMap.isMyLocationEnabled = true
-        googleMap.uiSettings?.isZoomControlsEnabled = true
+        googleMap.uiSettings.isZoomControlsEnabled = true
         gpsHandler = GPSHandler()
         gpsHandler.addCallback(this, this)
     }

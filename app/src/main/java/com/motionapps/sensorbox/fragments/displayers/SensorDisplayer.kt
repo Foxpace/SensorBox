@@ -86,7 +86,7 @@ open class SensorDisplayer @Inject constructor(): Displayer, TextUpdater.TextUpd
                     graphUpdater?.startSensing(context, sensorNeeds)
                 }
             }
-            SensorNeeds.Companion.TypeOfRepresentation.TEXTVIEW, // text viersion - for proximity, steps, ...
+            SensorNeeds.Companion.TypeOfRepresentation.TEXTVIEW, // text version - for proximity, steps, ...
             SensorNeeds.Companion.TypeOfRepresentation.REALTIME_COUNTER -> {
                 graphUpdater = TextUpdater()
                 (graphUpdater as TextUpdater).onTextUpdater = this

@@ -11,7 +11,6 @@ import android.os.Looper
 import android.widget.Button
 import android.widget.Chronometer
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -45,6 +44,7 @@ import com.motionapps.sensorservices.services.MeasurementStates
 import com.motionapps.sensorservices.types.SensorNeeds
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import dagger.hilt.android.AndroidEntryPoint
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -364,7 +364,7 @@ class MeasurementActivity : AppCompatActivity() {
                 }
             }
         }else{
-            Toast.makeText(this@MeasurementActivity, getString(R.string.measurement_annot_empty), Toast.LENGTH_LONG).show()
+            Toasty.info(this@MeasurementActivity, getString(R.string.measurement_annot_empty), Toasty.LENGTH_LONG).show()
         }
     }
 

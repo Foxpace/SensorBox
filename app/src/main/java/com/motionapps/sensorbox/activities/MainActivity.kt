@@ -7,12 +7,12 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -35,6 +35,7 @@ import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS_EXTRA
 import com.motionapps.wearoslib.WearOsStates
 import com.motionapps.wearoslib.WearOsSyncService
 import dagger.hilt.android.AndroidEntryPoint
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 
 
@@ -137,7 +138,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     MeasurementService.RUNNING -> {
-                        Toast.makeText(context, "Measuring", Toast.LENGTH_LONG).show()
+                        Toasty.info(context, R.string.measurement_active, Toasty.LENGTH_LONG, true).show()
                     }
                     else ->{
                         // empty
@@ -159,7 +160,8 @@ class MainActivity : AppCompatActivity() {
         // drawer set up
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
-        val navController = findNavController(R.id.nav_host_fragment)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
         appBarConfiguration = AppBarConfiguration(
             setOf(
@@ -379,10 +381,10 @@ class MainActivity : AppCompatActivity() {
                                 dialog = it
                             }
                         } else {
-                            Toast.makeText(
+                            Toasty.info(
                                 this@MainActivity,
                                 getString(R.string.wear_os_sync_in_progress),
-                                Toast.LENGTH_SHORT
+                                Toasty.LENGTH_SHORT
                             ).show()
                         }
                         unbindService(this)
