@@ -3,7 +3,6 @@ package com.motionapps.sensorbox.fragments
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -68,9 +67,7 @@ open class HomeFragment : Fragment() {
         setObservers(inflater)
         mainViewModel.clearHandlers()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            permissionHandler = PermissionHandler(this)
-        }
+        permissionHandler = PermissionHandler(this)
 
         return root
     }
@@ -323,9 +320,7 @@ open class HomeFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if(this::permissionHandler.isInitialized){
-            permissionHandler.onDestroy()
-        }
+        permissionHandler.onDestroy()
         removeWearOs()
     }
 

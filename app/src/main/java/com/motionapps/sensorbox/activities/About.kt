@@ -4,6 +4,7 @@ package com.motionapps.sensorbox.activities
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -47,11 +48,8 @@ class About : Fragment() {
         }
 
         // creation of Aboutpage with all the other elements
-        return AboutPage(requireContext(), true)
+        val aboutPage = AboutPage(requireContext(), true)
             .isRTL(false)
-            .setCustomFont(ResourcesCompat.getFont(requireContext(),
-                R.font.roboto_family
-            ))
             .setImage(R.drawable.ic_launcher_white_square)
             .setDescription(getString(R.string.about_app_description))
             .addItem(versionElement)
@@ -62,7 +60,17 @@ class About : Fragment() {
             .addItem(licences)
             .addItem(getPolicyElement())
             .addItem(getTermsElement())
-            .create()
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            aboutPage.setCustomFont(
+                ResourcesCompat.getFont(
+                    requireContext(),
+                    R.font.roboto_family
+                )
+            )
+        }
+
+        return aboutPage.create()
     }
 
     override fun onDestroy() {

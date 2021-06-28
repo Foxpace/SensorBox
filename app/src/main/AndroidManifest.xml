@@ -101,7 +101,7 @@
 
     <application
         android:name=".SensorBoxApp"
-        android:icon="@drawable/ic_launcher_white_square"
+        android:icon="@mipmap/ic_icon_square"
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_launcher_white_round"
         android:supportsRtl="true"

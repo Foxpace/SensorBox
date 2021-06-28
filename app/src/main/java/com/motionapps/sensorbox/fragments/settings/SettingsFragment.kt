@@ -1,6 +1,5 @@
 package com.motionapps.sensorbox.fragments.settings
 
-import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
@@ -10,7 +9,6 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.afollestad.materialdialogs.MaterialDialog
-import com.google.android.material.snackbar.Snackbar
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.permissions.PermissionSettingsDialog
 import com.motionapps.sensorbox.uiHandlers.PowerManagement
@@ -134,14 +132,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
      * @return
      */
     private fun checkValue(value: String, toCompare: Int): Boolean{
-        val v = value.toLong()
-        return if(v > toCompare){
-            val s: String = getString(R.string.settings_high_value_warning)
-            Snackbar.make(this@SettingsFragment.requireView(), s + toCompare.toString(), Snackbar.LENGTH_SHORT).show()
-            false
-        }else{
-            true
+        try {
+            return if(value.toLong() > toCompare){
+                val s: String = getString(R.string.settings_high_value_warning)
+                Toasty.warning(this@SettingsFragment.requireContext(), s + toCompare.toString(), Toasty.LENGTH_LONG).show()
+                false
+            }else{
+                true
+            }
+        }catch (e: Error){
+            Toasty.error(requireContext(), getString(R.string.settings_wrong_input_number), Toasty.LENGTH_LONG).show()
         }
+        return false
     }
 
     override fun onDestroy() {

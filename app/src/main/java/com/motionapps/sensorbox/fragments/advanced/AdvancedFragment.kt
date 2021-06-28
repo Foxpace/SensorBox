@@ -1,6 +1,5 @@
 package com.motionapps.sensorbox.fragments.advanced
 
-import android.Manifest
 import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDirections
@@ -34,8 +33,8 @@ class AdvancedFragment : HomeFragment() {
                         )
                     )
                     return@setOnClickListener
-                } else {
-                    permissionHandler.storageCallback.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                } else if(Build.VERSION_CODES.M <= Build.VERSION.SDK_INT){
+                    permissionHandler.showDialogStorage(this)
                     return@setOnClickListener
                 }
             }

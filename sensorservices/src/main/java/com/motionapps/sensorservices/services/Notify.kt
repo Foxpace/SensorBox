@@ -36,10 +36,8 @@ object Notify {
         builder.setAutoCancel(false)
         builder.setStyle(NotificationCompat.BigTextStyle().bigText(content))
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setSmallIcon(R.drawable.ic_graph)
-            builder.color = ContextCompat.getColor(context, R.color.colorBlack)
-        }
+        builder.setSmallIcon(R.drawable.ic_graph)
+        builder.color = ContextCompat.getColor(context, R.color.colorBlack)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             builder.priority = NotificationManager.IMPORTANCE_DEFAULT
@@ -72,10 +70,8 @@ object Notify {
         builder.setStyle(NotificationCompat.BigTextStyle().bigText(content))
         builder.setSound(Uri.parse("android.resource://" + context.packageName + "/" + R.raw.end))
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setSmallIcon(R.drawable.ic_graph)
-            builder.color = ContextCompat.getColor(context, R.color.colorBlack)
-        }
+        builder.setSmallIcon(R.drawable.ic_graph)
+        builder.color = ContextCompat.getColor(context, R.color.colorBlack)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             builder.priority = NotificationManager.IMPORTANCE_DEFAULT

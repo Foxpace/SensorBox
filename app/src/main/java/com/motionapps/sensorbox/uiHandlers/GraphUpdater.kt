@@ -36,6 +36,7 @@ open class GraphUpdater @Inject constructor(): SensorEventListener{
      */
     open fun startSensing(context: Context, sensorNeeds: SensorNeeds){
         //can be changed in runtime
+        restartedFlag = false
         if(sensorNeeds != this.sensorNeeds && running){
             onDestroy()
             registerSensor(context, sensorNeeds)
@@ -52,6 +53,7 @@ open class GraphUpdater @Inject constructor(): SensorEventListener{
      */
     private fun registerSensor(context: Context, sensorNeeds: SensorNeeds) {
         startTime = System.currentTimeMillis()
+        reducer = System.currentTimeMillis()
         this.sensorNeeds = sensorNeeds
 
         sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -75,10 +77,20 @@ open class GraphUpdater @Inject constructor(): SensorEventListener{
         }
     }
 
+    fun restart(){
+        for(series in chartData){
+            series.resetData(arrayOf(DataPoint(0.0, 0.0)))
+        }
+        reducer = System.currentTimeMillis()
+        startTime = System.currentTimeMillis()
+        restartedFlag = false
+    }
+
     fun onPause(){
         if(running){
             sensorManager?.unregisterListener(this)
             running = false
+            restartedFlag = false
         }
     }
 
@@ -89,18 +101,28 @@ open class GraphUpdater @Inject constructor(): SensorEventListener{
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
-
-    private var reducer = System.currentTimeMillis()
     // reduces updates based on time, only one sample per millisecond is allowed
+    private var reducer = System.currentTimeMillis()
+    private var restartedFlag = false
+
 
     override fun onSensorChanged(p0: SensorEvent) {
 
         if (reducer != System.currentTimeMillis()) {
+
+            if(restartedFlag){
+                return
+            }
+
+            val actualTime = System.currentTimeMillis()
+            if(actualTime <= reducer){
+                restartedFlag = true
+                restart()
+            }
+
             for (i in 0 until sensorNeeds.count) {
                 chartData[i].appendData(
-                    DataPoint(
-                        (System.currentTimeMillis() - startTime).toDouble(),
-                        p0.values[i].toDouble()
+                    DataPoint((actualTime - startTime).toDouble(), p0.values[i].toDouble()
                     ), true, maxSensorPoints
                 )
             }

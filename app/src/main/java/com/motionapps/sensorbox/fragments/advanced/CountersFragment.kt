@@ -10,12 +10,12 @@ import android.widget.TextView
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.snackbar.Snackbar
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ENDLESS
 import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.shawnlin.numberpicker.NumberPicker
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -69,13 +69,13 @@ class CountersFragment : Fragment() {
                 val action: NavDirections = CountersFragmentDirections.actionCountersFragmentToExtraFragment(type, pickerLeft.value, pickerRight.value)
                 if(type == LONG){
                     if(pickerLeft.value == 0 && pickerRight.value == 0){
-                        Snackbar.make(requireView(), getString(R.string.advanced_setup_time), Snackbar.LENGTH_SHORT).show()
+                        Toasty.warning(requireContext(), getString(R.string.advanced_setup_time), Toasty.LENGTH_SHORT).show()
                     }else{
                         Navigation.findNavController(requireView()).navigate(action)
                     }
                 }else{
                     if(pickerLeft.value == 0 || pickerRight.value == 0){
-                        Snackbar.make(requireView(), getString(R.string.advanced_setup_time), Snackbar.LENGTH_SHORT).show()
+                        Toasty.warning(requireContext(), getString(R.string.advanced_setup_time), Toasty.LENGTH_SHORT).show()
                     }else{
                         Navigation.findNavController(requireView()).navigate(action)
                     }

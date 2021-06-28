@@ -148,6 +148,7 @@
     </string>
     <string name="settings_android">Android settings</string>
     <string name="settings_android_open">Open the app in settings</string>
+    <string name="settings_wrong_input_number">Wrong input - use only digits</string>
     <string name="settings_android_battery_optimization">Ignore battery optimization</string>
     <string name="settings_no_optimisations_required">No optimisations required under Android M</string>
     <string name="settings_annotations">Annotations</string>

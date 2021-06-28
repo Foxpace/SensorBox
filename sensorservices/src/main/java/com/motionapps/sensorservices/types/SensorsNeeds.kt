@@ -128,7 +128,7 @@ enum class SensorNeeds( val id: Int, val count: Int, val oneValueTextView: Int,
             const val percentage = "%"
             const val induction = "μT"
             const val centimeter = "cm"
-            const val nothing = ""
+            const val nothing = "-"
             const val pressure = "hPa"
             const val lux = "lx"
             const val celsius = "°C"
