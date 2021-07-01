@@ -46,9 +46,14 @@ open class HomeFragment : Fragment() {
 
     private var dialog: MaterialDialog? = null
     private val wearOsViews: ArrayList<View> = ArrayList() // storing Wear Os views - can be deleted
-    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() }) //
+    private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() })
     protected lateinit var permissionHandler: PermissionHandler
     private var wearShown = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        permissionHandler = PermissionHandler(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -66,9 +71,6 @@ open class HomeFragment : Fragment() {
         initMainButton()
         setObservers(inflater)
         mainViewModel.clearHandlers()
-
-        permissionHandler = PermissionHandler(this)
-
         return root
     }
 
@@ -310,17 +312,20 @@ open class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         removeWearOs()
-        permissionHandler.onDestroy()
-        dialog?.dismiss()
 
+        if(this::permissionHandler.isInitialized){
+            permissionHandler.onDestroy()
+        }
+
+        dialog?.dismiss()
         dialog = null
+
         container = null
         mainButton = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        permissionHandler.onDestroy()
         removeWearOs()
     }
 

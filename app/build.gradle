@@ -15,8 +15,8 @@ android {
         applicationId "motionapps.sensorbox"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 60
-        versionName "4.2.0"
+        versionCode 61
+        versionName "4.2.1"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -32,7 +32,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            multiDexKeepFile file('multidex-config.txt')
         }
     }
 
