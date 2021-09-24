@@ -158,6 +158,7 @@
     <string name="settings_annotation">Annotation</string>
     <string name="settings_add">Add</string>
     <string name="settings_high_value_warning">The parameter is too high! Max: </string>
+    <string name="settings_empty_string">Value needs to be set </string>
     <string name="settings_activity_recognition_permission">Allow Activity recognition permission in settings to log changes in activity</string>
     <string name="settings_activity_recognition_title">About activity recognition</string>
     <string name="settings_activity_recognition_text">SensorBox uses Activity Recognition Client, Google\'s API, which is native tool for

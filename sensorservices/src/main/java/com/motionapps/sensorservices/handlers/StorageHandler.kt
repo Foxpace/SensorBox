@@ -125,9 +125,11 @@ object StorageHandler {
             if (documentFile != null) {
                 val file = File(documentFile.uri.path!!)
                 val split = file.path.split(":".toRegex()).toTypedArray()
-                return reversePath(
-                    split[1]
-                )
+                return when {
+                    split.size >= 2 -> reversePath(split[1])
+                    split.isNotEmpty() -> reversePath(split[0])
+                    else -> context.getString(R.string.no_path)
+                }
             }
 
             return context.getString(R.string.no_path)

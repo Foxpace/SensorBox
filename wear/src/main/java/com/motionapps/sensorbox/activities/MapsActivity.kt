@@ -21,7 +21,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
 
     private lateinit var googleMap: GoogleMap
     private lateinit var mapView: MapView
-    private lateinit var gpsHandler: GPSHandler
+    private val gpsHandler = GPSHandler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +52,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
         this.googleMap = googleMap
         googleMap.isMyLocationEnabled = true
         googleMap.uiSettings.isZoomControlsEnabled = true
-        gpsHandler = GPSHandler()
+
         gpsHandler.addCallback(this, this)
     }
 

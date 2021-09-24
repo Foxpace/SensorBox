@@ -39,7 +39,7 @@ class SettingsAdapter(private val context: Context, private val prefKey: String,
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view = mInflater.inflate(R.layout.settings_sampling_row, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(view, 0)
     }
 
     /**
@@ -52,7 +52,7 @@ class SettingsAdapter(private val context: Context, private val prefKey: String,
         val textView = holder.itemView.findViewById<TextView>(R.id.settings_sampling_text)
         textView.text = optionsText[position]
         val imageView = holder.itemView.findViewById<ImageView>(R.id.settings_sampling_image)
-
+        (holder as ViewHolder).speed = position
         if (position == this.position) {
             imageView.setImageResource(R.drawable.accept_deny_dialog_positive_bg)
             pickedView = holder.itemView
@@ -71,7 +71,7 @@ class SettingsAdapter(private val context: Context, private val prefKey: String,
      *
      * @param itemView
      */
-    private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    private inner class ViewHolder(itemView: View, var speed: Int = 0) : RecyclerView.ViewHolder(itemView) {
         init {
             itemView.setOnClickListener{view ->
                 pickedView?.let{
@@ -79,17 +79,17 @@ class SettingsAdapter(private val context: Context, private val prefKey: String,
                     previousView.setImageResource(R.drawable.accept_deny_dialog_negative_bg)
                 }
 
-                this@SettingsAdapter.position = adapterPosition
+                this@SettingsAdapter.position = speed
                 val imageView = view.findViewById<ImageView>(R.id.settings_sampling_image)
                 imageView.setImageResource(R.drawable.accept_deny_dialog_positive_bg)
 
                 pickedView = view
                 val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
                 val editor = sharedPreferences.edit()
-                editor.putInt(prefKey, PREFERENCES[prefKey]!![adapterPosition])
+                editor.putInt(prefKey, PREFERENCES[prefKey]!![speed])
                 editor.apply()
 
-                notifyDataSetChanged()
+                notifyItemChanged(speed)
 
             }
         }

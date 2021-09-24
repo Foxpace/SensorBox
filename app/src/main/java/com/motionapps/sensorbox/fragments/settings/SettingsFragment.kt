@@ -133,6 +133,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
      */
     private fun checkValue(value: String, toCompare: Int): Boolean{
         try {
+            if(value.isBlank()){
+                val s: String = getString(R.string.settings_empty_string)
+                Toasty.warning(this@SettingsFragment.requireContext(), s, Toasty.LENGTH_LONG).show()
+                return false
+            }
             return if(value.toLong() > toCompare){
                 val s: String = getString(R.string.settings_high_value_warning)
                 Toasty.warning(this@SettingsFragment.requireContext(), s + toCompare.toString(), Toasty.LENGTH_LONG).show()

@@ -64,7 +64,7 @@ class PermissionActivityForResult : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if(requestCode == GPS_REQUEST){
+        if(requestCode == GPS_REQUEST && grantResults.isNotEmpty()){
             if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 goBack()
             }else{
