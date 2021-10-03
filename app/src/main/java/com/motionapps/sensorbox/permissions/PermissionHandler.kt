@@ -2,6 +2,7 @@ package com.motionapps.sensorbox.permissions
 
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.hardware.Sensor
@@ -62,6 +63,33 @@ class PermissionHandler(fragment: Fragment) {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
+    val gpsCallbackS = fragment.registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+                // Precise location access granted.
+                val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
+                Navigation.findNavController(fragment.requireView()).navigate(action)
+            }
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                // Only approximate location access granted.
+                val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
+                Navigation.findNavController(fragment.requireView()).navigate(action)
+            }
+            else -> {
+                // permission is denied
+                if (permissions.keys.any { fragment.shouldShowRequestPermissionRationale(it) }) {
+                    showDialogFineLocation(fragment)
+                } else {
+//              R.string.permission_gps_show,
+                    PermissionSettingsDialog.showSettings(fragment.requireContext())
+                }
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.M)
     val bodySensors = fragment.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -87,21 +115,31 @@ class PermissionHandler(fragment: Fragment) {
 
     fun checkGPSPermission(fragment: Fragment): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(
-                    fragment.requireContext(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
+            if (!isAnyGpsPermission(fragment.requireContext())) {
                 showDialogFineLocation(fragment)
-                return true
+                return false
             }
+            return true
         }
-        return false
+        return true
     }
 
+    private fun isAnyGpsPermission(context: Context): Boolean {
+        val coarse = ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val fine = ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        return coarse || fine
+    }
 
     /**
-     * Creates prominent disclosure for GPS for apps under Android Q
+     * Creates prominent disclosure for GPS for apps - modified for Android S
+     * Asks for fine location for Android below SDK 31
      *
      * @return material dialog
      */
@@ -109,32 +147,29 @@ class PermissionHandler(fragment: Fragment) {
     @ExperimentalCoroutinesApi
     @InternalCoroutinesApi
     fun showDialogFineLocation(fragment: Fragment) {
-        dialog = PermissionSettingsDialog.showPermissionRational(
-            permissionCallback = gpsCallback,
-            fragment = fragment,
-            messageText = R.string.permission_gps,
-            permission = Manifest.permission.ACCESS_FINE_LOCATION,
-            icon = R.drawable.ic_baseline_location,
-        )
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            dialog = PermissionSettingsDialog.showPermissionRational(
+                permissionCallback = gpsCallback,
+                fragment = fragment,
+                messageText = R.string.permission_gps,
+                permission = Manifest.permission.ACCESS_FINE_LOCATION,
+                icon = R.drawable.ic_baseline_location,
+            )
+        } else {
+            dialog = PermissionSettingsDialog.showPermissionRational(
+                permissionCallback = gpsCallbackS,
+                fragment = fragment,
+                messageText = R.string.permission_gps,
+                permissions = arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                icon = R.drawable.ic_baseline_location,
+            )
+        }
+
     }
 
-//    /**
-//     * Creates prominent disclosure for GPS for apps for Android Q and above
-//     *
-//     * @return material dialog
-//     */
-//    @RequiresApi(Build.VERSION_CODES.Q)
-//    @ExperimentalCoroutinesApi
-//    @InternalCoroutinesApi
-//    fun showDialogBackgroundLocation(
-//        fragment: Fragment,
-//    ) {
-//        dialog = PermissionSettingsDialog.showPermissionSettings(
-//            fragment = fragment,
-//            messageText = R.string.permission_gps_android_Q,
-//            icon = R.drawable.ic_baseline_location,
-//        )
-//    }
 
     fun checkHeartRateSensor(fragment: Fragment, sensorId: Int): Boolean {
         if (sensorId == Sensor.TYPE_HEART_RATE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH && ActivityCompat.checkSelfPermission(

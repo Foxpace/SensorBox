@@ -78,7 +78,7 @@ class SensorBasicAdapter(context: Context?, data: List<Sensor>) :
     private inner class ViewHolder(itemView: View) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         override fun onClick(view: View) {
-            if (mClickListener != null) mClickListener!!.onItemClick(view, adapterPosition, availableSensors[adapterPosition])
+            if (mClickListener != null) mClickListener!!.onItemClick(view, bindingAdapterPosition, availableSensors[bindingAdapterPosition])
         }
 
         init {

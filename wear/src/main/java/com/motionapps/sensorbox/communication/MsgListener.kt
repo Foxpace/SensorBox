@@ -31,8 +31,7 @@ import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUI
 import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_PATHS
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import com.motionapps.wearoslib.WearOsHandler
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 import java.nio.charset.StandardCharsets
 
 @ExperimentalCoroutinesApi
@@ -43,6 +42,8 @@ import java.nio.charset.StandardCharsets
  *
  */
 class MsgListener : WearableListenerService() {
+
+    private var syncJob: Job? = null
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         if (messageEvent.path == WEAR_MESSAGE_PATH) {
@@ -115,9 +116,10 @@ class MsgListener : WearableListenerService() {
                 }
                 // file is sent by requested path from phone
                 WEAR_SEND_FILE -> {
-                    val pathIntent = Intent(this, SendFileService::class.java)
-                    pathIntent.putExtra(SendFileService.PATH_EXTRA, data[1])
-                    SendFileService.enqueueWork(this, pathIntent)
+                    syncJob?.cancel()
+                    syncJob = CoroutineScope(Dispatchers.IO).launch{
+                        DataSync.sendFile(context = this@MsgListener, path = data[1])
+                    }
                 }
                 // deletes all the folders in internal storage
                 DELETE_ALL_MEASUREMENTS -> {

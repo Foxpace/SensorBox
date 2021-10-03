@@ -6,7 +6,7 @@
     <string name="open_module">Opening module</string>
     <string name="open_phone_browser">Check your browser in phone</string>
     <string name="norespond">Mobile does not respond</string>
-    <string name="pick_sensor_measure_title">Pick sensor to measure</string>
+    <string name="pick_sensor_measure_title">Pick sensors to measure</string>
     <string name="pick_sensor_show_title">Pick sensor to show</string>
     <string name="Service_running">Service works</string>
     <string name="title_activity_main" translatable="false">MainActivity</string>

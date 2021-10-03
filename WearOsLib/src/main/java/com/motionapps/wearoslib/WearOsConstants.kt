@@ -42,5 +42,4 @@ object WearOsConstants {
     const val SAMPLE_PATH_TIME = "/com.motionapps.sensorbox.sample.time"
     const val FILE_TO_TRANSFER_PATH = "/com.motionapps.sensorbox.file_to_transfer"
 
-
 }

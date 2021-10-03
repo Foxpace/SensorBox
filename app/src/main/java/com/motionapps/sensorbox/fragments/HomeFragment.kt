@@ -215,7 +215,7 @@ open class HomeFragment : Fragment() {
 
             infoButton.setOnClickListener {
 
-                if(permissionHandler.checkGPSPermission(this)){
+                if(!permissionHandler.checkGPSPermission(this)){
                     return@setOnClickListener
                 }
                 val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
@@ -233,7 +233,7 @@ open class HomeFragment : Fragment() {
 
             imageButton.setOnClickListener {
 
-                if(permissionHandler.checkGPSPermission(this)){
+                if(!permissionHandler.checkGPSPermission(this)){
                     return@setOnClickListener
                 }
 

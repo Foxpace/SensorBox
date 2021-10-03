@@ -96,7 +96,7 @@ class MainActivityAdapter(context: Context?) : RecyclerView.Adapter<RecyclerView
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         override fun onClick(view: View) {
             if (clickListener != null) {
-                clickListener!!.onClick(actions[adapterPosition])
+                clickListener!!.onClick(actions[bindingAdapterPosition])
             }
         }
 

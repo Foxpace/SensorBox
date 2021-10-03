@@ -1,5 +1,6 @@
 package com.motionapps.wearoslib
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -29,6 +30,7 @@ object WearOsNotify {
      * @param importance - importance
      * @return - built notification
      */
+    @SuppressLint("UnspecifiedImmutableFlag")
     fun createProgressNotification(
         context: Context,
         count: Int,
@@ -58,14 +60,25 @@ object WearOsNotify {
             builder.setSmallIcon(R.drawable.ic_graph)
             builder.color = ContextCompat.getColor(context, R.color.black_color)
             val stopIntent = Intent(STOP_SYNC)
-            builder.addAction(
-                R.drawable.ic_baseline_stop,
-                context.getString(R.string.text_stop),
-                PendingIntent.getBroadcast(
-                    context,
-                    25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                builder.addAction(
+                    R.drawable.ic_baseline_stop,
+                    context.getString(R.string.text_stop),
+                    PendingIntent.getBroadcast(
+                        context,
+                        25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    )
                 )
-            )
+            }else{
+                builder.addAction(
+                    R.drawable.ic_baseline_stop,
+                    context.getString(R.string.text_stop),
+                    PendingIntent.getBroadcast(
+                        context,
+                        25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                )
+            }
         }
         return builder.build()
     }

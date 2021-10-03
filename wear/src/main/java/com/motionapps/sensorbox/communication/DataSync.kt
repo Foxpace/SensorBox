@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.StatFs
 import android.util.Log
+import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
@@ -13,7 +14,15 @@ import java.io.File
 
 object DataSync {
     private const val TAG = "DataSync"
-    private val permittedValues = arrayOf("ACG.csv", "ACC.csv", "GYRO.csv", "MAGNET.csv", "HEART_RATE.csv", "GPS.csv", "extra.json")
+    private val permittedValues = arrayOf(
+        "ACG.csv",
+        "ACC.csv",
+        "GYRO.csv",
+        "MAGNET.csv",
+        "HEART_RATE.csv",
+        "GPS.csv",
+        "extra.json"
+    )
 
     /**
      * deletes all the files in internal storage
@@ -22,31 +31,27 @@ object DataSync {
      */
 
     fun deleteAllFolders(context: Context) {
-        if (isSync(context)) {
-            val root = File(context.filesDir, context.getString(R.string.app_name)) // root
-            val folders = root.listFiles() // measurement folders
-            if (folders != null) {
-                for (folder in folders) {
-                    if(folder.isFile){
-                        continue
-                    }
+        if (!isSync(context)) return
+        val root = File(context.filesDir, context.getString(R.string.app_name)) // root
+        val folders = root.listFiles() ?: return // measurement folders
+        for (folder in folders) {
+            if (folder.isFile) continue
+            val measurementFiles = folder.listFiles() ?: continue // measurement files in folder
 
-                    val measurementFiles = folder.listFiles() // measurement files in folder
-                    if (measurementFiles != null) {
-                        for (file in measurementFiles) {
-                            val path = file.absolutePath
-                            val parts = path.split("/".toRegex()).toTypedArray()
-                            if (file.delete() && parts[parts.size - 1] in permittedValues) {
-                                Log.w(TAG, file.name + " has been deleted")
-                            }
-                        }
-                    }
-                    if (folder.delete()) {
-                        Log.w(TAG, folder.name + " has been deleted")
-                    }
-                }
+            for (file in measurementFiles) {
+                val path = file.absolutePath
+                val parts = path.split("/".toRegex()).toTypedArray()
+
+                if (file.delete() && parts[parts.size - 1] in permittedValues) Log.w(
+                    TAG,
+                    file.name + " has been deleted"
+                )
             }
+
+            if (folder.delete()) Log.w(TAG, folder.name + " has been deleted")
         }
+
+
     }
 
     /**
@@ -56,25 +61,24 @@ object DataSync {
      * @param folderToDelete - folder name
      */
     fun deleteFolder(context: Context, folderToDelete: String) {
-        if (isSync(context)) {
-            val root = File(context.filesDir, context.getString(R.string.app_name)) // root // main folder in internal storage
-            val folders = root.listFiles()
-            if (folders != null) {
-                for (f in folders) {
-                    if(folderToDelete in f.absolutePath){ // measurement folders
-                        val files = f.listFiles()
-                        if (files != null){
-                            for(file in files){ // measurement file
-                                file.delete()
-                                Log.w(TAG, "${file.absolutePath} was deleted")
-                            }
-                            f.delete()
-                            Log.w(TAG, "${f.absolutePath} was deleted")
-                            break
-                        }
+        if (!isSync(context)) return
+        val root = File(
+            context.filesDir,
+            context.getString(R.string.app_name)
+        ) // root // main folder in internal storage
+        val folders = root.listFiles() ?: return
 
-                    }
+        for (f in folders) {
+            if (folderToDelete !in f.absolutePath) return  // measurement folders
+            val files = f.listFiles()
+            if (files != null) {
+                for (file in files) { // measurement file
+                    file.delete()
+                    Log.w(TAG, "${file.absolutePath} was deleted")
                 }
+                f.delete()
+                Log.w(TAG, "${f.absolutePath} was deleted")
+                break
             }
         }
     }
@@ -104,7 +108,9 @@ object DataSync {
                         }
                     }
                 }
-                val line = "$count|" + "%.03f".format( size / 1024.0) + "|$totalCount|${getFreeMemory(context)}"
+                val line = "$count|" + "%.03f".format(size / 1024.0) + "|$totalCount|${
+                    getFreeMemory(context)
+                }"
                 return line.replace(",", ".")
             }
         }
@@ -120,12 +126,13 @@ object DataSync {
     fun getPaths(context: Context): String {
         val stringBuilder = StringBuilder()
         if (isSync(context)) {
-            val root = File(context.filesDir, context.getString(R.string.app_name)) // root // root folder
+            val root =
+                File(context.filesDir, context.getString(R.string.app_name)) // root // root folder
             val folders = root.listFiles() // measurement folders
             if (folders != null) {
                 for (folder in folders) {
 
-                    if(folder.isFile){
+                    if (folder.isFile) {
                         continue
                     }
 
@@ -134,7 +141,7 @@ object DataSync {
                         for (file in measurementFile) {
                             val path = file.absolutePath
                             val parts = path.split("/".toRegex()).toTypedArray()
-                            if(parts[parts.size - 1] in permittedValues){
+                            if (parts[parts.size - 1] in permittedValues) {
                                 stringBuilder.append(parts[parts.size - 2]).append("/")
                                     .append(parts[parts.size - 1]).append("|")
                             }
@@ -153,7 +160,7 @@ object DataSync {
      */
     private fun isSync(context: Context): Boolean {
         val folder = File(context.filesDir, context.getString(R.string.app_name))
-        if(folder.exists()){
+        if (folder.exists()) {
             val files = folder.listFiles()
             if (files != null) {
                 return files.isNotEmpty()
@@ -167,41 +174,29 @@ object DataSync {
      *
      * @param context
      * @param path to the file
-     * @param statusListener callback if everything went ok
      */
-    fun sendFile(context: Context, path: String?, statusListener: StatusListener) {
-        if (isSync(context)) {
-            val root = File(context.filesDir, context.getString(R.string.app_name)) // root
-            val folders = root.listFiles() // root file
-            if (folders != null) {
-                for (folder in folders) {
-                    val measurementFiles = folder.listFiles() // measurement folders
-                    if (measurementFiles != null) {
-                        for (file in measurementFiles) { // measurement files - csv, ...
-                            if (file.absolutePath.contains(path!!)) { // finding path
+    fun sendFile(context: Context, path: String?) {
+        if (!isSync(context)) return
 
-                                // adding to the DataClient
-                                val asset = Asset.createFromUri(Uri.fromFile(file))
-                                val dataMap = PutDataMapRequest.create(WearOsConstants.FILE_TO_TRANSFER_PATH)
-                                dataMap.dataMap.putAsset(WearOsConstants.FILE_TO_TRANSFER_PATH, asset)
+        val root = File(context.filesDir, context.getString(R.string.app_name)) // root
+        val folders = root.listFiles() ?: return // root file
 
-                                val request = dataMap.asPutDataRequest()
-                                request.setUrgent()
+        for (folder in folders) {
+            val measurementFiles = folder.listFiles() ?: return // measurement folders
 
-                                val putTask = Wearable.getDataClient(context).putDataItem(request)
-                                putTask.addOnSuccessListener {
-                                    statusListener.onStatusChange(true)
-                                    Log.i(TAG, file.name + " was successfully sent")
-                                }
-                                putTask.addOnFailureListener { e: Exception ->
-                                    statusListener.onStatusChange(false)
-                                    e.printStackTrace()
-                                }
-                                break
-                            }
-                        }
-                    }
-                }
+            for (file in measurementFiles) { // measurement files - csv, ...
+                if (!file.absolutePath.contains(path!!)) continue // finding path
+
+                // adding to the DataClient
+                val asset = Asset.createFromUri(Uri.fromFile(file))
+                val dataMap =
+                    PutDataMapRequest.create(WearOsConstants.FILE_TO_TRANSFER_PATH)
+                dataMap.dataMap.putAsset(WearOsConstants.FILE_TO_TRANSFER_PATH, asset)
+
+                val request = dataMap.asPutDataRequest()
+                request.setUrgent()
+                Tasks.await(Wearable.getDataClient(context).putDataItem(request))
+                break
             }
         }
     }
@@ -216,7 +211,10 @@ object DataSync {
      */
     fun nullAsset(context: Context?) {
         val dataMap = PutDataMapRequest.create(WearOsConstants.FILE_TO_TRANSFER_PATH)
-        dataMap.dataMap.putAsset(WearOsConstants.FILE_TO_TRANSFER_PATH, null) // null put into the asset
+        dataMap.dataMap.putAsset(
+            WearOsConstants.FILE_TO_TRANSFER_PATH,
+            null
+        ) // null put into the asset
         val request = dataMap.asPutDataRequest()
 
         request.setUrgent()
@@ -236,13 +234,5 @@ object DataSync {
         val stat = StatFs(context.getExternalFilesDir("")?.absolutePath)
         val bytesAvailable = stat.blockSizeLong * stat.availableBlocksLong
         return bytesAvailable / (1024f * 1024f)
-    }
-
-    /**
-     * some functions require callback - sends if everything is ok
-     *
-     */
-    interface StatusListener {
-        fun onStatusChange(status: Boolean)
     }
 }

@@ -2,7 +2,6 @@ package com.motionapps.sensorbox.permissions
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -16,7 +15,7 @@ import com.motionapps.sensorbox.R
 
 class PermissionSettingsDialog {
 
-    companion object{
+    companion object {
 
         @RequiresApi(Build.VERSION_CODES.M)
         fun showPermissionRational(
@@ -39,9 +38,9 @@ class PermissionSettingsDialog {
                     dialog.dismiss()
                     val rational = fragment.shouldShowRequestPermissionRationale(permission)
                     val alreadyAsked = storeAskedPermission(fragment.requireContext(), permission)
-                    if(rational || !alreadyAsked){
+                    if (rational || !alreadyAsked) {
                         permissionCallback.launch(permission)
-                    }else{
+                    } else {
                         showSettings(fragment.requireContext())
                     }
 
@@ -58,30 +57,46 @@ class PermissionSettingsDialog {
             }
         }
 
-        private fun storeAskedPermission(context: Context, permission: String): Boolean{
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+        private fun storeAskedPermission(context: Context, permission: String): Boolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 return false
             }
 
             val preferenceManager = PreferenceManager.getDefaultSharedPreferences(context)
             val returnValue = preferenceManager.getBoolean(permission, false)
-            preferenceManager.edit().apply{
+            preferenceManager.edit().apply {
                 this.putBoolean(permission, true)
             }.apply()
             return returnValue
         }
 
-        fun showPermissionSettings(fragment: Fragment, messageText: Int, icon: Int): MaterialDialog{
-            return MaterialDialog(fragment.requireContext()).show {
+        @RequiresApi(Build.VERSION_CODES.S)
+        fun showPermissionRational(
+            permissionCallback: ActivityResultLauncher<Array<String>>,
+            fragment: Fragment,
+            messageText: Int,
+            permissions: Array<String>,
+            icon: Int,
+        ): MaterialDialog {
+            return MaterialDialog(fragment.requireActivity()).show {
                 title(R.string.activity_permissions_required)
                 message(messageText)
                 icon(icon)
                 cancelable(true)
                 cancelOnTouchOutside(false)
                 cornerRadius(16f)
-                positiveButton(R.string.show_permission_settings) { dialog ->
+
+                positiveButton(R.string.show_permission) { dialog ->
+
                     dialog.dismiss()
-                    showSettings(fragment.requireContext())
+                    val rational = permissions.any { fragment.shouldShowRequestPermissionRationale(it) }
+                    val alreadyAsked = permissions.any { storeAskedPermission(fragment.requireContext(), it)}
+                    if (rational || !alreadyAsked) {
+                        permissionCallback.launch(permissions)
+                    } else {
+                        showSettings(fragment.requireContext())
+                    }
+
                 }
                 // show privacy policy in dialog
                 negativeButton(R.string.about_privacy_policy) {
@@ -93,10 +108,38 @@ class PermissionSettingsDialog {
                     fragment.startActivity(browserIntent)
                 }
             }
+        }
 
-            }
+//        fun showPermissionSettings(
+//            fragment: Fragment,
+//            messageText: Int,
+//            icon: Int
+//        ): MaterialDialog {
+//            return MaterialDialog(fragment.requireContext()).show {
+//                title(R.string.activity_permissions_required)
+//                message(messageText)
+//                icon(icon)
+//                cancelable(true)
+//                cancelOnTouchOutside(false)
+//                cornerRadius(16f)
+//                positiveButton(R.string.show_permission_settings) { dialog ->
+//                    dialog.dismiss()
+//                    showSettings(fragment.requireContext())
+//                }
+//                // show privacy policy in dialog
+//                negativeButton(R.string.about_privacy_policy) {
+//                    it.dismiss()
+//                    val browserIntent = Intent(
+//                        Intent.ACTION_VIEW,
+//                        Uri.parse(fragment.getString(R.string.link_privacy_policy))
+//                    )
+//                    fragment.startActivity(browserIntent)
+//                }
+//            }
+//
+//        }
 
-        fun showSettings(context: Context){
+        fun showSettings(context: Context) {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri: Uri = Uri.fromParts("package", context.packageName, null)
             intent.data = uri

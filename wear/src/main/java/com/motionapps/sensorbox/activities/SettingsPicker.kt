@@ -16,9 +16,9 @@ import kotlinx.coroutines.InternalCoroutinesApi
  * shows sampling rates for sensors - user can choose
  *
  */
+@ExperimentalCoroutinesApi
 @InternalCoroutinesApi
 class SettingsPicker: AppCompatActivity() {
-    @ExperimentalCoroutinesApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)

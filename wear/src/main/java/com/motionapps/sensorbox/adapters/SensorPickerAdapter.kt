@@ -114,9 +114,10 @@ class SensorPickerAdapter(context: Context?, sensors: List<Sensor>) : RecyclerVi
 
     private inner class ViewHolder(itemView: View) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
+
         override fun onClick(view: View) {
             if (mClickListener != null) {
-                mClickListener!!.onItemClicked(view, adapterPosition)
+                mClickListener!!.onItemClicked(view, bindingAdapterPosition)
             }
         }
 
@@ -129,7 +130,7 @@ class SensorPickerAdapter(context: Context?, sensors: List<Sensor>) : RecyclerVi
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         override fun onClick(view: View) {
             if (mClickListener != null) {
-                mClickListener!!.onItemClicked(view, adapterPosition)
+                mClickListener!!.onItemClicked(view, bindingAdapterPosition)
             }
         }
 

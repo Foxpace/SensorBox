@@ -8,6 +8,7 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -24,6 +25,13 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
 class PickSensorShow: AppCompatActivity(), ItemClickListener {
+
+    var mapRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startActivity(Intent(this, MapsActivity::class.java))
+        }
+    }
+
     private var adapter: SensorBasicAdapter? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +74,7 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 val permissionIntent = Intent(this, PermissionActivityForResult::class.java)
                 permissionIntent.putExtra(PermissionActivityForResult.GPS_INTENT, PermissionActivityForResult.GPS_SHOW)
-                startActivityForResult(permissionIntent, PERMISSION_RESULT_GPS)
+                mapRequest.launch(permissionIntent)
                 return
             }
         }else{
@@ -85,13 +93,6 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
         }
 
         startActivity(intent)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == PERMISSION_RESULT_GPS && resultCode == Activity.RESULT_OK){
-            startActivity(Intent(this, MapsActivity::class.java))
-        }
     }
 
     override fun onRequestPermissionsResult(

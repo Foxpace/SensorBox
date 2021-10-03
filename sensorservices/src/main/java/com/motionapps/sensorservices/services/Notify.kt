@@ -1,5 +1,6 @@
 package com.motionapps.sensorservices.services
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -28,6 +29,7 @@ object Notify {
      * @param content - subtext of notification
      * @return built notification
      */
+    @SuppressLint("UnspecifiedImmutableFlag")
     fun createNotification(context: Context, title: String?, content: String?): Notification {
 
         createChannel(context)
@@ -46,7 +48,12 @@ object Notify {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val stopIntent = Intent(MeasurementService.STOP_SERVICE)
-            val stopPendingIntent = PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+            val stopPendingIntent = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+            }else{
+                PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+            }
+
             builder.addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopPendingIntent)
         }
 

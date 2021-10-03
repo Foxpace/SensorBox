@@ -1,6 +1,7 @@
 package com.motionapps.sensorservices.handlers.measurements
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
@@ -91,20 +92,36 @@ class ActivityRecognition : MeasurementInterface {
     /**
      * creates pending intent, which are passed to model, when they are triggered
      */
+    @SuppressLint("UnspecifiedImmutableFlag")
     private fun getPendingIntentUpdates(context: Context): PendingIntent {
         val intent = Intent(MOVING_STATE_UPDATES)
-        return PendingIntent.getBroadcast(
-            context, REQUEST_CODE_UPDATES,
-            intent, PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getBroadcast(
+                context, REQUEST_CODE_UPDATES,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            )
+        } else {
+            PendingIntent.getBroadcast(
+                context, REQUEST_CODE_UPDATES,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }
     }
 
+    @SuppressLint("UnspecifiedImmutableFlag")
     private fun getPendingIntentTransition(context: Context): PendingIntent {
         val intentTransitions = Intent(MOVING_STATE_TRANSITION)
-        return PendingIntent.getBroadcast(
-            context, REQUEST_CODE_TRANSITION,
-            intentTransitions, PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getBroadcast(
+                context, REQUEST_CODE_TRANSITION,
+                intentTransitions, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            )
+        } else {
+            PendingIntent.getBroadcast(
+                context, REQUEST_CODE_TRANSITION,
+                intentTransitions, PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }
     }
 
     /**
