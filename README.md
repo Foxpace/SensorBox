@@ -13,6 +13,7 @@ The SensorBox provides easy way to access sensors in Android phone and Wear Os. 
 ## [Download it on Google Play here](https://play.google.com/store/apps/details?id=motionapps.sensorbox&hl=en_CA)
 [![API](https://img.shields.io/badge/API-19%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=19)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![fdroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/motionapps.sensorbox)](https://apt.izzysoft.de/fdroid/index/apk/motionapps.sensorbox)
 
 ## Features:
 
