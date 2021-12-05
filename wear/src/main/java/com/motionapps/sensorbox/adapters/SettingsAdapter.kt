@@ -1,6 +1,7 @@
 package com.motionapps.sensorbox.adapters
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.hardware.SensorManager
 import android.view.LayoutInflater
 import android.view.View
@@ -10,99 +11,148 @@ import android.widget.TextView
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.activities.MainSettings
 import com.motionapps.sensorservices.services.MeasurementService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
+import java.util.*
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-class SettingsAdapter(private val context: Context, private val prefKey: String, private val optionsText: Array<String>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-    private val mInflater: LayoutInflater = LayoutInflater.from(context)
-    // private val samplingRatesStrings: Array<String> = context.resources.getStringArray(R.array.sensor_delays)
-    private var position: Int
-    private var pickedView: View? = null // saves view to save
+/**
+ * picker for the settings to change in the app
+ *
+ * @param context
+ */
+class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    init {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        // picked preferences
-        position = PREFERENCES[prefKey]!!.indexOf(sharedPreferences.getInt(prefKey, 1))
-    }
-
-    /**
-     * inflates views for sampling rates
-     *
-     * @param parent
-     * @param viewType
-     * @return
-     */
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val view = mInflater.inflate(R.layout.settings_sampling_row, parent, false)
-        return ViewHolder(view, 0)
-    }
-
-    /**
-     * turns on the sampling rate, which is chosen - stored in sharedPreferences
-     *
-     * @param holder for view - text is changed with button colour
-     * @param position
-     */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val textView = holder.itemView.findViewById<TextView>(R.id.settings_sampling_text)
-        textView.text = optionsText[position]
-        val imageView = holder.itemView.findViewById<ImageView>(R.id.settings_sampling_image)
-        (holder as ViewHolder).speed = position
-        if (position == this.position) {
-            imageView.setImageResource(R.drawable.accept_deny_dialog_positive_bg)
-            pickedView = holder.itemView
-        } else {
-            imageView.setImageResource(R.drawable.accept_deny_dialog_negative_bg)
+    // texts to inflate
+    private val texts: ArrayList<Int> = object : ArrayList<Int>() {
+        init {
+            add(R.string.battery_limit)
+            add(R.string.wake_lock)
+            add(R.string.wear_sampling_text)
+            add(R.string.activity_gps_time)
+            add(R.string.activity_gps_distance)
         }
     }
 
-    override fun getItemCount(): Int {
-        return optionsText.size
+    // icons to inflate
+    private val images: ArrayList<Int> = object : ArrayList<Int>() {
+        init {
+            add(R.drawable.ic_battery_full)
+            add(R.drawable.ic_cpu)
+            add(R.drawable.ic_sampling)
+            add(R.drawable.ic_baseline_timer)
+            add(R.drawable.ic_baseline_location)
+        }
+    }
+
+    // classes to use
+    private val keys: ArrayList<String> = object : ArrayList<String>() {
+        init {
+            add(MainSettings.BATTERY_RESTRICTION)
+            add(MainSettings.WAKE_LOCK)
+            add(SettingsPickerAdapter.SAMPLING_PREFERENCE)
+            add(MeasurementService.GPS_TIME)
+            add(MeasurementService.GPS_DISTANCE)
+        }
+    }
+
+    private val stringGpsTime: Array<String> = context.resources.getStringArray(R.array.GPS_times)
+    private val stringGpsDistance: Array<String> = context.resources.getStringArray(R.array.GPS_distances)
+    private val mInflater: LayoutInflater = LayoutInflater.from(context)
+    private val sharedPreferences: SharedPreferences =
+        PreferenceManager.getDefaultSharedPreferences(context)
+    var clickListener: ClickListenerInterface? = null
+
+    /**
+     * inflates empty view
+     *
+     * @param parent
+     * @param viewType
+     * @return ButtonHolder with specific activity
+     */
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val view = mInflater.inflate(R.layout.button_settings, parent, false)
+        return ButtonHolder(view)
     }
 
     /**
-     * Creates clickListener to change sampling rate for the sensor - view is replaced by new and
-     * stored to SharedPreferences
+     * adds action to the views
      *
-     * @param itemView
+     * @param holder ButtonHolder, where the icon and text is inflated
+     * @param position of the view
      */
-    private inner class ViewHolder(itemView: View, var speed: Int = 0) : RecyclerView.ViewHolder(itemView) {
-        init {
-            itemView.setOnClickListener{view ->
-                pickedView?.let{
-                    val previousView = it.findViewById<ImageView>(R.id.settings_sampling_image)
-                    previousView.setImageResource(R.drawable.accept_deny_dialog_negative_bg)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val imageView = holder.itemView.findViewById<ImageView>(R.id.settings_button_image)
+        imageView.setImageResource(images[position])
+        val textView = holder.itemView.findViewById<TextView>(R.id.settings_button_text)
+        textView.setText(texts[position])
+
+        updateValueText(holder.itemView.findViewById(R.id.settings_button_value), keys[position])
+    }
+
+    private fun updateValueText(textView: TextView, key: String) {
+        when (key) {
+
+            MainSettings.BATTERY_RESTRICTION, MainSettings.WAKE_LOCK -> {
+                if (sharedPreferences.getBoolean(key, true)) {
+                    textView.setText(R.string.settings_on)
+                } else {
+                    textView.setText(R.string.settings_off)
                 }
+            }
 
-                this@SettingsAdapter.position = speed
-                val imageView = view.findViewById<ImageView>(R.id.settings_sampling_image)
-                imageView.setImageResource(R.drawable.accept_deny_dialog_positive_bg)
+            SettingsPickerAdapter.SAMPLING_PREFERENCE -> {
+                when (sharedPreferences.getInt(SettingsPickerAdapter.SAMPLING_PREFERENCE, 1)) {
+                    SensorManager.SENSOR_DELAY_FASTEST -> textView.setText(R.string.settings_wear_sampling_fastest)
+                    SensorManager.SENSOR_DELAY_GAME -> textView.setText(R.string.settings_wear_sampling_game)
+                    SensorManager.SENSOR_DELAY_UI -> textView.setText(R.string.settings_wear_sampling_ui)
+                    SensorManager.SENSOR_DELAY_NORMAL -> textView.setText(R.string.settings_wear_sampling_normal)
+                }
+            }
 
-                pickedView = view
-                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-                val editor = sharedPreferences.edit()
-                editor.putInt(prefKey, PREFERENCES[prefKey]!![speed])
-                editor.apply()
+            MeasurementService.GPS_TIME -> {
+                val position = SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_TIME]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_TIME, 1))
+                textView.text = stringGpsTime[position]
+            }
 
-                notifyItemChanged(speed)
-
+            MeasurementService.GPS_DISTANCE -> {
+                val position = SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_DISTANCE]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 1))
+                textView.text = stringGpsDistance[position]
             }
         }
     }
 
-    companion object {
-        const val SAMPLING_PREFERENCE = "SAMPLING_PREFERENCE"
-        val PREFERENCES = hashMapOf(
-            SAMPLING_PREFERENCE to arrayOf(SensorManager.SENSOR_DELAY_FASTEST, SensorManager.SENSOR_DELAY_GAME, SensorManager.SENSOR_DELAY_UI, SensorManager.SENSOR_DELAY_NORMAL),
-            MeasurementService.GPS_TIME to arrayOf(1, 30, 60, 120, 300, 600, 1800, 3600),
-            MeasurementService.GPS_DISTANCE to arrayOf(1, 10, 50, 100, 250, 500, 1000),
-        )
+    override fun getItemCount(): Int {
+        return keys.size
     }
 
+    /**
+     * holds reference to classes after click
+     *
+     * @param itemView
+     */
+    private inner class ButtonHolder(itemView: View) :
+        RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        override fun onClick(view: View) {
+            if (clickListener != null) {
+                clickListener!!.onClick(bindingAdapterPosition, keys[bindingAdapterPosition])
+            }
+        }
+
+        init {
+            itemView.setOnClickListener(this)
+        }
+    }
+
+    /**
+     * provides callback for the activity to handle clicks from the adapter and passes specific class
+     *
+     */
+    interface ClickListenerInterface {
+        fun onClick(position: Int, key: String)
+    }
 
 }

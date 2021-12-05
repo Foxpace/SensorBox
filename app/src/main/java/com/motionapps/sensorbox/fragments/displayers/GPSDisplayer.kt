@@ -158,8 +158,8 @@ class GPSDisplayer(context: Context, private val gpsHandler: GPSHandler) : Displ
     override fun onAvailabilityChanged(locationAvailability: LocationAvailability?) {}
 
     @SuppressLint("MissingPermission")
-    override fun onMapReady(googleMap: GoogleMap?) {
-        this.googleMap = googleMap
+    override fun onMapReady(p0: GoogleMap) {
+        this.googleMap = p0
         googleMap?.isMyLocationEnabled = true
         googleMap?.uiSettings?.isZoomControlsEnabled = true
     }

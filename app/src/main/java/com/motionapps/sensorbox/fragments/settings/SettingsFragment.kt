@@ -11,7 +11,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.afollestad.materialdialogs.MaterialDialog
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.permissions.PermissionSettingsDialog
-import com.motionapps.sensorbox.uiHandlers.PowerManagement
+import com.motionapps.sensorservices.handlers.PowerManagement
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ACTIVITY_RECOGNITION_PERIOD
 import com.motionapps.sensorservices.services.MeasurementService.Companion.GPS_DISTANCE
 import com.motionapps.sensorservices.services.MeasurementService.Companion.GPS_TIME
@@ -94,7 +94,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         batterySettings?.let {
             it.setOnPreferenceClickListener {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    PowerManagement.checkOptimisation(this@SettingsFragment.requireActivity())
+                    PowerManagement.tryToIgnoreBatteryOptimisations(this@SettingsFragment.requireActivity())
                 } else{
                     Toasty.info(requireContext(), R.string.settings_no_optimisations_required, Toasty.LENGTH_LONG).show()
                 }

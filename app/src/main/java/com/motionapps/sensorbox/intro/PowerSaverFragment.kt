@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.github.appintro.SlideBackgroundColorHolder
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.uiHandlers.PowerManagement
+import com.motionapps.sensorservices.handlers.PowerManagement
 
 @RequiresApi(Build.VERSION_CODES.M)
 /**
@@ -29,7 +29,7 @@ class PowerSaverFragment : Fragment(), SlideBackgroundColorHolder {
 
         (view.findViewById<Button>(R.id.intro_ignore_battery)).also {
             it.setOnClickListener{
-                PowerManagement.checkOptimisation(requireActivity())
+                PowerManagement.tryToIgnoreBatteryOptimisations(requireActivity())
             }
         }
 

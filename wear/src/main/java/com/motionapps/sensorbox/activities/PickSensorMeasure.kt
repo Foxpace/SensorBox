@@ -22,7 +22,7 @@ import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.SensorPickerAdapter
 import com.motionapps.sensorbox.adapters.SensorPickerAdapter.ItemClickListener
-import com.motionapps.sensorbox.adapters.SettingsAdapter
+import com.motionapps.sensorbox.adapters.SettingsPickerAdapter
 import com.motionapps.sensorservices.services.MeasurementService.Companion.getIntentWearOs
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
@@ -157,13 +157,11 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
             permissionIntent.putExtra(PermissionActivityForResult.GPS_INTENT, PermissionActivityForResult.GPS_LOG)
             if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
                 if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-//                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
                     startActivityForResult(permissionIntent, GPS_REQUEST)
                     return
                 }
             }else{
                 if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)  != PackageManager.PERMISSION_GRANTED){
-//                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION), GPS_REQUEST)
                     startActivityForResult(permissionIntent, GPS_REQUEST)
                     return
                 }
@@ -187,12 +185,6 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
 
         // checks sensor to measure
         selectSensor(position)
-//        val imageView = view?.findViewById<ImageView>(R.id.viewholder_image)
-//        if (adapter.isChecked(position)) {
-//            imageView?.setImageResource(R.drawable.ic_save_red)
-//        } else {
-//            imageView?.setImageResource(R.drawable.ic_save_green)
-//        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -249,12 +241,14 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
 
             // pathing, sensors, battery check
             val path = "WEAR_" + millisToTimeString(System.currentTimeMillis())
-            val sensorSpeed = sharedPreferences.getInt(SettingsAdapter.SAMPLING_PREFERENCE, 0)
+            val sensorSpeed = sharedPreferences.getInt(SettingsPickerAdapter.SAMPLING_PREFERENCE, 0)
             val batteryRestriction =
                 sharedPreferences.getBoolean(MainSettings.BATTERY_RESTRICTION, true)
+            val wakeLock =
+                sharedPreferences.getBoolean(MainSettings.WAKE_LOCK, true)
 
             // intent creation for Wear Os
-            var intent = getIntentWearOs(this, path, adapter.sensors, sensorSpeed, adapter.isGPS, batteryRestriction)
+            var intent = getIntentWearOs(this, path, adapter.sensors, sensorSpeed, adapter.isGPS, batteryRestriction, wakeLock)
 
             // if the phone is available - send status
             wearOsState?.let {

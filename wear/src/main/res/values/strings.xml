@@ -66,6 +66,8 @@
     <string name="gps_dist_title">Minimal displacement</string>
     <string name="title_activity_main_settings" translatable="false">MainSettings</string>
     <string name="battery_limit">Battery limit</string>
+    <string name="wake_lock">Wake lock</string>
+    <string name="white_list">White list</string>
     <string name="wear_sampling_text">Sampling</string>
     <string name="activity_gps_time">GPS time</string>
     <string name="activity_gps_distance">GPS distance</string>
@@ -75,8 +77,8 @@
     <string name="settings_wear_sampling_ui" translatable="false">66 ms</string>
     <string name="settings_wear_sampling_normal" translatable="false">200 ms</string>
 
-    <string name="settings_battery_on" translatable="false">On</string>
-    <string name="settings_battery_off" translatable="false">Off</string>
+    <string name="settings_on" translatable="false">On</string>
+    <string name="settings_off" translatable="false">Off</string>
     <string name="low_battery">Low battery</string>
 
     <string-array name="GPS_times" translatable="false">

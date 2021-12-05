@@ -12,7 +12,7 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.motionapps.sensorbox.rlRecording.RealTimeSensorService
 import com.motionapps.sensorbox.activities.MainSettings
 import com.motionapps.sensorbox.activities.PermissionActivity
-import com.motionapps.sensorbox.adapters.SettingsAdapter
+import com.motionapps.sensorbox.adapters.SettingsPickerAdapter
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.Companion.getIntentWearOs
 import com.motionapps.sensorservices.services.MeasurementService.MeasurementBinder
@@ -66,10 +66,20 @@ class MsgListener : WearableListenerService() {
                     }
                     val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
                     val sensorSpeed =
-                        sharedPreferences.getInt(SettingsAdapter.SAMPLING_PREFERENCE, 0)
+                        sharedPreferences.getInt(SettingsPickerAdapter.SAMPLING_PREFERENCE, 0)
                     val batteryRestriction =
                         sharedPreferences.getBoolean(MainSettings.BATTERY_RESTRICTION, true)
-                    intent = getIntentWearOs(this, data[1], sensors, sensorSpeed, false, batteryRestriction)
+                    val wakeLock =
+                        sharedPreferences.getBoolean(MainSettings.WAKE_LOCK, true)
+                    intent = getIntentWearOs(
+                        this,
+                        data[1],
+                        sensors,
+                        sensorSpeed,
+                        false,
+                        batteryRestriction,
+                        wakeLock
+                    )
                     startService(intent)
                 }
 
@@ -85,6 +95,7 @@ class MsgListener : WearableListenerService() {
                 WEAR_HEART_RATE_PERMISSION_REQUIRED -> {
                     intent = Intent(this, PermissionActivity::class.java)
                     intent.putExtra(PermissionActivity.PERMISSION_KEY, Manifest.permission.BODY_SENSORS)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
                 }
 

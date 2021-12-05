@@ -38,4 +38,7 @@
     <string name="intro_error">Error occurred during creation of folder. Please contact support.</string>
 
 
+    <string name="intro_ignored_optimisations">Optimisations are ignored</string>
+    <string name="intro_ignored_optimisations_error">Device does not support this option</string>
+
 </resources>

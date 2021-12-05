@@ -475,9 +475,18 @@ class MeasurementService : Service(), WearOsListener {
          * @param sensors - intArray of sensors to use
          * @param sensorSpeed - SensorManager.SENSOR_DELAY_FAST, ...
          * @param battery - stop on low battery - true
+         * @param wakeLock - lock the cpu - true
          * @return filled Intent with  params
          */
-        fun getIntentWearOs(context: Context, path: String, sensors: IntArray, sensorSpeed: Int, gps: Boolean, battery: Boolean): Intent{
+        fun getIntentWearOs(
+            context: Context,
+            path: String,
+            sensors: IntArray,
+            sensorSpeed: Int,
+            gps: Boolean,
+            battery: Boolean,
+            wakeLock: Boolean
+        ): Intent{
             val intent = Intent(context, MeasurementService::class.java)
 
             return addExtraToIntentAdvanced(
@@ -496,7 +505,7 @@ class MeasurementService : Service(), WearOsListener {
                     false,
                     false,
                     battery,
-                    false,
+                    wakeLock,
                     false
                 ),
                 null
