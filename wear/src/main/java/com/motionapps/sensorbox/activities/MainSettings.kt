@@ -41,9 +41,9 @@ class MainSettings : AppCompatActivity(), SettingsAdapter.ClickListenerInterface
         lastChange = position
         when (key) {
             // negate the preference
-            BATTERY_RESTRICTION, WAKE_LOCK  -> {
+            BATTERY_RESTRICTION, WAKE_LOCK, ALWAYS_ON_DISPLAY  -> {
                 val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-                val b = !sharedPreferences.getBoolean(key, true)
+                val b = !sharedPreferences.getBoolean(key, SettingsAdapter.defaultValues.getOrDefault(key, false))
                 val editor = sharedPreferences.edit()
                 editor.putBoolean(key, b)
                 editor.apply()
@@ -87,6 +87,6 @@ class MainSettings : AppCompatActivity(), SettingsAdapter.ClickListenerInterface
     companion object {
         const val BATTERY_RESTRICTION = "BATTERY_RESTRICTION_WEAR"
         const val WAKE_LOCK = "WAKE_LOCK_WEAR"
-        const val BATTERY_WHITELIST = "BATTERY_WHITE_LIST"
+        const val ALWAYS_ON_DISPLAY = "ALWAYS_ON_DISPLAY"
     }
 }

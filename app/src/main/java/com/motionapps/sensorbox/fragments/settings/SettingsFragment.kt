@@ -71,6 +71,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        val wearOsBatterytips: Preference? = findPreference(WEAR_OS_SETTINGS_TIPS)
+        wearOsBatterytips?.setOnPreferenceClickListener {
+            dialog = MaterialDialog(this@SettingsFragment.requireContext()).show{
+                cornerRadius(16f)
+                title(R.string.settings_wear_os_battery_title)
+                message(R.string.settings_wear_os_battery_text)
+                negativeButton(R.string.cancel) {
+                    it.dismiss()
+                }
+            }
+            true
+        }
+
         // settings for the service - number parameters
         for(key in PREFS) {
             val pref: EditTextPreference? = findPreference(key)
@@ -166,6 +179,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         const val STORAGE_DETAILS = "storage_details"
         const val ANDROID_SETTINGS = "android_settings"
         const val BATTERY_SETTINGS = "battery_settings"
+        const val WEAR_OS_SETTINGS_TIPS = "wear_os_battery"
     }
 
 }

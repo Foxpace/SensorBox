@@ -150,6 +150,12 @@
     <string name="settings_android_open">Open the app in settings</string>
     <string name="settings_wrong_input_number">Wrong input - use only digits</string>
     <string name="settings_android_battery_optimization">Ignore battery optimization</string>
+    <string name="settings_wear_os_battery_title">About Wear Os battery optimization</string>
+    <string name="settings_wear_os_battery_text">Wear Os has aggressive battery saving routines, which prohibit to record sensors for longer period of time.
+        You can try it without any additional options, but the measurement will not provide longer measurements, then 2 mins in general. \n\nSolutions:
+        \n\u2022 use wake lock, but usually it does not to lead to reasonable solution\n\u2022 turn on always on display and
+        leave the screen on red measurement screen of the watch. The screen will become black after 1 min, but is still reactive as it would not be asleep.
+        This should be enough to keep the device alive and data flow intact. However, it can increase battery drainage.\n\nThese options can be found in settings of the Wear Os app.</string>
     <string name="settings_no_optimisations_required">No optimisations required under Android M</string>
     <string name="settings_annotations">Annotations</string>
     <string name="settings_csv">Data format</string>

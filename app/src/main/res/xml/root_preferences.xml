@@ -83,5 +83,8 @@
         <Preference
             app:key="battery_settings"
             app:title="@string/settings_android_battery_optimization" />
+        <Preference
+            app:key="wear_os_battery"
+            app:title="@string/settings_wear_os_battery_title" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -66,6 +66,7 @@
     <string name="gps_dist_title">Minimal displacement</string>
     <string name="title_activity_main_settings" translatable="false">MainSettings</string>
     <string name="battery_limit">Battery limit</string>
+    <string name="keep_screen_on">Always on display</string>
     <string name="wake_lock">Wake lock</string>
     <string name="white_list">White list</string>
     <string name="wear_sampling_text">Sampling</string>
@@ -108,7 +109,8 @@
     <string name="start">START</string>
     <string name="title_activity_stopactivity" translatable="false">StopActivity</string>
 
-    <string name="recording_is_running_tap_to_end_and_save_data">Recording is running.\nTap to end and save data</string>
+    <string name="tap_to_save_screen_off">Recording is running.\nTap to end and save data.\n\nAlways on display: off</string>
+    <string name="tap_to_save_screen_on">Recording is running.\nTap to end and save data.\n\nAlways on display: on</string>
     <string name="error_toast">Something went wrong</string>
     <string name="at_least_one">Pick at least one sensor</string>
     <string name="go_to_phone_to_sync">Saving - to get the data, go to phone</string>

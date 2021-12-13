@@ -31,6 +31,7 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
         init {
             add(R.string.battery_limit)
             add(R.string.wake_lock)
+            add(R.string.keep_screen_on)
             add(R.string.wear_sampling_text)
             add(R.string.activity_gps_time)
             add(R.string.activity_gps_distance)
@@ -42,6 +43,7 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
         init {
             add(R.drawable.ic_battery_full)
             add(R.drawable.ic_cpu)
+            add(R.drawable.ic_brightness)
             add(R.drawable.ic_sampling)
             add(R.drawable.ic_baseline_timer)
             add(R.drawable.ic_baseline_location)
@@ -53,6 +55,7 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
         init {
             add(MainSettings.BATTERY_RESTRICTION)
             add(MainSettings.WAKE_LOCK)
+            add(MainSettings.ALWAYS_ON_DISPLAY)
             add(SettingsPickerAdapter.SAMPLING_PREFERENCE)
             add(MeasurementService.GPS_TIME)
             add(MeasurementService.GPS_DISTANCE)
@@ -60,7 +63,8 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
     }
 
     private val stringGpsTime: Array<String> = context.resources.getStringArray(R.array.GPS_times)
-    private val stringGpsDistance: Array<String> = context.resources.getStringArray(R.array.GPS_distances)
+    private val stringGpsDistance: Array<String> =
+        context.resources.getStringArray(R.array.GPS_distances)
     private val mInflater: LayoutInflater = LayoutInflater.from(context)
     private val sharedPreferences: SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(context)
@@ -96,8 +100,8 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
     private fun updateValueText(textView: TextView, key: String) {
         when (key) {
 
-            MainSettings.BATTERY_RESTRICTION, MainSettings.WAKE_LOCK -> {
-                if (sharedPreferences.getBoolean(key, true)) {
+            MainSettings.BATTERY_RESTRICTION, MainSettings.WAKE_LOCK, MainSettings.ALWAYS_ON_DISPLAY -> {
+                if (sharedPreferences.getBoolean(key, defaultValues.getOrDefault(key, false))) {
                     textView.setText(R.string.settings_on)
                 } else {
                     textView.setText(R.string.settings_off)
@@ -114,12 +118,18 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
             }
 
             MeasurementService.GPS_TIME -> {
-                val position = SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_TIME]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_TIME, 1))
+                val position =
+                    SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_TIME]!!.indexOf(
+                        sharedPreferences.getInt(MeasurementService.GPS_TIME, 1)
+                    )
                 textView.text = stringGpsTime[position]
             }
 
             MeasurementService.GPS_DISTANCE -> {
-                val position = SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_DISTANCE]!!.indexOf(sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 1))
+                val position =
+                    SettingsPickerAdapter.PREFERENCES[MeasurementService.GPS_DISTANCE]!!.indexOf(
+                        sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 1)
+                    )
                 textView.text = stringGpsDistance[position]
             }
         }
@@ -153,6 +163,14 @@ class SettingsAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.View
      */
     interface ClickListenerInterface {
         fun onClick(position: Int, key: String)
+    }
+
+    companion object{
+        val defaultValues: Map<String, Boolean> = mapOf(
+            MainSettings.BATTERY_RESTRICTION to true,
+            MainSettings.WAKE_LOCK to false,
+            MainSettings.ALWAYS_ON_DISPLAY to false
+        )
     }
 
 }
