@@ -21,7 +21,6 @@ import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.scopes.ActivityRetainedScoped
 import kotlinx.coroutines.*
 import javax.inject.Inject
 

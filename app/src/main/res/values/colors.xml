@@ -5,11 +5,8 @@
     <color name="colorGray">#AAAAAA</color>
     <color name="colorAccent">#FFFFFF</color>
     <color name="colorWhite">#FFFFFF</color>
-    <color name="colorRed">#FF0000</color>
     <color name="colorRedLT">#F94144</color>
     <color name="colorBlack">#000000</color>
     <color name="transparent">#00000000</color>
-    <color name="colorDarkGreen">#43AA8B</color>
-    <color name="colorButton">#888888</color>
     <color name="colorBlueGray">#7192BE</color>
 </resources>

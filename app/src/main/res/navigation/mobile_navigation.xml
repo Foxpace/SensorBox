@@ -47,6 +47,9 @@
         <action
             android:id="@+id/action_nav_home_to_nav_wear_os_info"
             app:destination="@id/infoSensorWearOsFragment" />
+        <action
+            android:id="@+id/action_nav_advanced_to_pickFolderFragment"
+            app:destination="@id/pickFolderFragment" />
     </fragment>
 
     <fragment

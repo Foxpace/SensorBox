@@ -90,7 +90,7 @@ class SensorMeasurement: MeasurementInterface {
         for(holder: EndHolder in holders){
             holder.saveFile()
         }
-        holders.removeAll(holders)
+        holders.removeAll(holders.toSet())
     }
 
     /**

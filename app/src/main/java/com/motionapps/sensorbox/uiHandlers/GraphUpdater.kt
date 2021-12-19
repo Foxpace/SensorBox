@@ -77,7 +77,7 @@ open class GraphUpdater @Inject constructor(): SensorEventListener{
         }
     }
 
-    fun restart(){
+    private fun restart(){
         for(series in chartData){
             series.resetData(arrayOf(DataPoint(0.0, 0.0)))
         }

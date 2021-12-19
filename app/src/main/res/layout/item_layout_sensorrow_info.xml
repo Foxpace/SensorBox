@@ -18,7 +18,8 @@
         app:layout_constraintHorizontal_bias="0.461"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_acceleration_icon" />
+        app:srcCompat="@drawable/ic_acceleration_icon"
+        android:contentDescription="TODO" />
 
     <TextView
         android:id="@+id/sensorrow_info_title"

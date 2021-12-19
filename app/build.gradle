@@ -4,34 +4,37 @@ apply plugin: 'kotlin-android'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.gms.google-services'
-apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
+
+if (getGradle().getStartParameter().getTaskRequests().toString().contains("Release")) {
+    apply plugin: 'com.google.firebase.crashlytics'
+}
 
 android {
     compileSdkVersion 31
-    buildToolsVersion "30.0.2"
+    buildToolsVersion '31.0.0'
 
 
     defaultConfig {
         applicationId "motionapps.sensorbox"
         minSdkVersion 19
         targetSdkVersion 31
-        versionCode 63
-        versionName "4.2.4"
+        versionCode 65
+        versionName "4.2.5"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        def secureProps = new Properties()
-        if (file("../secure.properties").exists()) {
-            file("../secure.properties")?.withInputStream { secureProps.load(it) }
-        }
-        resValue "string", "maps_api_key", (secureProps.getProperty("MAPS_API_KEY") ?: "")
+        signingConfig signingConfigs.debug
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        nfrelease{
+            initWith release
         }
     }
 
@@ -76,8 +79,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-wearable:17.1.0'
     implementation 'androidx.preference:preference-ktx:1.1.1'
 
-    implementation 'com.google.firebase:firebase-analytics-ktx:20.0.1'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.2.6'
+    releaseImplementation 'com.google.firebase:firebase-analytics-ktx:20.0.2'
+    releaseImplementation 'com.google.firebase:firebase-crashlytics-ktx:18.2.6'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2-native-mt'

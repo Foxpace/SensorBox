@@ -41,7 +41,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:padding="32dp"
-            app:srcCompat="@drawable/ic_long_time" />
+            app:srcCompat="@drawable/ic_long_time"
+            android:contentDescription="TODO" />
     </LinearLayout>
 
     <LinearLayout
@@ -76,7 +77,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:padding="32dp"
-            app:srcCompat="@drawable/ic_endless_time" />
+            app:srcCompat="@drawable/ic_endless_time"
+            android:contentDescription="TODO" />
     </LinearLayout>
 
     <LinearLayout
@@ -114,7 +116,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:padding="32dp"
-            app:srcCompat="@drawable/ic_short_time" />
+            app:srcCompat="@drawable/ic_short_time"
+            android:contentDescription="TODO" />
     </LinearLayout>
 
 

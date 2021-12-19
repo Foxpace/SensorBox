@@ -297,15 +297,15 @@ class ActivityRecognition : MeasurementInterface {
     private fun registerUpdates(context: Context, timeToUpdate: Long) {
 
         pendingIntentUpdates = getPendingIntentUpdates(context)
-        pendingIntentUpdates?.let{
-            activityRecognitionClient.requestActivityUpdates(timeToUpdate, it).
+        pendingIntentUpdates?.let{ pendingIntent: PendingIntent ->
+            activityRecognitionClient.requestActivityUpdates(timeToUpdate, pendingIntent).
             addOnSuccessListener {
                 OnSuccessListener<Void> {
                     Log.i(TAG, "successfully registered activity updates")
                 }
-            }.addOnFailureListener {
+            }.addOnFailureListener { exception: Exception ->
                 pendingIntentUpdates = null
-                Log.w(TAG, "Registration of activity updates failed")
+                Log.w(TAG, "Registration of activity updates failed: $exception")
             }
         }
     }

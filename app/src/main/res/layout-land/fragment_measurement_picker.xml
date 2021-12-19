@@ -29,7 +29,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:padding="16dp"
-            app:srcCompat="@drawable/ic_long_time" />
+            app:srcCompat="@drawable/ic_long_time"
+            android:contentDescription="TODO" />
 
         <TextView
             android:layout_width="match_parent"
@@ -66,7 +67,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:padding="16dp"
-            app:srcCompat="@drawable/ic_endless_time" />
+            app:srcCompat="@drawable/ic_endless_time"
+            android:contentDescription="TODO" />
 
         <TextView
             android:layout_width="match_parent"
@@ -101,7 +103,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:padding="16dp"
-            app:srcCompat="@drawable/ic_short_time" />
+            app:srcCompat="@drawable/ic_short_time"
+            android:contentDescription="TODO" />
 
         <TextView
             android:layout_width="match_parent"

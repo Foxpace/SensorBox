@@ -118,7 +118,6 @@ enum class SensorNeeds( val id: Int, val count: Int, val oneValueTextView: Int,
         object TypeOfRepresentation{
             const val PLOT = 0
             const val TEXTVIEW = 1
-            const val MAP = 2
             const val REALTIME_COUNTER = 3
         }
 
@@ -133,7 +132,6 @@ enum class SensorNeeds( val id: Int, val count: Int, val oneValueTextView: Int,
             const val lux = "lx"
             const val celsius = "°C"
             const val steps_string = "steps"
-            const val meters = "m"
             const val heartrate = "bpm"
         }
 

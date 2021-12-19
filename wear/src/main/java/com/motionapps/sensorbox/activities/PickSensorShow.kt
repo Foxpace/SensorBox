@@ -26,7 +26,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @InternalCoroutinesApi
 class PickSensorShow: AppCompatActivity(), ItemClickListener {
 
-    var mapRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private var mapRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             startActivity(Intent(this, MapsActivity::class.java))
         }
@@ -106,14 +106,6 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
                 startActivity(tempIntent)
             } else {
                 when(requestCode){
-//                    PERMISSION_RESULT_GPS -> {
-//                        if(shouldShowRequestPermissionRationale(permissions[0])){
-//                            Toast.makeText(this, R.string.permission_rejected_gps, Toast.LENGTH_LONG).show()
-//                        }else{
-//                            finish()
-//                            startActivity(Intent(this, PermissionActivity::class.java))
-//                        }
-//                    }
                     PERMISSION_RESULT_BODY -> {
                         if(permissions.isNotEmpty()) {
                             if (shouldShowRequestPermissionRationale(permissions[0])) {

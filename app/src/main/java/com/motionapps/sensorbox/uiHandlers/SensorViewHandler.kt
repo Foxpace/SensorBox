@@ -3,7 +3,6 @@ package com.motionapps.sensorbox.uiHandlers
 import android.content.Context
 import com.motionapps.sensorservices.types.SensorNeeds
 import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.scopes.ActivityScoped
 import dagger.hilt.android.scopes.ViewModelScoped
 import javax.inject.Inject
 

@@ -57,9 +57,4 @@ object PowerManagement {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    fun isOptimised(context: Context): Boolean {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager? ?: return false
-        return pm.isIgnoringBatteryOptimizations(context.packageName)
-    }
 }

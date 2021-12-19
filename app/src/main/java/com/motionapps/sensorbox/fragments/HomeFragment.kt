@@ -47,7 +47,7 @@ open class HomeFragment : Fragment() {
     private var dialog: MaterialDialog? = null
     private val wearOsViews: ArrayList<View> = ArrayList() // storing Wear Os views - can be deleted
     private val mainViewModel: MainViewModel by viewModels(ownerProducer = { requireActivity() })
-    protected lateinit var permissionHandler: PermissionHandler
+    protected var permissionHandler: PermissionHandler? = null
     private var wearShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,19 +106,21 @@ open class HomeFragment : Fragment() {
             // handling the button to add or remove to sensor for measurement
             // sensorViewHandler manages all sensors to measure
             imageButtons[i].setOnClickListener {
+                permissionHandler?.let { permissionHandler ->
 
-                if(permissionHandler.checkHeartRateSensor(this, sensorsNeeds[i].id )){
-                    return@setOnClickListener
-                }
+                    if(permissionHandler.checkHeartRateSensor(this, sensorsNeeds[i].id )){
+                        return@setOnClickListener
+                    }
 
-                sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id] =
-                    !sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!
-                if (sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!) {
-                    imageButtons[i].setImageResource(R.drawable.ic_ok)
-                } else {
-                    imageButtons[i].setImageResource(R.drawable.ic_circle)
+                    sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id] =
+                        !sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!
+                    if (sensorViewHandler.sensorsToRecord[sensorsNeeds[i].id]!!) {
+                        imageButtons[i].setImageResource(R.drawable.ic_ok)
+                    } else {
+                        imageButtons[i].setImageResource(R.drawable.ic_circle)
+                    }
+                    checkSensorsToMeasure()
                 }
-                checkSensorsToMeasure()
             }
 
             // for refresh reasons - button is updated by sensorViewHandler from ViewModel
@@ -185,11 +187,13 @@ open class HomeFragment : Fragment() {
             }
         } else {
             infoButton.setOnClickListener {
-                if(permissionHandler.checkHeartRateSensor(this, sensorNeeds.id)){
-                    return@setOnClickListener
+                permissionHandler?.let { permissionHandler ->
+                    if (permissionHandler.checkHeartRateSensor(this, sensorNeeds.id)) {
+                        return@setOnClickListener
+                    }
+                    val action: NavDirections = HomeFragmentDirections.homeInfoAction(resourceName)
+                    Navigation.findNavController(requireView()).navigate(action)
                 }
-                val action: NavDirections = HomeFragmentDirections.homeInfoAction(resourceName)
-                Navigation.findNavController(requireView()).navigate(action)
             }
         }
 
@@ -214,12 +218,13 @@ open class HomeFragment : Fragment() {
             val infoButton: ImageButton = view.findViewById(R.id.sensorrow_info)
 
             infoButton.setOnClickListener {
-
-                if(!permissionHandler.checkGPSPermission(this)){
-                    return@setOnClickListener
+                permissionHandler?.let { permissionHandler ->
+                    if(!permissionHandler.checkGPSPermission(this)){
+                        return@setOnClickListener
+                    }
+                    val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
+                    Navigation.findNavController(requireView()).navigate(action)
                 }
-                val action: NavDirections = HomeFragmentDirections.homeInfoAction(SensorNeeds.GPS)
-                Navigation.findNavController(requireView()).navigate(action)
             }
 
             icon.setImageResource(R.drawable.ic_gps)
@@ -232,19 +237,19 @@ open class HomeFragment : Fragment() {
             }
 
             imageButton.setOnClickListener {
+                permissionHandler?.let { permissionHandler ->
+                    if(!permissionHandler.checkGPSPermission(this)){
+                        return@setOnClickListener
+                    }
 
-                if(!permissionHandler.checkGPSPermission(this)){
-                    return@setOnClickListener
+                    sensorViewHandler.gpsMeasurement = !sensorViewHandler.gpsMeasurement
+                    if (sensorViewHandler.gpsMeasurement) {
+                        imageButton.setImageResource(R.drawable.ic_ok)
+                    } else {
+                        imageButton.setImageResource(R.drawable.ic_circle)
+                    }
+                    checkSensorsToMeasure()
                 }
-
-                sensorViewHandler.gpsMeasurement = !sensorViewHandler.gpsMeasurement
-                if (sensorViewHandler.gpsMeasurement) {
-                    imageButton.setImageResource(R.drawable.ic_ok)
-                } else {
-                    imageButton.setImageResource(R.drawable.ic_circle)
-                }
-                checkSensorsToMeasure()
-
             }
             container?.addView(view)
         }
@@ -260,7 +265,11 @@ open class HomeFragment : Fragment() {
     open fun initMainButton() {
         mainButton?.setOnClickListener {
 
-            if(StorageFunctions.checkStorageAccess(this, permissionHandler)){
+            if(permissionHandler == null){
+                return@setOnClickListener
+            }
+
+            if(StorageFunctions.checkStorageAccess(this, permissionHandler!!)){
                 return@setOnClickListener
             }
 
@@ -313,9 +322,7 @@ open class HomeFragment : Fragment() {
         super.onDestroyView()
         removeWearOs()
 
-        if(this::permissionHandler.isInitialized){
-            permissionHandler.onDestroy()
-        }
+        permissionHandler?.onDestroy()
 
         dialog?.dismiss()
         dialog = null

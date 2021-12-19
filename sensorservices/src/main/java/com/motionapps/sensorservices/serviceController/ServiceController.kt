@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.SensorManager
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
@@ -182,7 +183,7 @@ class ServiceController {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent: PendingIntent = getAlarmIntent(context)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 System.currentTimeMillis() + addedTime, pendingIntent
@@ -205,9 +206,16 @@ class ServiceController {
     private fun getAlarmIntent(context: Context): PendingIntent{
         val intent = Intent(MeasurementService.STOP_SERVICE)
         intent.flags = Intent.FLAG_RECEIVER_FOREGROUND
+
+        val flags =
+            if (SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT
+            }
         return PendingIntent.getBroadcast(
             context, 50, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            flags
         )
     }
 

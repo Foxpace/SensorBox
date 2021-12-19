@@ -213,7 +213,7 @@ object DataSync {
         val dataMap = PutDataMapRequest.create(WearOsConstants.FILE_TO_TRANSFER_PATH)
         dataMap.dataMap.putAsset(
             WearOsConstants.FILE_TO_TRANSFER_PATH,
-            null
+            Asset.createFromBytes(ByteArray(0))
         ) // null put into the asset
         val request = dataMap.asPutDataRequest()
 

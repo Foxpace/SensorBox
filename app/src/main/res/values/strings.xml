@@ -297,6 +297,7 @@
     <string name="heart_rate_permission_text_wear_os">In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\" permission for Wear Os. The permission will be shown at your smartwatch after clicking the button.</string>
     <string name="wear_os_active_measurement">Turn off Wear Os active measurement</string>
     <string name="measurement_active">Measuring</string>
+    <string name="second_formater">%s s</string>
 
 
 

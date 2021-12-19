@@ -1,5 +1,6 @@
 package com.motionapps.sensorbox.activities
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -206,7 +207,7 @@ class MeasurementActivity : AppCompatActivity() {
             when(measurementState){
                 is MeasurementStates.OnTick -> {
                     findViewById<TextView>(R.id.measurement_time)?.let {
-                        it.text = "${measurementState.tick} s"
+                        it.text = getString(R.string.second_formater).format(measurementState.tick)
                     }
                 }
                 is MeasurementStates.OnEndMeasurement ->{
@@ -334,6 +335,7 @@ class MeasurementActivity : AppCompatActivity() {
     /**
      * Annotation dialog to add notes during measurement
      */
+    @SuppressLint("CheckResult")
     private fun showDialogAnnotations(){
         // gets info from sharedPreferences - customized in settings
         val preferences = PreferenceManager.getDefaultSharedPreferences(this@MeasurementActivity)

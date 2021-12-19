@@ -56,9 +56,14 @@ class GPSHandler : LocationCallback() {
             firstInit(context)
         }
 
-        locationClient.lastLocation.addOnSuccessListener { location ->
-            lastLocation = location
-            callback?.onLastLocationSuccess(location)
+        locationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            if (location == null) {
+                callback!!.onLastLocationSuccess(null)
+            } else {
+                lastLocation = location
+                callback?.onLastLocationSuccess(location)
+            }
+
         }.addOnFailureListener {
             callback!!.onLastLocationSuccess(null)
         }

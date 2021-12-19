@@ -51,7 +51,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/maps_api_key" />
+            android:value="${MAPS_API_KEY}" />
 
         <activity
             android:name=".activities.MapsActivity"
@@ -89,10 +89,6 @@
                 <action android:name="com.foxpace.sensors.LAUNCH" />
             </intent-filter>
         </service>
-        <service
-            android:name=".communication.sendFiles.SendFileService"
-            android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <activity
             android:name=".activities.PickSensorShow"
@@ -100,6 +96,10 @@
         <activity
             android:name=".charts.GraphViewer"
             android:label="@string/title_activity_graph_viewer" />
+
+        <property
+            android:name="android.content.MEDIA_CAPABILITIES"
+            android:resource="@xml/media_capabilities" />
     </application>
 
 </manifest>
