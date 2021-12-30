@@ -47,6 +47,7 @@ Whole functionality is hidden under SensorServices library, where one foreground
 * **The phone app and the Wear Os app use the same SensorService Library** which covers all the requirements from the apps. The library provides intents builders for both of them. 
 * **WearOsLib** provides easy and comprehensive code of how to find other device and send messages, send file between them. 
 
+
 ### Libraries:
 
 * **app / wear** - implementation for the phone / wearable respectively 
@@ -54,6 +55,16 @@ Whole functionality is hidden under SensorServices library, where one foreground
 * **Flipper** - [Storage access framework](https://github.com/baldapps/Flipper) created by [baldapps](https://github.com/baldapps)
 * **Sensorservices** - main background service, which registers all the sensors and other providers of the data
 * **WearOsLib** - general library for communication of the phone and wearable and vice versa
+
+## How to build the project:
+
+* clone / download the project to your machine
+* to activate google services follow steps at **[Firebase](https://console.firebase.google.com/u/0/).** Create project and get the `google-services.json`
+  * make sure, that the package id in app/wear build gradle is the same as in firebase console
+* `google-services.json` copy to the app folder and wear folder too
+* to activate Google maps, follow the steps here to create API key **[Google documentation](https://developers.google.com/maps/documentation/android-sdk/get-api-key#console)**
+* adding line to `local.properties`: **MAPS_API_KEY=YOUR_API_KEY** is enough
+
 
 ## Third parties:
 
