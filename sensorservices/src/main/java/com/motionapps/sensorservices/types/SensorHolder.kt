@@ -3,6 +3,9 @@ package com.motionapps.sensorservices.types
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.OutputStream
 
 /**
@@ -32,8 +35,12 @@ class SensorHolder(
         for (i in 0 until axes) {
             values += p0.values[i].toString() + ";" // formatting values
         }
+        CoroutineScope(Dispatchers.IO).launch {
+            kotlin.runCatching {
+                outputStream.write(lineFormat.format(p0.timestamp, values, p0.accuracy).toByteArray())
+            }
+        }
 
-        outputStream.write(lineFormat.format(p0.timestamp, values, p0.accuracy).toByteArray())
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}

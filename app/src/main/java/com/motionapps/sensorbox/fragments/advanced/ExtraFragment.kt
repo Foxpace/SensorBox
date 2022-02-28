@@ -135,7 +135,7 @@ class ExtraFragment : Fragment() {
             }
 
             // on countDown action
-            mainViewModel.countDown.observe(viewLifecycleOwner, { countDownState ->
+            mainViewModel.countDown.observe(viewLifecycleOwner) { countDownState ->
                 when (countDownState) {
                     is CountDownStates.OnTick -> {
                         dialog?.findViewById<TextView>(R.id.dialog_text_countdown)?.text =
@@ -153,7 +153,7 @@ class ExtraFragment : Fragment() {
                     else -> {
                     }
                 }
-            })
+            }
         }
 
         // check significant motion

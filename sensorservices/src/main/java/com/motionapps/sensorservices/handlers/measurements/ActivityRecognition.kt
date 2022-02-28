@@ -297,16 +297,19 @@ class ActivityRecognition : MeasurementInterface {
     private fun registerUpdates(context: Context, timeToUpdate: Long) {
 
         pendingIntentUpdates = getPendingIntentUpdates(context)
-        pendingIntentUpdates?.let{ pendingIntent: PendingIntent ->
-            activityRecognitionClient.requestActivityUpdates(timeToUpdate, pendingIntent).
-            addOnSuccessListener {
-                OnSuccessListener<Void> {
-                    Log.i(TAG, "successfully registered activity updates")
+        pendingIntentUpdates?.let{ pendingIntent: PendingIntent? ->
+            pendingIntent?.let{
+                activityRecognitionClient.requestActivityUpdates(timeToUpdate, pendingIntent).
+                addOnSuccessListener {
+                    OnSuccessListener<Void> {
+                        Log.i(TAG, "successfully registered activity updates")
+                    }
+                }.addOnFailureListener { exception: Exception ->
+                    pendingIntentUpdates = null
+                    Log.w(TAG, "Registration of activity updates failed: $exception")
                 }
-            }.addOnFailureListener { exception: Exception ->
-                pendingIntentUpdates = null
-                Log.w(TAG, "Registration of activity updates failed: $exception")
             }
+
         }
     }
 
@@ -346,20 +349,6 @@ class ActivityRecognition : MeasurementInterface {
             DetectedActivity.TILTING
 
         )
-
-//        fun convertTransitionToString(transition: Int): String {
-//            return when (transition) {
-//                DetectedActivity.IN_VEHICLE -> "Vehicle"
-//                DetectedActivity.ON_BICYCLE -> "Bike"
-//                DetectedActivity.ON_FOOT -> "Foot"
-//                DetectedActivity.STILL -> "Still"
-//                DetectedActivity.WALKING -> "Walking"
-//                DetectedActivity.RUNNING -> "Run"
-//                DetectedActivity.UNKNOWN -> "Unknown"
-//                DetectedActivity.TILTING -> "Tilting"
-//                else -> "Not classified"
-//            }
-//        }
 
         private const val TAG: String = "ActivityManager"
         private const val REQUEST_CODE_TRANSITION = 1654

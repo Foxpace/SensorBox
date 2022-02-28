@@ -89,19 +89,17 @@ object WearOsStorageHandler {
         folderName: String
     ): Boolean {
         val manager = StorageManagerCompat(context)
-        val root = manager.getRoot(StorageManagerCompat.DEF_MAIN_ROOT) // root access
-        if (root != null) {
-            val f = root.toRootDirectory(context)
-            if (f != null) {
-                val subFolder =
-                    DocumentFileCompat.peekSubFolder(f, mainFolderName) // find main folder
-                if (subFolder != null) {
-                    if (DocumentFileCompat.peekSubFolder(subFolder, folderName) == null) { // create our measurement folder, if it does not exists
-                        subFolder.createDirectory(folderName)
-                        return true
-                    }
-                }
-            }
+        val root = manager.getRoot(StorageManagerCompat.DEF_MAIN_ROOT) ?: return false // root access
+        val f = root.toRootDirectory(context) ?: return false
+        val subFolder = DocumentFileCompat.peekSubFolder(f, mainFolderName) ?: return false // find main folder
+
+        if (DocumentFileCompat.peekSubFolder(
+                subFolder,
+                folderName
+            ) == null
+        ) { // create our measurement folder, if it does not exists
+            subFolder.createDirectory(folderName)
+            return true
         }
         return false
     }
@@ -126,22 +124,21 @@ object WearOsStorageHandler {
     ): OutputStream? {
 
         val manager = StorageManagerCompat(context)
-        val root = manager.getRoot(StorageManagerCompat.DEF_MAIN_ROOT) // root access
-        if (root != null) {
-            val f = root.toRootDirectory(context)
-            if (f != null) {
-                val subFolder = DocumentFileCompat.peekSubFolder(f, folderMain) // SensorBox folder
-                if (subFolder != null) {
-                    val recordFolder = DocumentFileCompat.peekSubFolder(subFolder, folderName) // measurementFolder
-                    if (recordFolder != null) {
-                        recordFolder.findFile(nameOfNewFile)?.delete() // deletes previous stored data
-                        recordFolder.createFile(mimeOfNewFile, nameOfNewFile)?.let {
-                            return context.contentResolver.openOutputStream(it.uri) // creates new file
-                        }
-                    }
-                }
-            }
+        val root = manager.getRoot(StorageManagerCompat.DEF_MAIN_ROOT) ?: return null // root access
+        val f = root.toRootDirectory(context) ?: return null
+        var subFolder = DocumentFileCompat.peekSubFolder(f, folderMain) // SensorBox folder
+        if(subFolder == null || !subFolder.exists()){
+            subFolder = f.createDirectory("SensorBox") ?: return null
         }
+        var recordFolder = DocumentFileCompat.peekSubFolder(subFolder, folderName)// measurementFolder
+        if(recordFolder == null || !recordFolder.exists()){
+            recordFolder = f.createDirectory(folderName) ?: return null
+        }
+        recordFolder.findFile(nameOfNewFile)?.delete() // deletes previous stored data
+        recordFolder.createFile(mimeOfNewFile, nameOfNewFile)?.let {
+            return context.contentResolver.openOutputStream(it.uri) // creates new file
+        }
+
         return null
     }
 }

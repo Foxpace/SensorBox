@@ -10,8 +10,7 @@ import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.HomeFragmentDirections
 import com.motionapps.sensorbox.permissions.PermissionHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 
 
 object StorageFunctions {

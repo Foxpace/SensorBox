@@ -1,5 +1,6 @@
 package com.motionapps.sensorservices.handlers.measurements
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -80,13 +81,22 @@ class AlarmNoiseHandler {
      * @param code
      * @return
      */
+    @SuppressLint("UnspecifiedImmutableFlag")
     private fun getIntent(context: Context, code: Int = requestCodes++): PendingIntent{
         val intent = Intent(ON_LONG_ALARM)
         intent.flags = Intent.FLAG_RECEIVER_FOREGROUND
-        return PendingIntent.getBroadcast(
-            context, code, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.getBroadcast(
+                context, code, intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }else{
+            PendingIntent.getBroadcast(
+                context, code, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        }
     }
 
     /**

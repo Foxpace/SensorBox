@@ -5,6 +5,7 @@ import android.content.*
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.os.StrictMode
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -20,6 +21,7 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
 import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.navigation.NavigationView
+import com.motionapps.sensorbox.BuildConfig
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment.Companion.POLICY_AGREED
@@ -149,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        turnOnStrictMode()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         checkFirstUsage()
@@ -175,6 +178,22 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+    }
+
+    /**
+     * to detect operations, which can cause ANR situations
+     */
+    private fun turnOnStrictMode() {
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork() // or .detectAll() for all detectable problems
+                    .penaltyLog()
+                    .build()
+            )
+        }
     }
 
     /**
@@ -303,7 +322,7 @@ class MainActivity : AppCompatActivity() {
     private fun checkWearOs() {
 
         // show Wear Os button
-        mainViewModel.wearOsPresence.observe(this, { wearOsState ->
+        mainViewModel.wearOsPresence.observe(this) { wearOsState ->
             when (wearOsState) {
                 is WearOsStates.PresenceResult -> {
                     wearOsMenuItemPresence?.isEnabled = wearOsState.present
@@ -312,10 +331,10 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                 }
             }
-        })
+        }
 
         // Wear Os sensors synced
-        mainViewModel.wearOsContacted.observe(this, { data ->
+        mainViewModel.wearOsContacted.observe(this) { data ->
             if (data.isNullOrEmpty()) {
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_off)
                 wearOsMenuItemPresence?.isEnabled = true
@@ -325,10 +344,10 @@ class MainActivity : AppCompatActivity() {
                 wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
                 wearOsMenuItemPresence?.isEnabled = true
             }
-        })
+        }
 
         // status of Wear Os and reaction to it
-        mainViewModel.wearOsStatus.observe(this, { status ->
+        mainViewModel.wearOsStatus.observe(this) { status ->
             when (status) {
                 is WearOsStates.AwaitResult -> {
                     wearOsMenuItemPresence?.isEnabled = false
@@ -351,7 +370,7 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                 }
             }
-        })
+        }
 
         // launches search for the Wear Os device
         wearOsJob = CoroutineScope(Dispatchers.IO).launch {

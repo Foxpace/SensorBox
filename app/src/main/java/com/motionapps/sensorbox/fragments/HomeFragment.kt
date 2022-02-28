@@ -84,13 +84,13 @@ open class HomeFragment : Fragment() {
      * Otherwise remove them, if they are available
      */
     private fun setObservers(inflater: LayoutInflater) {
-        mainViewModel.wearOsContacted.observe(requireActivity(), { info ->
+        mainViewModel.wearOsContacted.observe(requireActivity()) { info ->
             if (info.isNotEmpty()) {
                 createWearViews(info, inflater)
             } else {
                 removeWearOs()
             }
-        })
+        }
     }
 
     /**

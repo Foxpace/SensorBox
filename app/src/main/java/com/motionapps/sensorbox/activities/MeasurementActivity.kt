@@ -168,11 +168,12 @@ class MeasurementActivity : AppCompatActivity() {
         }
 
         // state of the countdown - different library - not the same as SensorServices lib
-        viewModel.countDown.observe(this, { countDownState ->
+        viewModel.countDown.observe(this) { countDownState ->
             when (countDownState) {
 
                 is CountDownStates.OnTick -> {
-                    dialog?.findViewById<TextView>(R.id.dialog_text_countdown)?.text = countDownState.tick
+                    dialog?.findViewById<TextView>(R.id.dialog_text_countdown)?.text =
+                        countDownState.tick
                 }
 
                 is CountDownStates.OnCancel -> {
@@ -188,38 +189,38 @@ class MeasurementActivity : AppCompatActivity() {
                 }
                 else -> {}
             }
-        })
+        }
 
         // on binder -> set up time / end the activity, if the measurement is not running
-        viewModel.measurementBinder.observe(this, { binder ->
-            binder?.let {b ->
+        viewModel.measurementBinder.observe(this) { binder ->
+            binder?.let { b ->
                 val service = b.getService()
-                if(!service.running && !viewModel.showRepeating && !viewModel.isCounting){
+                if (!service.running && !viewModel.showRepeating && !viewModel.isCounting) {
                     endMeasurement()
                 }
                 setUpTime(b)
 
             }
-        })
+        }
 
         // state of the measurement
-        viewModel.measurementState.observe(this, { measurementState ->
-            when(measurementState){
+        viewModel.measurementState.observe(this) { measurementState ->
+            when (measurementState) {
                 is MeasurementStates.OnTick -> {
                     findViewById<TextView>(R.id.measurement_time)?.let {
                         it.text = getString(R.string.second_formater).format(measurementState.tick)
                     }
                 }
-                is MeasurementStates.OnEndMeasurement ->{
-                    if(measurementState.repeat){
+                is MeasurementStates.OnEndMeasurement -> {
+                    if (measurementState.repeat) {
                         showDialogRepeating()
-                    }else{
+                    } else {
                         endMeasurement()
                     }
                 }
                 else -> {}
             }
-        })
+        }
     }
 
     /**
