@@ -5,9 +5,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import androidx.appcompat.app.AppCompatActivity
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
-import com.google.android.wearable.intent.RemoteIntent
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.MainActivityAdapter
 import com.motionapps.sensorbox.adapters.MainActivityAdapter.ClickListenerInterface
@@ -19,6 +19,7 @@ import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.SETTINGS
 import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.TERMS
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.MeasurementBinder
+import com.motionapps.wearoslib.WearOsHandler
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -88,10 +89,15 @@ class MainActivity: AppCompatActivity(), ClickListenerInterface {
 
     companion object{
         fun startBrowser(context: Context, urlID: Int){
-            val intent = Intent(Intent.ACTION_VIEW)
-                .addCategory(Intent.CATEGORY_BROWSABLE)
-                .setData( Uri.parse(context.getString(urlID)))
-            RemoteIntent.startRemoteActivity(context, intent, null)
+
+            val remoteActivityHelper = RemoteActivityHelper(context)
+
+            remoteActivityHelper.startRemoteActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setData( Uri.parse(context.getString(urlID))),
+                WearOsHandler().getNodeId(context)
+            )
             Toasty.info(context, R.string.open_phone_browser, Toasty.LENGTH_SHORT, true).show()
         }
     }

@@ -1,0 +1,1 @@
+Log data from all sensors in your phone with annotations.

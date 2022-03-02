@@ -35,13 +35,22 @@ class WearOsHandler {
         context: Context,
         wearOsListener: WearOsListener,
         capability: String
-    ) {
+    ): String? {
         val client = Wearable.getCapabilityClient(context)
         this.wearOsListener = wearOsListener
         this.capability = capability
         try {
-            searchForNode(client)
-            setupListener(client)
+            val result = runCatching<String?> {
+                val foundId: String? = searchForNode(client)
+                setupListener(client)
+                return@runCatching foundId
+            }
+            if(result.isFailure){
+                result.exceptionOrNull()?.printStackTrace()
+                wearOsListener.onWearOsStates(WearOsStates.PresenceResult(false))
+            }else{
+                return result.getOrNull()
+            }
         } catch (e: ExecutionException) {
             e.printStackTrace()
             wearOsListener.onWearOsStates(WearOsStates.PresenceResult(false))
@@ -49,6 +58,7 @@ class WearOsHandler {
             e.printStackTrace()
             wearOsListener.onWearOsStates(WearOsStates.PresenceResult(false))
         }
+        return null
     }
 
     /**
@@ -71,11 +81,11 @@ class WearOsHandler {
         this.msg = msg
         return runBlocking {
             try {
-                val b = searchForNode(client)
-                if (b) {
+                val nodeId = searchForNode(client)
+                if (nodeId != null) {
                     sendMsg(context, path, msg)
                 }
-                return@runBlocking b
+                return@runBlocking nodeId != null
             } catch (e: ExecutionException) {
                 e.printStackTrace()
             } catch (e: InterruptedException) {
@@ -83,8 +93,27 @@ class WearOsHandler {
             }
             return@runBlocking false
         }
-
     }
+
+    /**
+     * Uses RunBlocking to get nodeId
+     *
+     * @param context
+     * @return
+     */
+    fun getNodeId(
+        context: Context
+    ): String? {
+        val client = Wearable.getCapabilityClient(context)
+        return runBlocking {
+            try {
+                return@runBlocking searchForNode(client)
+            } catch (e: Exception) {
+                return@runBlocking null
+            }
+        }
+    }
+
 
 
     /**
@@ -94,16 +123,16 @@ class WearOsHandler {
      * @return
      */
     @Throws(ExecutionException::class, InterruptedException::class)
-    private suspend fun searchForNode(client: CapabilityClient): Boolean {
+    private suspend fun searchForNode(client: CapabilityClient): String? {
         return withContext(Dispatchers.IO) {
             val j = async { getCapabilities(client) } // searching for wear nodes
             j.await()?.let {
-                updateCapability(it) // update nodeId
-                return@withContext true
+                 // update nodeId
+                return@withContext updateCapability(it)
             } ?: run {
                 // no node
                 wearOsListener?.onWearOsStates(WearOsStates.PresenceResult(false))
-                return@withContext false
+                return@withContext null
             }
         }
 

@@ -14,7 +14,7 @@ android {
         applicationId "motionapps.sensorbox"
         minSdkVersion 25
         targetSdkVersion 31
-        versionCode 1000027
+        versionCode 1000042
         versionName "3.4.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
@@ -43,6 +43,7 @@ dependencies {
 
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.wear:wear-remote-interactions:1.0.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

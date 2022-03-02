@@ -1,0 +1,66 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+
+  desc "Increment version code"
+  lane :increment_vc do
+    increment_version_code(gradle_file_path: "./app/build.gradle")
+    increment_version_code(gradle_file_path: "./wear/build.gradle")
+  end
+
+  desc "Build"
+  lane :build do
+    gradle(task: "clean assembleRelease")
+  end
+
+  desc "Phone app to the google play"
+  lane :deploy_internal do
+    increment_version_code(gradle_file_path: "./app/build.gradle")
+    increment_version_code(gradle_file_path: "./wear/build.gradle")
+
+    store_password = prompt(text: "Signing Store Password: ", secure_text: true)
+    key_password = prompt(text: "Alias Key Password: ", secure_text: true)
+    releaseFilePath = File.join(Dir.pwd , "sensorboxkey.jks")
+
+    gradle(task: 'clean')
+
+    gradle(
+      task: 'bundle',
+      build_type: 'Release',
+      print_command: false,
+      properties: {
+        "android.injected.signing.store.file" => releaseFilePath,
+        "android.injected.signing.store.password" => store_password,
+        "android.injected.signing.key.alias" => "SensorBox",
+        "android.injected.signing.key.password" => key_password,
+        "android.injected.version.name" => "5.0.0",
+      }
+    )
+    supply(
+      aab_paths: [
+      "./wear/build/outputs/bundle/release/wear-release.aab",
+      "./app/build/outputs/bundle/release/app-release.aab"
+      ],
+      track: "internal", # production / beta
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  end
+end

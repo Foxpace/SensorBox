@@ -1,0 +1,19 @@
+Use your sensors in mobile to track motion by accelerometer, gyroscope, magnetometer, ... and location data by GPS, which are stored in CSV files in your phone. No data are sent out from smartphone.  
+
+While measuring, you can make annotations, which you can customize in settings. They can be found in the same folder like CSV files called "extra". 
+
+App is constructed from more modules, which enable to set countdown to stop measurement, types of usage , use only motion sensors with/without GPS or just use all sensors. 
+
+More parameters can be found in settings, with which you can modify measurement, like you want. 
+
+Can use sensors: accelerometer, gyroscope, magnetometer, rotation vector calculation, thermometer, barometer, luxmeter, proximity sensor, humidity meter, pedometer.
+
+If you are owner of Wear Os device, you can use it to get additional data. Wear motion data are collected by smartphone and stored in individual CSV files. Phone is required to collect data. Also, you can take a look at graphs directly in Wear Os with option to pause recording. 
+
+Recently, the activity recognition client , Google's API, has been added, so all motion changes, which can result in change of motion state, can be recorded. Two files are generated. One with timestamps of significant changes, which resulted in change of motion state. This data are event based. Second file has timestamps with confidence of each possible activity, which can client recognize. This  data are recorded periodically with customizable frequency. 
+
+Supported activities by activity recognition client: vehicle, bike, running, walking, still, tilting. 
+
+Wear Os app now supports local storage, so you can record data without paired phone. Sync can be done manually through phone app. Meanwhile local storage is in test phase, but available at all versions of app. 
+
+More will come and if you have some kind of problem / suggestion, contact us via email down below.
