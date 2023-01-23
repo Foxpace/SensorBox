@@ -29,19 +29,25 @@ class PermissionActivityForResult : AppCompatActivity() {
         }
 
 
-        findViewById<TextView>(R.id.permission_button).setOnClickListener{
+        findViewById<TextView>(R.id.permission_button).setOnClickListener {
 
-            if(permissionPick == GPS_SHOW || Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
-            }else{
-                if(permissionPick == GPS_SHOW){
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), GPS_REQUEST)
-                }else{
-                    ActivityCompat.requestPermissions(this,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                        GPS_REQUEST)
-                }
+            if (permissionPick == GPS_SHOW || Build.VERSION_CODES.Q > Build.VERSION.SDK_INT) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    GPS_REQUEST
+                )
+            } else {
+
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ),
+                    GPS_REQUEST
+                )
+
             }
         }
     }

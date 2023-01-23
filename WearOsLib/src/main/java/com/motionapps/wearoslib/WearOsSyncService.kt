@@ -1,7 +1,10 @@
 package com.motionapps.wearoslib
 
 import android.app.Service
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
@@ -238,7 +241,7 @@ class WearOsSyncService : Service(), DataClient.OnDataChangedListener, WearOsLis
 
         job?.cancel()
         wearOsHandler.onDestroy()
-        stopForeground(true)
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     companion object {

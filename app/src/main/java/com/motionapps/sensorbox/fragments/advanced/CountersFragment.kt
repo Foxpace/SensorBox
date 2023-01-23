@@ -1,18 +1,16 @@
 package com.motionapps.sensorbox.fragments.advanced
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.navArgs
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ENDLESS
-import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.shawnlin.numberpicker.NumberPicker
 import es.dmoral.toasty.Toasty
@@ -45,9 +43,9 @@ class CountersFragment : Fragment() {
         val pickerLeft: NumberPicker = view.findViewById(R.id.number_picker_left)
         val pickerRight: NumberPicker = view.findViewById(R.id.number_picker_right)
         val textViewLeft: TextView = view.findViewById(R.id.number_picker_textview_left)
-        val textViewRight: TextView  = view.findViewById(R.id.number_picker_textview_rigth)
+        val textViewRight: TextView = view.findViewById(R.id.number_picker_textview_rigth)
 
-        val args: CountersFragmentArgs by navArgs()
+//        val args: CountersFragmentArgs by navArgs()
 
         pickerLeft.minValue = 0
         pickerLeft.value = 0
@@ -56,30 +54,39 @@ class CountersFragment : Fragment() {
         pickerRight.value = 0
         pickerRight.maxValue = 60
 
-        if(args.longMeasurement){
-            type = LONG
-            setUpLongMeasurement(pickerLeft, textViewLeft, textViewRight)
-        }else{
-            type = SHORT
-            setUpShortMeasurement(pickerLeft, textViewLeft, textViewRight)
-        }
+//        if(args.longMeasurement){
+//            type = LONG
+//            setUpLongMeasurement(pickerLeft, textViewLeft, textViewRight)
+//        }else{
+        type = SHORT
+        setUpShortMeasurement(pickerLeft, textViewLeft, textViewRight)
+//        }
 
         (view.findViewById<Button>(R.id.number_picker_next)).also {
-            it.setOnClickListener{
-                val action: NavDirections = CountersFragmentDirections.actionCountersFragmentToExtraFragment(type, pickerLeft.value, pickerRight.value)
-                if(type == LONG){
-                    if(pickerLeft.value == 0 && pickerRight.value == 0){
-                        Toasty.warning(requireContext(), getString(R.string.advanced_setup_time), Toasty.LENGTH_SHORT).show()
-                    }else{
-                        Navigation.findNavController(requireView()).navigate(action)
-                    }
-                }else{
-                    if(pickerLeft.value == 0 || pickerRight.value == 0){
-                        Toasty.warning(requireContext(), getString(R.string.advanced_setup_time), Toasty.LENGTH_SHORT).show()
-                    }else{
-                        Navigation.findNavController(requireView()).navigate(action)
-                    }
+            it.setOnClickListener {
+                val action: NavDirections =
+                    CountersFragmentDirections.actionCountersFragmentToExtraFragment(
+                        type,
+                        pickerLeft.value,
+                        pickerRight.value
+                    )
+//                if(type == LONG){
+//                    if(pickerLeft.value == 0 && pickerRight.value == 0){
+//                        Toasty.warning(requireContext(), getString(R.string.advanced_setup_time), Toasty.LENGTH_SHORT).show()
+//                    }else{
+//                        Navigation.findNavController(requireView()).navigate(action)
+//                    }
+//                }else{
+                if (pickerLeft.value == 0 || pickerRight.value == 0) {
+                    Toasty.warning(
+                        requireContext(),
+                        getString(R.string.advanced_setup_time),
+                        Toasty.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Navigation.findNavController(requireView()).navigate(action)
                 }
+//                }
             }
         }
 
@@ -94,24 +101,28 @@ class CountersFragment : Fragment() {
      * @param textViewLeft
      * @param textViewRight
      */
-    private fun setUpShortMeasurement(pickerLeft: NumberPicker, textViewLeft: TextView, textViewRight: TextView) {
+    private fun setUpShortMeasurement(
+        pickerLeft: NumberPicker,
+        textViewLeft: TextView,
+        textViewRight: TextView
+    ) {
         type = SHORT
         textViewLeft.setText(R.string.advanced_time_to_start)
         textViewRight.setText(R.string.advanced_time_to_measure)
         pickerLeft.maxValue = 20
     }
 
-    /**
-     * Specifics for long measurement
-     *
-     * @param pickerLeft - hours to measure
-     * @param textViewLeft
-     * @param textViewRight
-     */
-    private fun setUpLongMeasurement(pickerLeft: NumberPicker, textViewLeft: TextView, textViewRight: TextView) {
-        type = LONG
-        textViewLeft.setText(R.string.advanced_hours)
-        textViewRight.setText(R.string.advanced_minutes)
-        pickerLeft.maxValue = 24
-    }
+//    /**
+//     * Specifics for long measurement
+//     *
+//     * @param pickerLeft - hours to measure
+//     * @param textViewLeft
+//     * @param textViewRight
+//     */
+//    private fun setUpLongMeasurement(pickerLeft: NumberPicker, textViewLeft: TextView, textViewRight: TextView) {
+//        type = LONG
+//        textViewLeft.setText(R.string.advanced_hours)
+//        textViewRight.setText(R.string.advanced_minutes)
+//        pickerLeft.maxValue = 24
+//    }
 }

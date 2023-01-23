@@ -53,38 +53,42 @@ class PermissionActivity : AppCompatActivity(), WearOsListener {
 
     }
 
-    private fun askForPermissions(){
-        // ask for body sensors and GPS together, if the intent is empty
-        // check if the device has GPS or heart rate sensor
+    private fun askForPermissions() {
+
+        val permissions = arrayListOf<String>()
+
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                ActivityCompat.requestPermissions(
-                    this, arrayOf(
-                        Manifest.permission.BODY_SENSORS,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                permissions.addAll(
+                    arrayOf(
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION,
                         Manifest.permission.ACCESS_FINE_LOCATION
-                    ), PERMISSION_REQUEST_CODE
+                    )
                 )
-            }else{
-                ActivityCompat.requestPermissions(
-                    this, arrayOf(
-                        Manifest.permission.BODY_SENSORS,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ), PERMISSION_REQUEST_CODE
-                )
-            }
-        }else{
-            if(SensorTools.isHeartRatePermissionRequired(this)){
-                ActivityCompat.requestPermissions(
-                    this, arrayOf(
-                        Manifest.permission.BODY_SENSORS,
-                    ), PERMISSION_REQUEST_CODE
-                )
-            }else{
-                goHome()
+            } else {
+                permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
 
+        if (SensorTools.isHeartRatePermissionRequired(this)) {
+            permissions.add(Manifest.permission.BODY_SENSORS)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        if (permissions.isEmpty()) {
+            goHome()
+            return
+        }
+
+        val arrayOfPermissions = Array(size = permissions.size) { "" }
+        permissions.forEachIndexed { i, permission -> arrayOfPermissions[i] = permission }
+
+        ActivityCompat.requestPermissions(
+            this, arrayOfPermissions, PERMISSION_REQUEST_CODE
+        )
 
     }
 

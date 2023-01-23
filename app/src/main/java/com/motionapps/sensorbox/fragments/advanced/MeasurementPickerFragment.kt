@@ -1,11 +1,11 @@
 package com.motionapps.sensorbox.fragments.advanced
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.fragment.app.Fragment
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
 import com.motionapps.sensorbox.R
@@ -27,12 +27,12 @@ class MeasurementPickerFragment : Fragment() {
 
         val view: View = inflater.inflate(R.layout.fragment_measurement_picker, container, false)
 
-        (view.findViewById<LinearLayout>(R.id.picker_measurement_long)).also {
-            it.setOnClickListener {
-                val action: NavDirections = MeasurementPickerFragmentDirections.actionMeasurementPickerFragmentToCountersFragment(true)
-                Navigation.findNavController(requireView()).navigate(action)
-            }
-        }
+//        (view.findViewById<LinearLayout>(R.id.picker_measurement_long)).also {
+//            it.setOnClickListener {
+//                val action: NavDirections = MeasurementPickerFragmentDirections.actionMeasurementPickerFragmentToCountersFragment(true)
+//                Navigation.findNavController(requireView()).navigate(action)
+//            }
+//        }
 
         (view.findViewById<LinearLayout>(R.id.picker_measurement_endless)).also {
             it.setOnClickListener {

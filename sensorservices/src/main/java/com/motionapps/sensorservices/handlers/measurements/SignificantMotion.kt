@@ -62,9 +62,11 @@ class SignificantMotion : MeasurementInterface, TriggerEventListener() {
      *
      * @param context
      */
-    override fun saveMeasurement(context: Context) {
-        outputStream?.flush()
-        outputStream?.close()
+    override suspend fun saveMeasurement(context: Context) {
+        kotlin.runCatching {
+            outputStream?.flush()
+            outputStream?.close()
+        }
     }
 
     /**
@@ -72,7 +74,7 @@ class SignificantMotion : MeasurementInterface, TriggerEventListener() {
      *
      * @param context
      */
-    override fun onDestroyMeasurement(context: Context) {
+    override suspend fun onDestroyMeasurement(context: Context) {
         pauseMeasurement(context)
         saveMeasurement(context)
         sensorManager = null

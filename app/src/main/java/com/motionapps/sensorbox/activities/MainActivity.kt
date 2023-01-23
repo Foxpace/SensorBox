@@ -5,7 +5,6 @@ import android.content.*
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
-import android.os.StrictMode
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -21,7 +20,6 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
 import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.navigation.NavigationView
-import com.motionapps.sensorbox.BuildConfig
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment
 import com.motionapps.sensorbox.fragments.settings.SettingsFragment.Companion.POLICY_AGREED
@@ -151,7 +149,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        turnOnStrictMode()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         checkFirstUsage()
@@ -178,22 +175,6 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-    }
-
-    /**
-     * to detect operations, which can cause ANR situations
-     */
-    private fun turnOnStrictMode() {
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                StrictMode.ThreadPolicy.Builder()
-                    .detectDiskReads()
-                    .detectDiskWrites()
-                    .detectNetwork() // or .detectAll() for all detectable problems
-                    .penaltyLog()
-                    .build()
-            )
-        }
     }
 
     /**

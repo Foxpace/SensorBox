@@ -124,8 +124,8 @@
 
 
     <!--POLICIES-->
-    <string name="link_terms">https://creativemotion.app/terms_and_conditions.html"</string>
-    <string name="link_privacy_policy">https://creativemotion.app/privacy_policy_sensorbox.html</string>
+    <string name="link_terms">https://sensorbox-policy.vercel.app/terms_and_conditions.html</string>
+    <string name="link_privacy_policy">https://sensorbox-policy.vercel.app/privacy_policy_sensorbox.html</string>
 
 
     <string name="back">Back</string>

@@ -6,11 +6,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.hardware.SensorManager
-import android.os.Binder
-import android.os.IBinder
-import android.os.PowerManager
-import android.os.SystemClock
+import android.os.*
 import com.motionapps.sensorservices.R
 import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.serviceController.ServiceController
@@ -27,23 +25,23 @@ import kotlinx.coroutines.flow.onEach
 class MeasurementService : Service(), WearOsListener {
 
 
-    private val serviceBroadcastReceiver: BroadcastReceiver = object: BroadcastReceiver() {
+    private val serviceBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
 
-            if (intent != null){
+            if (intent != null) {
                 // stops service and pending intent to stop, or on low battery
-                if(intent.action == STOP_SERVICE || intent.action == Intent.ACTION_BATTERY_LOW){
-                    if(!intent.getBooleanExtra(USER, false)){
+                if (intent.action == STOP_SERVICE || intent.action == Intent.ACTION_BATTERY_LOW) {
+                    if (!intent.getBooleanExtra(USER, false)) {
                         sendOnFinishNotification()
                     }
                     context?.sendBroadcast(Intent(STOP_ACTIVITY))
                     cancelService()
 
-                }else if(intent.action == ANNOTATION){ // to pass annotation from the measurementActivity
+                } else if (intent.action == ANNOTATION) { // to pass annotation from the measurementActivity
                     intent.extras?.let {
                         val time: Long = it.getLong(ANNOTATION_TIME, -1L)
                         val text: String = it.getString(ANNOTATION_TEXT, "")
-                        if(time != -1L){
+                        if (time != -1L) {
                             serviceController.onAnnotation(time, text)
                         }
                     }
@@ -66,7 +64,7 @@ class MeasurementService : Service(), WearOsListener {
         return MeasurementBinder()
     }
 
-    interface OnMeasurementStateListener{
+    interface OnMeasurementStateListener {
         fun onServiceState(measurementStates: MeasurementStates)
     }
 
@@ -106,13 +104,24 @@ class MeasurementService : Service(), WearOsListener {
         }
 
         if (!paramInternalStorage) { // show notification at phone only
-            startForeground(
-                ONGOING_NOTIFICATION_ID, Notify.createNotification(
-                    applicationContext, getString(
-                        R.string.notification_title
-                    ), getString(R.string.notification_content)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    ONGOING_NOTIFICATION_ID, Notify.createNotification(
+                        applicationContext, getString(
+                            R.string.notification_title
+                        ), getString(R.string.notification_content)
+                    ), FOREGROUND_SERVICE_TYPE_LOCATION
                 )
-            )
+            } else {
+                startForeground(
+                    ONGOING_NOTIFICATION_ID,
+                    Notify.createNotification(
+                        applicationContext, getString(
+                            R.string.notification_title
+                        ), getString(R.string.notification_content)
+                    ),
+                )
+            }
 
             // search for Wear Os
             wearOsJob = CoroutineScope(Dispatchers.Main).launch {
@@ -129,13 +138,13 @@ class MeasurementService : Service(), WearOsListener {
 
         serviceController.onInit(this, intent)
 
-        if(!serviceController.onStart(this)){
+        if (!serviceController.onStart(this)) {
             cancelService()
         }
 
-        when(paramType){
+        when (paramType) {
             SHORT -> createShortTimer()
-            LONG -> createLongTimer()
+//            LONG -> createLongTimer()
             ENDLESS -> START_REDELIVER_INTENT
         }
         return START_NOT_STICKY
@@ -145,7 +154,7 @@ class MeasurementService : Service(), WearOsListener {
      * checks wakeLock and registers receiver
      *
      */
-    private fun handleAndroid(){
+    private fun handleAndroid() {
         wakeLockHandle()
         createBroadcastReceiver()
     }
@@ -171,12 +180,12 @@ class MeasurementService : Service(), WearOsListener {
      * registers receiver for the intent to stop service / write annotation
      * also can registers intents for battery status and controls the battery %
      */
-    private fun createBroadcastReceiver(){
+    private fun createBroadcastReceiver() {
         val intentFilter = IntentFilter(STOP_SERVICE)
         intentFilter.addAction(ANNOTATION)
 //        intentFilter.addAction(STATUS)
 
-        if(paramChecks[2]){
+        if (paramChecks[2]) {
             intentFilter.addAction(Intent.ACTION_BATTERY_LOW)
         }
 
@@ -204,7 +213,7 @@ class MeasurementService : Service(), WearOsListener {
                         sendOnFinishNotification()
                         serviceController.onStop(this@MeasurementService)
                         cancelService()
-                    }else{
+                    } else {
                         // passing seconds left
                         onMeasurementStateListener?.onServiceState(state)
                     }
@@ -215,16 +224,16 @@ class MeasurementService : Service(), WearOsListener {
 
     }
 
-    private fun createLongTimer(){
-        serviceController.longTimer(this)
-    }
+//    private fun createLongTimer() {
+//        serviceController.longTimer(this)
+//    }
 
     /**
      * acquires wakelock with time limit for LONG/SHORT measurement
      *
      */
     @SuppressLint("WakelockTimeout")
-    private fun wakeLockHandle(){
+    private fun wakeLockHandle() {
         if (paramChecks[3]) { // wakelock flag
             wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
                 newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SensorBox::Measuring").apply {
@@ -232,9 +241,9 @@ class MeasurementService : Service(), WearOsListener {
                         SHORT -> {
                             acquire(paramTimeIntervals[1] * 1000L)
                         }
-                        LONG -> {
-                            acquire(((paramTimeIntervals[0] * 3600 + paramTimeIntervals[1] * 60) * 1000).toLong())
-                        }
+//                        LONG -> {
+//                            acquire(((paramTimeIntervals[0] * 3600 + paramTimeIntervals[1] * 60) * 1000).toLong())
+//                        }
                         else -> {
                             acquire()
                         }
@@ -248,7 +257,7 @@ class MeasurementService : Service(), WearOsListener {
      * finishing notification after stopping of the service
      *
      */
-    private fun sendOnFinishNotification(){
+    private fun sendOnFinishNotification() {
         Notify.updateNotification(
             this, FINISH_NOTIFICATION,
             Notify.endingNotification(
@@ -263,8 +272,8 @@ class MeasurementService : Service(), WearOsListener {
      * method stop measurement from the service
      *
      */
-    private fun cancelService(){
-        if(running){
+    private fun cancelService() {
+        if (running) {
             running = false
 
             onMeasurementStateListener?.onServiceState( // ending to activity
@@ -278,34 +287,45 @@ class MeasurementService : Service(), WearOsListener {
 
             shortJob?.cancel()
 
-            serviceController.onStop(this) // stops measurement
-            stopForeground(true)
-            onMeasurementStateListener = null
+            val savingJob = CoroutineScope(Dispatchers.Main).launch {
+                serviceController.onStop(this@MeasurementService)
+            } // stops measurement
+            savingJob.invokeOnCompletion {
+                stopForeground( STOP_FOREGROUND_REMOVE)
+                onMeasurementStateListener = null
+                wearOsJob?.cancel() // cancels Wear Os
+                wearOsHandler.onDestroy()
+                stopSelf()
+            }
+
+        } else {
+            wearOsJob?.cancel() // cancels Wear Os
+            wearOsHandler.onDestroy()
+            stopSelf()
         }
-        wearOsJob?.cancel() // cancels Wear Os
-        wearOsHandler.onDestroy()
-        stopSelf()
+
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopForeground(true)
 
-        if(wakeLock != null){
-            if(wakeLock!!.isHeld){
+        stopForeground(STOP_FOREGROUND_REMOVE)
+
+        if (wakeLock != null) {
+            if (wakeLock!!.isHeld) {
                 wakeLock!!.release()
             }
         }
 
         wearOsPresence?.let {
-            if(!paramInternalStorage && it.present){ // If there is internal storage - Wear Os usage
+            if (!paramInternalStorage && it.present) { // If there is internal storage - Wear Os usage
                 removeWearOs()
             }
         }
 
 
 
-        if(receiver){
+        if (receiver) {
             unregisterReceiver(serviceBroadcastReceiver)
             receiver = false
         }
@@ -318,7 +338,7 @@ class MeasurementService : Service(), WearOsListener {
      * @param wearOsStates - PresenceResult for Wear Os
      */
     override suspend fun onWearOsStates(wearOsStates: WearOsStates) {
-        if(wearOsStates is WearOsStates.PresenceResult){
+        if (wearOsStates is WearOsStates.PresenceResult) {
             wearOsPresence = wearOsStates
         }
     }
@@ -363,7 +383,7 @@ class MeasurementService : Service(), WearOsListener {
         // types
         const val SHORT = 0
         const val ENDLESS = 1
-        const val LONG = 2
+//        const val LONG = 2
 
         const val SHORT_STRING = "SHORT"
         const val ENDLESS_STRING = "ENDLESS"
@@ -375,7 +395,8 @@ class MeasurementService : Service(), WearOsListener {
         const val STOP_ACTIVITY = "STOP_ACTIVITY"
         const val STOP_SERVICE = "STOP_SERVICE"
         const val ANNOTATION = "ANNOTATION"
-//        const val STATUS = "STATUS"
+
+        //        const val STATUS = "STATUS"
         const val RUNNING = "RUNNING"
         const val ANNOTATION_TIME = "ANNOTATION_TIME"
         const val ANNOTATION_TEXT = "ANNOTATION_TEXT"
@@ -486,7 +507,7 @@ class MeasurementService : Service(), WearOsListener {
             gps: Boolean,
             battery: Boolean,
             wakeLock: Boolean
-        ): Intent{
+        ): Intent {
             val intent = Intent(context, MeasurementService::class.java)
 
             return addExtraToIntentAdvanced(
@@ -519,14 +540,14 @@ class MeasurementService : Service(), WearOsListener {
          * @param customName - can be empty, if it is not, then the name replaces the type in name
          * @return - folder name
          */
-        fun generateFolderName(type: Int, customName: String = ""): String{
+        fun generateFolderName(type: Int, customName: String = ""): String {
             val date = StorageHandler.getDate(System.currentTimeMillis(), "dd_MM_yyyy_HH_mm_ss")
-            return  if(customName != ""){
+            return if (customName != "") {
                 "%s_%s".format(customName, date)
-            }else{
-                val measurement = when(type){
+            } else {
+                val measurement = when (type) {
                     SHORT -> SHORT_STRING
-                    LONG -> LONG_STRING
+//                    LONG -> LONG_STRING
                     else -> ENDLESS_STRING
                 }
                 "%s_%s".format(measurement, date)

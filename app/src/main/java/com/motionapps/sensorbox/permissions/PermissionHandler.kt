@@ -28,8 +28,7 @@ class PermissionHandler(fragment: Fragment) {
 
     var dialog: MaterialDialog? = null
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    val storageCallback = fragment.registerForActivityResult(
+    private val storageCallback = fragment.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
@@ -46,8 +45,7 @@ class PermissionHandler(fragment: Fragment) {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    val gpsCallback = fragment.registerForActivityResult(
+    private val gpsCallback = fragment.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
@@ -57,7 +55,22 @@ class PermissionHandler(fragment: Fragment) {
             if (fragment.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 showDialogFineLocation(fragment)
             } else {
-//              R.string.permission_gps_show,
+                PermissionSettingsDialog.showSettings(fragment.requireContext())
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val notificationHandler = fragment.registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            StorageFunctions.checkMainFolder(fragment.requireContext(), fragment.requireView())
+            fragment.requireView().findViewById<Button>(R.id.home_mainbutton).callOnClick()
+        } else {
+            if (fragment.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                showDialogNotification(fragment)
+            } else {
                 PermissionSettingsDialog.showSettings(fragment.requireContext())
             }
         }
@@ -90,8 +103,7 @@ class PermissionHandler(fragment: Fragment) {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    val bodySensors = fragment.registerForActivityResult(
+    private val bodySensors = fragment.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (!isGranted && fragment.shouldShowRequestPermissionRationale(Manifest.permission.BODY_SENSORS)) {
@@ -102,7 +114,6 @@ class PermissionHandler(fragment: Fragment) {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     fun showDialogStorage(fragment: Fragment) {
         dialog = PermissionSettingsDialog.showPermissionRational(
             permissionCallback = storageCallback,
@@ -114,12 +125,25 @@ class PermissionHandler(fragment: Fragment) {
     }
 
     fun checkGPSPermission(fragment: Fragment): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!isAnyGpsPermission(fragment.requireContext())) {
-                showDialogFineLocation(fragment)
-                return false
-            }
+        if (!isAnyGpsPermission(fragment.requireContext())) {
+            showDialogFineLocation(fragment)
+            return false
+        }
+        return true
+    }
+
+    fun checkNotificationPermission(fragment: Fragment): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return true
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                fragment.requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            showDialogNotification(fragment)
+            return false
         }
         return true
     }
@@ -143,7 +167,6 @@ class PermissionHandler(fragment: Fragment) {
      *
      * @return material dialog
      */
-    @RequiresApi(Build.VERSION_CODES.M)
     @ExperimentalCoroutinesApi
     @InternalCoroutinesApi
     fun showDialogFineLocation(fragment: Fragment) {
@@ -170,9 +193,24 @@ class PermissionHandler(fragment: Fragment) {
 
     }
 
+    /**
+     * Creates prominent disclosure for the notification for Android 13 - SDK 33 and higher
+     * @return material dialog
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun showDialogNotification(fragment: Fragment) {
+        dialog = PermissionSettingsDialog.showPermissionRational(
+            permissionCallback = notificationHandler,
+            fragment = fragment,
+            messageText = R.string.permission_notification,
+            permission = Manifest.permission.POST_NOTIFICATIONS,
+            icon = R.drawable.ic_bell,
+        )
+    }
+
 
     fun checkHeartRateSensor(fragment: Fragment, sensorId: Int): Boolean {
-        if (sensorId == Sensor.TYPE_HEART_RATE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH && ActivityCompat.checkSelfPermission(
+        if (sensorId == Sensor.TYPE_HEART_RATE && ActivityCompat.checkSelfPermission(
                 fragment.requireContext(),
                 Manifest.permission.BODY_SENSORS
             ) != PackageManager.PERMISSION_GRANTED
@@ -183,8 +221,7 @@ class PermissionHandler(fragment: Fragment) {
         return false
     }
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT_WATCH)
-    fun showDialogBodySensors(fragment: Fragment) {
+    private fun showDialogBodySensors(fragment: Fragment) {
         dialog = MaterialDialog(fragment.requireContext()).show {
             title(R.string.heart_rate_permission_title)
             message(R.string.heart_rate_permission_text)

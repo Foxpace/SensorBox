@@ -17,7 +17,6 @@ class PermissionSettingsDialog {
 
     companion object {
 
-        @RequiresApi(Build.VERSION_CODES.M)
         fun showPermissionRational(
             permissionCallback: ActivityResultLauncher<String>,
             fragment: Fragment,
@@ -30,7 +29,7 @@ class PermissionSettingsDialog {
                 message(messageText)
                 icon(icon)
                 cancelable(true)
-                cancelOnTouchOutside(false)
+                cancelOnTouchOutside(true)
                 cornerRadius(16f)
 
                 positiveButton(R.string.show_permission) { dialog ->
@@ -83,7 +82,7 @@ class PermissionSettingsDialog {
                 message(messageText)
                 icon(icon)
                 cancelable(true)
-                cancelOnTouchOutside(false)
+                cancelOnTouchOutside(true)
                 cornerRadius(16f)
 
                 positiveButton(R.string.show_permission) { dialog ->
@@ -109,35 +108,6 @@ class PermissionSettingsDialog {
                 }
             }
         }
-
-//        fun showPermissionSettings(
-//            fragment: Fragment,
-//            messageText: Int,
-//            icon: Int
-//        ): MaterialDialog {
-//            return MaterialDialog(fragment.requireContext()).show {
-//                title(R.string.activity_permissions_required)
-//                message(messageText)
-//                icon(icon)
-//                cancelable(true)
-//                cancelOnTouchOutside(false)
-//                cornerRadius(16f)
-//                positiveButton(R.string.show_permission_settings) { dialog ->
-//                    dialog.dismiss()
-//                    showSettings(fragment.requireContext())
-//                }
-//                // show privacy policy in dialog
-//                negativeButton(R.string.about_privacy_policy) {
-//                    it.dismiss()
-//                    val browserIntent = Intent(
-//                        Intent.ACTION_VIEW,
-//                        Uri.parse(fragment.getString(R.string.link_privacy_policy))
-//                    )
-//                    fragment.startActivity(browserIntent)
-//                }
-//            }
-//
-//        }
 
         fun showSettings(context: Context) {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)

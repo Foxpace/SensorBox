@@ -13,9 +13,7 @@ import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.handlers.measurements.*
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementStates
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flow
 
 
@@ -69,7 +67,6 @@ class ServiceController {
 
                 extraInfoHandler.onStart(context, paramInternalStorage) // init of the notes and alarms
                 extraInfoHandler.handleNotes(b.getStringArrayList(MeasurementService.NOTES))
-                alarmNoiseHandler.initHandler(context, b.getIntArray(MeasurementService.ALARMS))
             }
         }
     }
@@ -95,7 +92,7 @@ class ServiceController {
 
         val measurement = when(paramType){
             MeasurementService.SHORT -> MeasurementService.SHORT_STRING
-            MeasurementService.LONG -> MeasurementService.LONG_STRING
+//            MeasurementService.LONG -> MeasurementService.LONG_STRING
             else -> MeasurementService.ENDLESS_STRING
         }
 
@@ -172,32 +169,32 @@ class ServiceController {
         emit(MeasurementStates.OnShortEnd)
     }
 
-    /**
-     * Sets intent with AlarmManager
-     *
-     * @param context
-     */
-    fun longTimer(context: Context){
-
-        val addedTime: Long = ((paramTimeIntervals[0]*3600 + paramTimeIntervals[1] * 60) * 1000).toLong()
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent: PendingIntent = getAlarmIntent(context)
-
-        if (SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + addedTime, pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + addedTime, pendingIntent
-            )
-        }
-
-        alarmNoiseHandler.setLongAlarms(context, alarmManager)
-
-    }
+//    /**
+//     * Sets intent with AlarmManager
+//     *
+//     * @param context
+//     */
+//    fun longTimer(context: Context){
+//
+//        val addedTime: Long = ((paramTimeIntervals[0]*3600 + paramTimeIntervals[1] * 60) * 1000).toLong()
+//        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+//        val pendingIntent: PendingIntent = getAlarmIntent(context)
+//
+//        if (SDK_INT >= Build.VERSION_CODES.M) {
+//            alarmManager.setExactAndAllowWhileIdle(
+//                AlarmManager.RTC_WAKEUP,
+//                System.currentTimeMillis() + addedTime, pendingIntent
+//            )
+//        } else {
+//            alarmManager.setExact(
+//                AlarmManager.RTC_WAKEUP,
+//                System.currentTimeMillis() + addedTime, pendingIntent
+//            )
+//        }
+//
+//        alarmNoiseHandler.setLongAlarms(context, alarmManager)
+//
+//    }
 
     /**
      * @param context
@@ -224,17 +221,19 @@ class ServiceController {
      *
      * @param context
      */
-    fun onStop(context: Context) {
+    suspend fun onStop(context: Context) {
         extraInfoHandler.addAlarms(alarmNoiseHandler)
         extraInfoHandler.writeExtra(context, paramInternalStorage)
 
-        sensorMeasurement.onDestroyMeasurement(context)
-        gpsMeasurement.onDestroyMeasurement(context)
-        activityRecognition.onDestroyMeasurement(context)
-
-        if(paramType == MeasurementService.LONG){
-            cancelAlarm(context)
+        val saving = CoroutineScope(Dispatchers.Main).launch {
+            sensorMeasurement.onDestroyMeasurement(context)
+            gpsMeasurement.onDestroyMeasurement(context)
+            activityRecognition.onDestroyMeasurement(context)
         }
+        saving.join()
+//        if(paramType == MeasurementService.LONG){
+//            cancelAlarm(context)
+//        }
     }
 
     /**
@@ -246,6 +245,6 @@ class ServiceController {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent: PendingIntent = getAlarmIntent(context)
         alarmManager.cancel(pendingIntent)
-        alarmNoiseHandler.onDestroy(context, alarmManager)
+        alarmNoiseHandler.onDestroy()
     }
 }

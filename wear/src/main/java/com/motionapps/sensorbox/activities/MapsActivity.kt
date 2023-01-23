@@ -6,9 +6,9 @@ import android.os.Bundle
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.wear.ambient.AmbientModeSupport
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.LatLng
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorservices.handlers.GPSHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,9 +32,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
         mapView.onCreate(savedInstanceState)
 
         val button = findViewById<ImageButton>(R.id.map_back)
-        button.setOnClickListener{
-            onBackPressed()
-        }
+        button.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     override fun onStart() {

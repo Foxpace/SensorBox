@@ -6,19 +6,20 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
-import android.widget.*
+import android.widget.Button
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.advanced.ExtraFragmentArgs
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ENDLESS
-import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.shawnlin.numberpicker.NumberPicker
 import dagger.hilt.android.scopes.ViewModelScoped
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -42,16 +43,16 @@ class AlarmHandler @Inject constructor() {
      * @param args - args from ExtraFragment, could be replaced by type integer
      */
 
-    fun refreshLayout(linearLayout: LinearLayout, layoutInflater: LayoutInflater, args: ExtraFragmentArgs){
-        for(i in alarmsList)
-        if (args.typeMeasurement == SHORT) {
-            createAlarmShort(linearLayout, layoutInflater, i, false)
-        }else{
-            val hours = TimeUnit.SECONDS.toHours(i.toLong()).toInt()
-            val minutes = TimeUnit.SECONDS.toMinutes((i - hours*3600).toLong()).toInt()
-            createAlarmLong(linearLayout, layoutInflater, hours, minutes, false)
-        }
-    }
+//    fun refreshLayout(linearLayout: LinearLayout, layoutInflater: LayoutInflater, args: ExtraFragmentArgs){
+//        for(i in alarmsList)
+//        if (args.typeMeasurement == SHORT) {
+//            createAlarmShort(linearLayout, layoutInflater, i, false)
+//        }else{
+//            val hours = TimeUnit.SECONDS.toHours(i.toLong()).toInt()
+//            val minutes = TimeUnit.SECONDS.toMinutes((i - hours*3600).toLong()).toInt()
+//            createAlarmLong(linearLayout, layoutInflater, hours, minutes, false)
+//        }
+//    }
 
     /**
      * Views are customised for seconds
@@ -186,8 +187,8 @@ class AlarmHandler @Inject constructor() {
                     }
 
                     // adding to linearlayout and storage
-                    val linearLayout = fragment.requireView().findViewById<LinearLayout>(R.id.extra_container_alarms)
-                    alarmHandler.createAlarmShort(linearLayout, fragment.layoutInflater, numberPicker.value, true)
+//                    val linearLayout = fragment.requireView().findViewById<LinearLayout>(R.id.extra_container_alarms)
+//                    alarmHandler.createAlarmShort(linearLayout, fragment.layoutInflater, numberPicker.value, true)
                     dismiss()
                 }
             }
@@ -232,7 +233,7 @@ class AlarmHandler @Inject constructor() {
                         ).show()
                         return@setOnClickListener
                         // time is beyond stated time for measurement
-                    } else if((leftNumberPicker.value * 3600 + rightNumberPicker.value * 60) > (args.firstTime*3600 + args.secondTime*60) && args.typeMeasurement == LONG){
+                    } else if((leftNumberPicker.value * 3600 + rightNumberPicker.value * 60) > (args.firstTime*3600 + args.secondTime*60) ){ // && args.typeMeasurement == LONG
                         Toasty.error(
                             context,
                             context.getString(R.string.advanced_time_pass_limit),
@@ -241,8 +242,8 @@ class AlarmHandler @Inject constructor() {
                         ).show()
                         return@setOnClickListener
                     }
-                    val linearLayout = fragment.requireView().findViewById<LinearLayout>(R.id.extra_container_alarms)
-                    alarmHandler.createAlarmLong(linearLayout, fragment.layoutInflater, leftNumberPicker.value, rightNumberPicker.value, true)
+//                    val linearLayout = fragment.requireView().findViewById<LinearLayout>(R.id.extra_container_alarms)
+//                    alarmHandler.createAlarmLong(linearLayout, fragment.layoutInflater, leftNumberPicker.value, rightNumberPicker.value, true)
                     dismiss()
 
                 }

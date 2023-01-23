@@ -17,8 +17,7 @@ import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.FOLDER_NAME
 import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.INTERNAL_STORAGE
 import com.motionapps.sensorservices.services.MeasurementService
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 import java.io.OutputStream
 
 @ExperimentalCoroutinesApi
@@ -200,6 +199,7 @@ class ActivityRecognition : MeasurementInterface {
     /**
      * removes all updates from Activity recognition client
      */
+    @SuppressLint("MissingPermission")
     private fun onDestroy() {
         if(running) {
             pendingIntentTransition?.let{
@@ -221,7 +221,7 @@ class ActivityRecognition : MeasurementInterface {
      *
      * @param context
      */
-    override fun saveMeasurement(context: Context) {
+    override suspend fun saveMeasurement(context: Context) {
         outputStreamTransitions?.flush()
         outputStreamTransitions?.close()
         outputStreamUpdates?.flush()
@@ -234,9 +234,14 @@ class ActivityRecognition : MeasurementInterface {
      *
      * @param context
      */
-    override fun onDestroyMeasurement(context: Context) {
-        pauseMeasurement(context)
-        saveMeasurement(context)
+    override suspend fun onDestroyMeasurement(context: Context) {
+        withContext(Dispatchers.Main){
+            pauseMeasurement(context)
+        }
+
+        withContext(Dispatchers.IO){
+            saveMeasurement(context)
+        }
     }
 
     /**
@@ -245,6 +250,7 @@ class ActivityRecognition : MeasurementInterface {
      * overloaded method, without custom callbacks
      */
 
+    @SuppressLint("MissingPermission")
     private fun registerTransitions(context: Context, activities: IntArray) {
 
         pendingIntentTransition = getPendingIntentTransition(context)
@@ -299,6 +305,13 @@ class ActivityRecognition : MeasurementInterface {
         pendingIntentUpdates = getPendingIntentUpdates(context)
         pendingIntentUpdates?.let{ pendingIntent: PendingIntent? ->
             pendingIntent?.let{
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACTIVITY_RECOGNITION
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    return
+                }
                 activityRecognitionClient.requestActivityUpdates(timeToUpdate, pendingIntent).
                 addOnSuccessListener {
                     OnSuccessListener<Void> {

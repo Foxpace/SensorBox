@@ -7,16 +7,11 @@ import android.location.Location
 import android.os.Looper
 import android.util.Log
 import androidx.preference.PreferenceManager
-
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationAvailability
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.motionapps.sensorservices.services.MeasurementService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
+
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
@@ -105,6 +100,7 @@ class GPSHandler : LocationCallback() {
     fun gpsOff() {
         if(registered){
             Log.i(tag, "Logging off location")
+            locationClient.flushLocations()
             locationClient.removeLocationUpdates(this)
         }
         registered = false
@@ -117,24 +113,20 @@ class GPSHandler : LocationCallback() {
      * @return LocationRequest specified by user
      */
     private fun createRequest(context: Context): LocationRequest {
-
         val sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val locationRequest = LocationRequest.create().apply {
-            try {
-                this.interval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-                this.fastestInterval = sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L
-                this.smallestDisplacement = sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat()
-                this.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }catch (e: ClassCastException){
-                this.interval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
-                this.fastestInterval = sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L
-                this.smallestDisplacement = sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat()
-                this.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
+        var b: LocationRequest.Builder
+        try {
+            b = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L)
+            b.setMinUpdateDistanceMeters(sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat())
+        }catch (e: ClassCastException){
+            b = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L)
+            b.setMinUpdateDistanceMeters(sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat())
         }
+        b.setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+        b.setWaitForAccurateLocation(true)
         //registering GPS
         Log.i("GPS", "location request created")
-        return locationRequest
+        return b.build()
     }
 
     /**

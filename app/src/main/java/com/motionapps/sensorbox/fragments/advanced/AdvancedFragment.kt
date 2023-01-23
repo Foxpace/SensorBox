@@ -33,7 +33,7 @@ class AdvancedFragment : HomeFragment() {
                         )
                     )
                     return@setOnClickListener
-                } else if(Build.VERSION_CODES.M <= Build.VERSION.SDK_INT && permissionHandler != null){
+                } else if(permissionHandler != null){
                     permissionHandler?.showDialogStorage(this)
                     return@setOnClickListener
                 }

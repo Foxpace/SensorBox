@@ -23,10 +23,9 @@ import com.afollestad.materialdialogs.list.listItemsSingleChoice
 import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.settings.AnnotationFragment
-import com.motionapps.sensorservices.handlers.StorageHandler
-import com.motionapps.sensorservices.handlers.StorageHandler.getDate
 import com.motionapps.sensorbox.uiHandlers.GraphHandler
 import com.motionapps.sensorbox.viewmodels.MeasurementViewModel
+import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ANDROID_SENSORS
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ANNOTATION
@@ -34,14 +33,13 @@ import com.motionapps.sensorservices.services.MeasurementService.Companion.CUSTO
 import com.motionapps.sensorservices.services.MeasurementService.Companion.ENDLESS
 import com.motionapps.sensorservices.services.MeasurementService.Companion.FINISH_NOTIFICATION
 import com.motionapps.sensorservices.services.MeasurementService.Companion.FOLDER_NAME
-import com.motionapps.sensorservices.services.MeasurementService.Companion.LONG
 import com.motionapps.sensorservices.services.MeasurementService.Companion.OTHER
 import com.motionapps.sensorservices.services.MeasurementService.Companion.SHORT
 import com.motionapps.sensorservices.services.MeasurementService.Companion.TIME_INTERVALS
 import com.motionapps.sensorservices.services.MeasurementService.Companion.TYPE
 import com.motionapps.sensorservices.services.MeasurementService.Companion.WEAR_SENSORS
-import com.motionapps.sensorservices.services.Notify
 import com.motionapps.sensorservices.services.MeasurementStates
+import com.motionapps.sensorservices.services.Notify
 import com.motionapps.sensorservices.types.SensorNeeds
 import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
 import dagger.hilt.android.AndroidEntryPoint
@@ -125,7 +123,7 @@ class MeasurementActivity : AppCompatActivity() {
             SHORT -> {
                 setContentView(R.layout.activity_measurement_textview)
             }
-            ENDLESS, LONG -> {
+            ENDLESS -> { // LONG
                 setContentView(R.layout.activity_measurement_chronometer)
             }
         }
@@ -257,19 +255,19 @@ class MeasurementActivity : AppCompatActivity() {
                     it.start()
                 }
             }
-            LONG -> {
-                val time = measurementBinder.getService().startTime
-                (findViewById<Chronometer>(R.id.measurement_time)).also {
-                    it.base = time
-                    it.start()
-                }
-                val timeIntervals = measurementBinder.getService().paramTimeIntervals
-                val stopTime = System.currentTimeMillis() + (timeIntervals[0]*3600 + timeIntervals[1]*60) * 1000
-
-                (findViewById<TextView>(R.id.measurement_time_title)).also{
-                    it.text = getString(R.string.measurement_format_long).format(getDate(stopTime))
-                }
-            }
+//            LONG -> {
+//                val time = measurementBinder.getService().startTime
+//                (findViewById<Chronometer>(R.id.measurement_time)).also {
+//                    it.base = time
+//                    it.start()
+//                }
+//                val timeIntervals = measurementBinder.getService().paramTimeIntervals
+//                val stopTime = System.currentTimeMillis() + (timeIntervals[0]*3600 + timeIntervals[1]*60) * 1000
+//
+//                (findViewById<TextView>(R.id.measurement_time_title)).also{
+//                    it.text = getString(R.string.measurement_format_long).format(getDate(stopTime))
+//                }
+//            }
         }
     }
 
@@ -374,7 +372,7 @@ class MeasurementActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         when(type){
-            ENDLESS, LONG -> {
+            ENDLESS -> { // LONG
                 (findViewById<Chronometer>(R.id.measurement_time)).also { it.start() }
             }
         }
@@ -385,7 +383,7 @@ class MeasurementActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         when(type){
-            ENDLESS, LONG -> {
+            ENDLESS -> { // LONG
                 (findViewById<Chronometer>(R.id.measurement_time)).also {
                     it.stop()
                 }

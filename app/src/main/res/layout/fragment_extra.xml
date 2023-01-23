@@ -232,53 +232,53 @@
                 
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_margin="8dp"
-                android:background="@drawable/rounded_black"
-                android:gravity="center"
-                android:orientation="vertical">
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:layout_margin="8dp"-->
+<!--                android:background="@drawable/rounded_black"-->
+<!--                android:gravity="center"-->
+<!--                android:orientation="vertical">-->
 
-                <TextView
-                    android:id="@+id/textView5"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_regular"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:text="@string/add_custom_noise_alarms_during_measurement"
-                    android:textColor="@color/colorWhite"
-                    android:textSize="15sp" />
+<!--                <TextView-->
+<!--                    android:id="@+id/textView5"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:fontFamily="@font/roboto_regular"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="8dp"-->
+<!--                    android:text="@string/add_custom_noise_alarms_during_measurement"-->
+<!--                    android:textColor="@color/colorWhite"-->
+<!--                    android:textSize="15sp" />-->
 
-                <Button
-                    android:id="@+id/extra_button_alarms"
-                    android:layout_width="wrap_content"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rounded_button"
-                    android:fontFamily="@font/roboto_regular"
-                    android:gravity="center"
-                    android:padding="16dp"
-                    android:text="@string/settings_add"
-                    android:textColor="@color/colorWhite"
-                    android:textSize="15sp"
-                    android:layout_margin="8dp"/>
+<!--                <Button-->
+<!--                    android:id="@+id/extra_button_alarms"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="0dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/rounded_button"-->
+<!--                    android:fontFamily="@font/roboto_regular"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="16dp"-->
+<!--                    android:text="@string/settings_add"-->
+<!--                    android:textColor="@color/colorWhite"-->
+<!--                    android:textSize="15sp"-->
+<!--                    android:layout_margin="8dp"/>-->
 
-                <ScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    tools:ignore="NestedScrolling">
-                    <LinearLayout
-                        android:id="@+id/extra_container_alarms"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:showDividers="middle"
-                        android:divider="@drawable/divider_gray"
-                        android:orientation="vertical" />
-                </ScrollView>
+<!--                <ScrollView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    tools:ignore="NestedScrolling">-->
+<!--                    <LinearLayout-->
+<!--                        android:id="@+id/extra_container_alarms"-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:showDividers="middle"-->
+<!--                        android:divider="@drawable/divider_gray"-->
+<!--                        android:orientation="vertical" />-->
+<!--                </ScrollView>-->
 
-            </LinearLayout>
+<!--            </LinearLayout>-->
 
             <LinearLayout
                 android:layout_width="match_parent"

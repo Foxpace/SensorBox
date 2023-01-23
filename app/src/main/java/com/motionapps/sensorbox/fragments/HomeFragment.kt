@@ -14,10 +14,10 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.NavDirections
 import androidx.navigation.Navigation
 import com.afollestad.materialdialogs.MaterialDialog
-import com.motionapps.sensorbox.activities.MeasurementActivity
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.types.SensorResources
+import com.motionapps.sensorbox.activities.MeasurementActivity
 import com.motionapps.sensorbox.permissions.PermissionHandler
+import com.motionapps.sensorbox.types.SensorResources
 import com.motionapps.sensorbox.uiHandlers.SensorViewHandler
 import com.motionapps.sensorbox.uiHandlers.StorageFunctions
 import com.motionapps.sensorbox.viewmodels.MainViewModel
@@ -265,11 +265,13 @@ open class HomeFragment : Fragment() {
     open fun initMainButton() {
         mainButton?.setOnClickListener {
 
-            if(permissionHandler == null){
+            val permissionHandler = permissionHandler ?: return@setOnClickListener
+
+            if(!permissionHandler.checkNotificationPermission(this)){
                 return@setOnClickListener
             }
 
-            if(StorageFunctions.checkStorageAccess(this, permissionHandler!!)){
+            if(StorageFunctions.checkStorageAccess(this, permissionHandler)){
                 return@setOnClickListener
             }
 

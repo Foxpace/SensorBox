@@ -95,6 +95,11 @@
         Unfortunately, Android 10 and higher stops GPS updates, after certain period of time due to the battery restrictions.
         Otherwise, the GPS recording would be redundant.
     </string>
+
+    <string name="permission_notification">
+        In order to track the sensors in the background, the app needs to launch background service, which is represented by notification. No activity is taken without your knowledge - notification.
+        From Android 13, the notification can be posted only with this permission. To enable this functionality, please enable the notifications.
+    </string>
     <string name="gps">GPS</string>
     <string name="sensor_info_GPS_latitude">Latitude</string>
     <string name="sensor_info_GPS_longitude">Longitude</string>
@@ -268,8 +273,8 @@
     <string name="intro_condition_folder">Please pick folder, where to store all the measurements</string>
 
     <!--POLICIES-->
-    <string name="link_terms">https://creativemotion.app/terms_and_conditions.html"</string>
-    <string name="link_privacy_policy">https://creativemotion.app/privacy_policy_sensorbox.html</string>
+    <string name="link_terms">https://sensorbox-policy.vercel.app/terms_and_conditions.html</string>
+    <string name="link_privacy_policy">https://sensorbox-policy.vercel.app/privacy_policy_sensorbox.html</string>
 
     <!--ABOUT-->
     <string name="about_app_description">SensorBox serves as sensor output aggregation tool. You can pick sensors, views their parameters, store them in csv files. During measurement, you can set up alarms, write notes and take annotations. Application is compatible with Wear Os. SensorBox is open source project, so you can visit github page for code.</string>
@@ -286,7 +291,7 @@
 
     <string name="google_play_link">https://play.google.com/store/apps/details?id=%s</string>
     <string name="github_page">https://github.com/Foxpace/SensorBox</string>
-    <string name="creative_motion_mail">support@creativemotion.app</string>
+    <string name="creative_motion_mail">creativemotionapps@gmail.com</string>
     <string name="creative_motion_web">https://creativemotion.app/</string>
 
     <!--Wear OS-->

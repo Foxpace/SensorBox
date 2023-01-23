@@ -8,8 +8,10 @@ import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.FOLDER_NAME
 import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.INTERNAL_STORAGE
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.withContext
 import java.io.OutputStream
 
 @ExperimentalCoroutinesApi
@@ -93,9 +95,11 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler): Measuremen
      *
      * @param context
      */
-    override fun saveMeasurement(context: Context) {
-        outputStream?.flush()
-        outputStream?.close()
+    override suspend fun saveMeasurement(context: Context) {
+        kotlin.runCatching {
+            outputStream?.flush()
+            outputStream?.close()
+        }
     }
 
     /**
@@ -103,9 +107,14 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler): Measuremen
      *
      * @param context
      */
-    override fun onDestroyMeasurement(context: Context) {
-        pauseMeasurement(context)
-        saveMeasurement(context)
+    override suspend fun onDestroyMeasurement(context: Context) {
+        withContext(Dispatchers.Main){
+            pauseMeasurement(context)
+        }
+        withContext(Dispatchers.IO){
+            saveMeasurement(context)
+        }
+
     }
 
     /**

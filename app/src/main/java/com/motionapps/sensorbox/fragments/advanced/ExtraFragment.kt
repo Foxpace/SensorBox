@@ -21,7 +21,6 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.widget.CompoundButtonCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
@@ -29,7 +28,6 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.jaredrummler.materialspinner.MaterialSpinner
 import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.fragments.advanced.extrahandlers.AlarmHandler
 import com.motionapps.sensorbox.activities.MeasurementActivity
 import com.motionapps.sensorbox.permissions.PermissionSettingsDialog
 import com.motionapps.sensorbox.viewmodels.MainViewModel
@@ -194,14 +192,7 @@ class ExtraFragment : Fragment() {
             val white = ContextCompat.getColor(requireContext(), R.color.colorWhite)
             checkBox.setTextColor(white)
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                CompoundButtonCompat.setButtonTintList(
-                    checkBox,
-                    ColorStateList.valueOf(white)
-                )
-            } else {
-                checkBox.buttonTintList = ColorStateList.valueOf(white)
-            }
+            checkBox.buttonTintList = ColorStateList.valueOf(white)
         }
         requireView().findViewById<Button>(R.id.extra_button_activity_recognition_permission)?.let {
             it.visibility = GONE
@@ -220,18 +211,14 @@ class ExtraFragment : Fragment() {
         val gray = ContextCompat.getColor(requireContext(), R.color.colorGray)
         checkBox.setTextColor(gray)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(gray))
-        } else {
-            checkBox.buttonTintList = ColorStateList.valueOf(gray)
-            requireView().findViewById<Button>(R.id.extra_button_activity_recognition_permission)
-                ?.let {
-                    it.visibility = VISIBLE
-                    it.setOnClickListener {
-                        showPermissionDialog()
-                    }
+        checkBox.buttonTintList = ColorStateList.valueOf(gray)
+        requireView().findViewById<Button>(R.id.extra_button_activity_recognition_permission)
+            ?.let {
+                it.visibility = VISIBLE
+                it.setOnClickListener {
+                    showPermissionDialog()
                 }
-        }
+            }
     }
 
     /**
@@ -326,7 +313,7 @@ class ExtraFragment : Fragment() {
         manageNoteViews()
         manageAlarmHandler()
         mainViewModel.refreshNotesAndAlarms(
-            requireView().findViewById(R.id.extra_container_alarms),
+//            requireView().findViewById(R.id.extra_container_alarms),
             requireView().findViewById(R.id.extra_container_notes),
             layoutInflater, args
         )
@@ -336,10 +323,10 @@ class ExtraFragment : Fragment() {
      * sets up button for the dialog
      */
     private fun manageAlarmHandler() {
-        requireView().findViewById<Button>(R.id.extra_button_alarms).setOnClickListener {
-            dialog = AlarmHandler.CustomDialog(this, mainViewModel.getAlarmHandler(), args)
-            dialog!!.show()
-        }
+//        requireView().findViewById<Button>(R.id.extra_button_alarms).setOnClickListener {
+//            dialog = AlarmHandler.CustomDialog(this, mainViewModel.getAlarmHandler(), args)
+//            dialog!!.show()
+//        }
     }
 
     /**

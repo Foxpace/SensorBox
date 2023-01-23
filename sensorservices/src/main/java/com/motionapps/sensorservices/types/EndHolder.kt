@@ -5,5 +5,5 @@ package com.motionapps.sensorservices.types
  *
  */
 interface EndHolder {
-    fun saveFile()
+    suspend fun saveFile()
 }

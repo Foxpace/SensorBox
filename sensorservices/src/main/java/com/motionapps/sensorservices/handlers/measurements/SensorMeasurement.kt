@@ -12,6 +12,8 @@ import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.
 import com.motionapps.sensorservices.types.EndHolder
 import com.motionapps.sensorservices.types.SensorHolder
 import com.motionapps.sensorservices.types.SensorNeeds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.OutputStream
 
 
@@ -86,7 +88,7 @@ class SensorMeasurement: MeasurementInterface {
      *
      * @param context
      */
-    override fun saveMeasurement(context: Context) {
+    override suspend fun saveMeasurement(context: Context) {
         for(holder: EndHolder in holders){
             holder.saveFile()
         }
@@ -98,8 +100,13 @@ class SensorMeasurement: MeasurementInterface {
      *
      * @param context
      */
-    override fun onDestroyMeasurement(context: Context) {
-        pauseMeasurement(context)
-        saveMeasurement(context)
+    override suspend fun onDestroyMeasurement(context: Context) {
+        withContext(Dispatchers.Main){
+            pauseMeasurement(context)
+        }
+
+        withContext(Dispatchers.IO){
+            saveMeasurement(context)
+        }
     }
 }

@@ -12,8 +12,8 @@ interface MeasurementInterface {
     fun initMeasurement(context: Context, params: Bundle)
     fun startMeasurement(context: Context)
     fun pauseMeasurement(context: Context)
-    fun saveMeasurement(context: Context)
-    fun onDestroyMeasurement(context: Context)
+    suspend fun saveMeasurement(context: Context)
+    suspend fun onDestroyMeasurement(context: Context)
 
     companion object {
         // keys for the bundle in service to handlers

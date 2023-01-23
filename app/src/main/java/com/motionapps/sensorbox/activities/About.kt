@@ -4,7 +4,6 @@ package com.motionapps.sensorbox.activities
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -54,21 +53,19 @@ class About : Fragment() {
             .setDescription(getString(R.string.about_app_description))
             .addItem(versionElement)
             .addItem(googlePlay())
-            .addItem(websiteElement())
+            // .addItem(websiteElement())
             .addItem(emailElement())
             .addItem(githubElement())
             .addItem(licences)
             .addItem(getPolicyElement())
             .addItem(getTermsElement())
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            aboutPage.setCustomFont(
-                ResourcesCompat.getFont(
-                    requireContext(),
-                    R.font.roboto_family
-                )
+        aboutPage.setCustomFont(
+            ResourcesCompat.getFont(
+                requireContext(),
+                R.font.roboto_family
             )
-        }
+        )
 
         return aboutPage.create()
     }
@@ -87,21 +84,21 @@ class About : Fragment() {
      * Tab element for website
      * @return About page Element
      */
-    private fun websiteElement(): Element{
-        var url = getString(R.string.creative_motion_web)
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "http://$url"
-        }
-        val websiteElement = Element()
-        websiteElement.title = getString(R.string.about_site_title)
-        websiteElement.iconDrawable = R.drawable.ic_link
-        websiteElement.iconTint = R.color.colorWhite
-        websiteElement.value = url
-        val uri = Uri.parse(url)
-        val browserIntent = Intent(Intent.ACTION_VIEW, uri)
-        websiteElement.intent = browserIntent
-        return websiteElement
-    }
+//    private fun websiteElement(): Element{
+//        var url = getString(R.string.creative_motion_web)
+//        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+//            url = "http://$url"
+//        }
+//        val websiteElement = Element()
+//        websiteElement.title = getString(R.string.about_site_title)
+//        websiteElement.iconDrawable = R.drawable.ic_link
+//        websiteElement.iconTint = R.color.colorWhite
+//        websiteElement.value = url
+//        val uri = Uri.parse(url)
+//        val browserIntent = Intent(Intent.ACTION_VIEW, uri)
+//        websiteElement.intent = browserIntent
+//        return websiteElement
+//    }
 
     /**
      * Tab element for Google play store

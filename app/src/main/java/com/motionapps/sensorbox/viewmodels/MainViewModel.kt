@@ -11,7 +11,6 @@ import com.motionapps.countdowndialog.CountDownInterface
 import com.motionapps.countdowndialog.CountDownStates
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.fragments.advanced.ExtraFragmentArgs
-import com.motionapps.sensorbox.fragments.advanced.extrahandlers.AlarmHandler
 import com.motionapps.sensorbox.uiHandlers.SensorViewHandler
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsConstants.START_MEASUREMENT
@@ -152,13 +151,13 @@ class MainViewModel @Inject constructor(
      * @param args - needs to distinguish Long and Short measurement
      */
     fun refreshNotesAndAlarms(
-        alarmLayout: LinearLayout,
+//        alarmLayout: LinearLayout,
         notesLayout: LinearLayout,
         layoutInflater: LayoutInflater,
         args: ExtraFragmentArgs
     ) {
         repository.noteHandler.refreshLayout(notesLayout, layoutInflater)
-        repository.alarmHandler.refreshLayout(alarmLayout, layoutInflater, args)
+//        repository.alarmHandler.refreshLayout(alarmLayout, layoutInflater, args)
     }
 
     /**
@@ -171,9 +170,9 @@ class MainViewModel @Inject constructor(
         positionSensorSpeed = 0
     }
 
-    fun getAlarmHandler(): AlarmHandler {
-        return repository.alarmHandler
-    }
+//    fun getAlarmHandler(): AlarmHandler {
+//        return repository.alarmHandler
+//    }
 
     fun getNotes(): ArrayList<String> {
         return repository.noteHandler.notes
