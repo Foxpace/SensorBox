@@ -10,11 +10,22 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
-import com.motionapps.sensorservices.handlers.measurements.*
+import com.motionapps.sensorservices.handlers.measurements.ActivityRecognition
+import com.motionapps.sensorservices.handlers.measurements.AlarmNoiseHandler
+import com.motionapps.sensorservices.handlers.measurements.ExtraInfoHandler
+import com.motionapps.sensorservices.handlers.measurements.GPSMeasurement
+import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface
+import com.motionapps.sensorservices.handlers.measurements.SensorMeasurement
+import com.motionapps.sensorservices.handlers.measurements.SignificantMotion
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.sensorservices.services.MeasurementStates
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 
 
 @ExperimentalCoroutinesApi
@@ -206,7 +217,7 @@ class ServiceController {
 
         val flags =
             if (SDK_INT >= Build.VERSION_CODES.S) {
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             } else {
                 PendingIntent.FLAG_UPDATE_CURRENT
             }

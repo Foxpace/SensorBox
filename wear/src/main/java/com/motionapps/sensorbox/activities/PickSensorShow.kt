@@ -8,29 +8,49 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.View
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
-import com.motionapps.sensorbox.charts.GraphViewer
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.SensorBasicAdapter
 import com.motionapps.sensorbox.adapters.SensorBasicAdapter.ItemClickListener
+import com.motionapps.sensorbox.charts.GraphViewer
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-class PickSensorShow: AppCompatActivity(), ItemClickListener {
+class PickSensorShow: ComponentActivity(), ItemClickListener {
 
     private var mapRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             startActivity(Intent(this, MapsActivity::class.java))
         }
     }
+
+    private var bodySensorsRequest =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { result ->
+            if (result) {
+                startActivity(tempIntent)
+            } else {
+
+                if (shouldShowRequestPermissionRationale(Manifest.permission.BODY_SENSORS)) {
+                    Toasty.error(
+                        this,
+                        R.string.permission_rejected_body,
+                        Toasty.LENGTH_LONG
+                    ).show()
+                } else {
+                    finish()
+                    startActivity(Intent(this, PermissionActivity::class.java))
+                }
+
+            }
+        }
+
 
     private var adapter: SensorBasicAdapter? = null
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,8 +105,7 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
             if(sensorId == Sensor.TYPE_HEART_RATE){
                 if(ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED){
                     tempIntent = intent
-                    ActivityCompat.requestPermissions(this@PickSensorShow,
-                        arrayOf(Manifest.permission.BODY_SENSORS), PERMISSION_RESULT_BODY)
+                    bodySensorsRequest.launch(Manifest.permission.BODY_SENSORS)
                     return
                 }
             }
@@ -95,40 +114,8 @@ class PickSensorShow: AppCompatActivity(), ItemClickListener {
         startActivity(intent)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if(requestCode == PERMISSION_RESULT_BODY || requestCode == PERMISSION_RESULT_GPS){
-            if ((permissions.isNotEmpty() && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                startActivity(tempIntent)
-            } else {
-                when(requestCode){
-                    PERMISSION_RESULT_BODY -> {
-                        if(permissions.isNotEmpty()) {
-                            if (shouldShowRequestPermissionRationale(permissions[0])) {
-                                Toasty.error(
-                                    this,
-                                    R.string.permission_rejected_body,
-                                    Toasty.LENGTH_LONG
-                                ).show()
-                            } else {
-                                finish()
-                                startActivity(Intent(this, PermissionActivity::class.java))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     companion object {
         const val GET_EXTRA_TYPE = "SensorType"
         const val GET_EXTRA_NAME = "SensorName"
-        const val PERMISSION_RESULT_BODY = 123
-        const val PERMISSION_RESULT_GPS = 124
     }
 }

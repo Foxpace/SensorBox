@@ -1,10 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.motionapps.wearoslib">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+
     <application>
     <service
         android:name="WearOsSyncService"
-        android:foregroundServiceType="location"
+        android:foregroundServiceType="dataSync"
         android:enabled="true"
         android:exported="false" />
     </application>
+
+
 </manifest>

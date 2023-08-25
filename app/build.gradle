@@ -11,14 +11,14 @@ if (getGradle().getStartParameter().getTaskRequests().toString().contains("Relea
 }
 
 android {
-    compileSdkVersion 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "motionapps.sensorbox"
         minSdkVersion 24
-        targetSdkVersion 33
-        versionCode 84
-        versionName "4.3.0"
+        targetSdkVersion 34
+        versionCode 85
+        versionName "4.3.1"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -39,15 +39,16 @@ android {
 
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_17
     }
     lint {
         disable 'MissingTranslation'
     }
+    namespace 'com.motionapps.sensorbox'
 
 
 }
@@ -61,33 +62,33 @@ dependencies {
     implementation project(path: ':flipper')
 
     implementation "androidx.multidex:multidex:2.0.1"
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.7.0'
+    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.0'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
 
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
-    implementation 'com.google.android.gms:play-services-basement:18.1.0'
+    implementation 'com.google.android.gms:play-services-basement:18.2.0'
     implementation 'com.google.android.gms:play-services-wearable:18.0.0'
-    implementation 'androidx.preference:preference-ktx:1.2.0'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
 
-    releaseImplementation 'com.google.firebase:firebase-analytics-ktx:21.2.0'
-    releaseImplementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.3'
+    releaseImplementation 'com.google.firebase:firebase-analytics-ktx:21.3.0'
+    releaseImplementation 'com.google.firebase:firebase-crashlytics-ktx:18.4.1'
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 
-    implementation 'androidx.fragment:fragment-ktx:1.5.5'
+    implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.5.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
     implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
 
     implementation "com.google.dagger:hilt-android:$hilt_version"
@@ -106,7 +107,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
 
 }
 

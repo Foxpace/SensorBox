@@ -2,7 +2,7 @@ package com.motionapps.sensorbox.activities
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.preference.PreferenceManager
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
@@ -19,7 +19,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
  */
 @InternalCoroutinesApi
 @ExperimentalCoroutinesApi
-class MainSettings : AppCompatActivity(), SettingsAdapter.ClickListenerInterface {
+class MainSettings : ComponentActivity(), SettingsAdapter.ClickListenerInterface {
 
     private var settingsAdapter: SettingsAdapter? = null
     private var lastChange: Int = -1

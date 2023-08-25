@@ -80,7 +80,7 @@ class AlarmNoiseHandler {
 //        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //            PendingIntent.getBroadcast(
 //                context, code, intent,
-//                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+//                PendingIntent.FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT or PendingIntent.FLAG_UPDATE_CURRENT
 //            )
 //        }else{
 //            PendingIntent.getBroadcast(

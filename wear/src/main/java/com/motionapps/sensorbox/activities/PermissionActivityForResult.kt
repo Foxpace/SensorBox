@@ -1,25 +1,42 @@
 package com.motionapps.sensorbox.activities
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import com.motionapps.sensorbox.R
 
-class PermissionActivityForResult : AppCompatActivity() {
+class PermissionActivityForResult : ComponentActivity() {
 
     private lateinit var permissionPick: String
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onPermissionResult(isGranted)
+    }
+
+    private fun onPermissionResult(granted: Boolean?) {
+        if (granted != null && granted) {
+            goBack()
+        } else {
+            val rational =
+                shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (!rational) {
+                PermissionActivity.showSettings(this)
+            }
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_permission)
-        if(intent.extras == null){
+        if (intent.extras == null) {
             goBack()
-        }else{
+        } else {
             permissionPick = intent.extras!!.getString(GPS_INTENT, GPS_SHOW)
         }
 
@@ -30,69 +47,20 @@ class PermissionActivityForResult : AppCompatActivity() {
 
 
         findViewById<TextView>(R.id.permission_button).setOnClickListener {
-
-            if (permissionPick == GPS_SHOW || Build.VERSION_CODES.Q > Build.VERSION.SDK_INT) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    GPS_REQUEST
-                )
-            } else {
-
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    ),
-                    GPS_REQUEST
-                )
-
-            }
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if(requestCode == GPS_REQUEST && grantResults.isNotEmpty()){
-            if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                goBack()
-            }else{
-                if(permissions.isNotEmpty()){
-                    val rational = shouldShowRequestPermissionRationale(permissions[0])
-                    if(!rational){
-                        PermissionActivity.showSettings(this)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun goBack(){
-        if(permissionPick == GPS_SHOW || Build.VERSION_CODES.Q > Build.VERSION.SDK_INT){
-            if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                setResult(Activity.RESULT_OK)
-            }else{
-                setResult(Activity.RESULT_CANCELED)
-            }
-        }else{
-            if(checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                setResult(Activity.RESULT_OK)
-            }else{
-                setResult(Activity.RESULT_CANCELED)
-            }
+    private fun goBack() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            setResult(RESULT_OK)
+        } else {
+            setResult(RESULT_CANCELED)
         }
         finish()
     }
 
-    companion object{
-
-        private const val GPS_REQUEST = 126
+    companion object {
 
         const val GPS_INTENT = "GPS_INTENT"
         const val GPS_SHOW = "GPS_SHOW"

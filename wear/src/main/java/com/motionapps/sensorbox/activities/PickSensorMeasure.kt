@@ -1,7 +1,6 @@
 package com.motionapps.sensorbox.activities
 
 import android.Manifest
-import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -10,29 +9,37 @@ import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.BatteryManager
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
-import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.adapters.SensorPickerAdapter
 import com.motionapps.sensorbox.adapters.SensorPickerAdapter.ItemClickListener
 import com.motionapps.sensorbox.adapters.SettingsPickerAdapter
+import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorservices.services.MeasurementService.Companion.getIntentWearOs
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
 import com.motionapps.wearoslib.WearOsListener
 import com.motionapps.wearoslib.WearOsStates
 import es.dmoral.toasty.Toasty
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.Objects
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
@@ -40,10 +47,29 @@ import java.util.*
  * User can pick sensors, which will be measured by MeasurementActivity
  */
 
-class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
+class PickSensorMeasure : ComponentActivity(), ItemClickListener, WearOsListener {
 
     private lateinit var adapter: SensorPickerAdapter
     private lateinit var layoutManager: WearableLinearLayoutManager
+
+    private val requestLocationPermission = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+
+        if (result.resultCode == RESULT_OK) {
+            selectSensor(tempPosition)
+        }
+    }
+
+    private val requestBodySensorPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { permission ->
+       onPermissionRefused(
+           Manifest.permission.BODY_SENSORS,
+           permission,
+           R.string.permission_rejected_body
+       )
+    }
 
     // checks for low battery
     private var receiverRegistered = false
@@ -151,28 +177,28 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
             return
         }
 
-        if(adapter.availableSensors[position] == -1 && adapter.gpsExists){
+        if (adapter.availableSensors[position] == -1 && adapter.gpsExists) {
             tempPosition = position
             val permissionIntent = Intent(this, PermissionActivityForResult::class.java)
-            permissionIntent.putExtra(PermissionActivityForResult.GPS_INTENT, PermissionActivityForResult.GPS_LOG)
-            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
-                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                    startActivityForResult(permissionIntent, GPS_REQUEST)
-                    return
-                }
-            }else{
-                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)  != PackageManager.PERMISSION_GRANTED){
-                    startActivityForResult(permissionIntent, GPS_REQUEST)
-                    return
-                }
-            }
+            permissionIntent.putExtra(
+                PermissionActivityForResult.GPS_INTENT,
+                PermissionActivityForResult.GPS_LOG
+            )
 
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestLocationPermission.launch(permissionIntent)
+                return
+            }
         }
 
         if(adapter.availableSensors[position] == Sensor.TYPE_HEART_RATE){
             tempPosition = position
             if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BODY_SENSORS), BODY_REQUEST)
+                requestBodySensorPermission.launch(Manifest.permission.BODY_SENSORS)
                 return
             }
         }
@@ -187,37 +213,17 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
         selectSensor(position)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == GPS_REQUEST && resultCode == RESULT_OK){
-            selectSensor(tempPosition)
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.isNotEmpty()) {
-            if (requestCode == GPS_REQUEST) {
-                onPermission(permissions[0], grantResults, R.string.permission_rejected_gps)
-            } else if (requestCode == BODY_REQUEST) {
-                onPermission(permissions[0], grantResults, R.string.permission_rejected_body)
-            }
-        }
-    }
-
-    private fun onPermission(permission: String, grantResults: IntArray, toastText: Int){
-        if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+    private fun onPermissionRefused(permission: String, granted: Boolean, toastText: Int){
+        if (granted) {
             selectSensor(tempPosition)
         } else {
             if(shouldShowRequestPermissionRationale(permission)){
                 Toasty.error(this, toastText, Toasty.LENGTH_LONG, true).show()
             }else{
                 finish()
-                startActivity(Intent(this, PermissionActivity::class.java))
+                val intent = Intent(this, PermissionActivity::class.java)
+                intent.putExtra(PermissionActivity.PERMISSION_KEY, permission)
+                startActivity(intent)
             }
         }
     }
@@ -283,10 +289,5 @@ class PickSensorMeasure : Activity(), ItemClickListener, WearOsListener {
         val date = Date(time)
         val formatter: DateFormat = SimpleDateFormat(format, Locale.getDefault())
         return formatter.format(date)
-    }
-
-    companion object{
-        const val GPS_REQUEST = 459
-        const val BODY_REQUEST = 460
     }
 }

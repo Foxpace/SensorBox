@@ -1,5 +1,6 @@
 package com.motionapps.sensorbox.rlRecording
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,15 +10,16 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
-import com.motionapps.wearoslib.WearOsConstants.WEAR_END_SENSOR_REAL_TIME
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH_TIME
 import com.motionapps.wearoslib.WearOsConstants.SAMPLE_PATH_VALUE
+import com.motionapps.wearoslib.WearOsConstants.WEAR_END_SENSOR_REAL_TIME
 
 
 /**
@@ -67,9 +69,15 @@ class RealTimeSensorService : Service(), SensorEventListener {
         return START_NOT_STICKY
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun registerBroadcast() {
         val filter = IntentFilter(WEAR_END_SENSOR_REAL_TIME)
-        registerReceiver(receiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(receiver, filter)
+        }
+
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -99,7 +107,7 @@ class RealTimeSensorService : Service(), SensorEventListener {
         val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensorManager.unregisterListener(this)
         val sensor = sensorManager.getDefaultSensor(id)
-        Log.i(TAG, "registerSensors: " + sensor.name)
+        Log.i(TAG, "registerSensors: " + sensor?.name)
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
         running = true
     }

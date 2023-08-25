@@ -1,8 +1,10 @@
 package com.motionapps.sensorbox.activities
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.*
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
@@ -247,13 +249,18 @@ class MainActivity : AppCompatActivity() {
      * Registers WearOs intents from MsgListener
      *
      */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun registerWearOsReceiver(){
         if(!wearOsReceiverB){
             val intentFilter = IntentFilter()
             intentFilter.addAction(WEAR_SEND_SENSOR_INFO)
             intentFilter.addAction(WEAR_STATUS)
             intentFilter.addAction(WEAR_HEART_RATE_PERMISSION_REQUIRED)
-            registerReceiver(wearOsReceiver, intentFilter)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(wearOsReceiver, intentFilter, RECEIVER_EXPORTED)
+            } else {
+                registerReceiver(wearOsReceiver, intentFilter)
+            }
             wearOsReceiverB = true
         }
     }

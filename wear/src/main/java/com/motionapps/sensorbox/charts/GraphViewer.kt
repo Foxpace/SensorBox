@@ -12,8 +12,8 @@ import android.os.HandlerThread
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
-import androidx.wear.ambient.AmbientModeSupport
+import androidx.activity.ComponentActivity
+import androidx.wear.ambient.AmbientLifecycleObserver
 import com.jjoe64.graphview.GraphView
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.activities.PickSensorShow
@@ -27,7 +27,7 @@ import kotlinx.coroutines.*
  * passes sensorEvents to GraphHandler with use of the HandlerThread
  *
  */
-class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport.AmbientCallbackProvider {
+class GraphViewer : ComponentActivity(), SensorEventListener, AmbientLifecycleObserver.AmbientLifecycleCallback {
 
     private var mSensorThread: HandlerThread? = null
     private var mSensorHandler: Handler? = null
@@ -35,8 +35,6 @@ class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport
     private var sensorManager: SensorManager? = null
     private var sensorType = 0
     var paused = false
-
-    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,7 +94,7 @@ class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport
 
         // sensor registration
         registerSensor()
-        ambientController = AmbientModeSupport.attach(this)
+        AmbientLifecycleObserver(this,this)
     }
 
     /**
@@ -145,20 +143,16 @@ class GraphViewer : AppCompatActivity(), SensorEventListener, AmbientModeSupport
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
-    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback = MyAmbientCallback()
 
-    inner class MyAmbientCallback : AmbientModeSupport.AmbientCallback() {
+    override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
+        unregisterSensor()
+    }
 
-        override fun onEnterAmbient(ambientDetails: Bundle?) {
-            unregisterSensor()
-        }
+    override fun onExitAmbient() {
+        registerSensor()
+    }
 
-        override fun onExitAmbient() {
-            registerSensor()
-        }
+    override fun onUpdateAmbient() {
 
-        override fun onUpdateAmbient() {
-
-        }
     }
 }

@@ -50,35 +50,31 @@ object WearOsNotify {
         builder.setContentTitle(context.getString(R.string.wear_os_sync_data))
 
         // importance
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.priority = importance
-            builder.setCategory(Notification.CATEGORY_SERVICE)
-        }
+        builder.priority = importance
+        builder.setCategory(Notification.CATEGORY_SERVICE)
 
         // button to stop sync
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setSmallIcon(R.drawable.ic_graph)
-            builder.color = ContextCompat.getColor(context, R.color.black_color)
-            val stopIntent = Intent(STOP_SYNC)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                builder.addAction(
-                    R.drawable.ic_baseline_stop,
-                    context.getString(R.string.text_stop),
-                    PendingIntent.getBroadcast(
-                        context,
-                        25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                    )
+        builder.setSmallIcon(R.drawable.ic_graph)
+        builder.color = ContextCompat.getColor(context, R.color.black_color)
+        val stopIntent = Intent(STOP_SYNC)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.addAction(
+                R.drawable.ic_baseline_stop,
+                context.getString(R.string.text_stop),
+                PendingIntent.getBroadcast(
+                    context,
+                    25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-            }else{
-                builder.addAction(
-                    R.drawable.ic_baseline_stop,
-                    context.getString(R.string.text_stop),
-                    PendingIntent.getBroadcast(
-                        context,
-                        25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT
-                    )
+            )
+        }else{
+            builder.addAction(
+                R.drawable.ic_baseline_stop,
+                context.getString(R.string.text_stop),
+                PendingIntent.getBroadcast(
+                    context,
+                    25, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT
                 )
-            }
+            )
         }
         return builder.build()
     }

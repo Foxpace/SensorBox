@@ -1,7 +1,7 @@
 package com.motionapps.sensorbox.activities
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
 import com.motionapps.sensorbox.R
@@ -17,7 +17,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
  */
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-class SettingsPicker: AppCompatActivity() {
+class SettingsPicker: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings_picker)

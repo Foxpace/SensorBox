@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.*
+import android.content.Context.RECEIVER_EXPORTED
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -66,10 +67,16 @@ class ActivityRecognition : MeasurementInterface {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun registerActivityRecognitionReceiver(context: Context){
         val intentFilter = IntentFilter()
         registerIntents(intentFilter)
-        context.registerReceiver(broadcastReceiver, intentFilter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(broadcastReceiver, intentFilter, RECEIVER_EXPORTED)
+        }else {
+            context.registerReceiver(broadcastReceiver, intentFilter)
+        }
+
         registered = true
     }
 
@@ -97,7 +104,7 @@ class ActivityRecognition : MeasurementInterface {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.getBroadcast(
                 context, REQUEST_CODE_UPDATES,
-                intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         } else {
             PendingIntent.getBroadcast(
@@ -113,7 +120,7 @@ class ActivityRecognition : MeasurementInterface {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.getBroadcast(
                 context, REQUEST_CODE_TRANSITION,
-                intentTransitions, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                intentTransitions, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         } else {
             PendingIntent.getBroadcast(
@@ -221,12 +228,11 @@ class ActivityRecognition : MeasurementInterface {
      *
      * @param context
      */
-    override suspend fun saveMeasurement(context: Context) {
+    override suspend fun saveMeasurement(context: Context): Unit = withContext(Dispatchers.IO) {
         outputStreamTransitions?.flush()
         outputStreamTransitions?.close()
         outputStreamUpdates?.flush()
         outputStreamUpdates?.close()
-
     }
 
     /**

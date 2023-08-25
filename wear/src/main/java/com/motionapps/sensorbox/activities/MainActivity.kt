@@ -1,10 +1,13 @@
 package com.motionapps.sensorbox.activities
 
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.wear.remote.interactions.RemoteActivityHelper
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
@@ -31,7 +34,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 /**
  * MainActivity for Wear os - let you choose from activities
  */
-class MainActivity: AppCompatActivity(), ClickListenerInterface {
+class MainActivity: ComponentActivity(), ClickListenerInterface {
 
     // checks if the service is alive - switches to active state
     private val connection: ServiceConnection = object  : ServiceConnection {

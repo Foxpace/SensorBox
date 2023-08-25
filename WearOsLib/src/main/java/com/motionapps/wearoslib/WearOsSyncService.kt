@@ -1,11 +1,14 @@
 package com.motionapps.wearoslib
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -72,11 +75,23 @@ class WearOsSyncService : Service(), DataClient.OnDataChangedListener, WearOsLis
             totalCount = intent.getIntExtra(
                 WearOsConstants.NUMBER_OF_FILES, 0
             )
-            startForeground(
-                NOTIFICATION_ID, WearOsNotify.createProgressNotification(
-                    this, totalCount, 0, NotificationCompat.PRIORITY_HIGH
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                startForeground(
+                    NOTIFICATION_ID, WearOsNotify.createProgressNotification(
+                        this, totalCount, 0, NotificationCompat.PRIORITY_HIGH,
+                    ),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
                 )
-            )
+            }else {
+                startForeground(
+                    NOTIFICATION_ID, WearOsNotify.createProgressNotification(
+                        this, totalCount, 0, NotificationCompat.PRIORITY_HIGH
+                    )
+                )
+            }
+
+
 
             broadcastRegistration()
             // sets up data client
@@ -96,11 +111,17 @@ class WearOsSyncService : Service(), DataClient.OnDataChangedListener, WearOsLis
         return START_NOT_STICKY
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun broadcastRegistration() {
         if (!receiverRegistered) {
             val intentFilter = IntentFilter(WearOsConstants.STOP_SYNC)
             intentFilter.addAction(WearOsConstants.WEAR_SEND_PATHS)
-            registerReceiver(broadcastReceiver, intentFilter)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(broadcastReceiver, intentFilter, RECEIVER_EXPORTED)
+            }else {
+                registerReceiver(broadcastReceiver, intentFilter)
+            }
             receiverRegistered = true
         }
     }

@@ -1,18 +1,20 @@
 package com.motionapps.sensorbox.activities
 
+import android.annotation.SuppressLint
 import android.content.*
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.widget.BoxInsetLayout
-import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.communication.MsgListener
 import com.motionapps.sensorservices.services.MeasurementService
 import com.motionapps.wearoslib.WearOsConstants
 import com.motionapps.wearoslib.WearOsHandler
@@ -21,19 +23,17 @@ import com.motionapps.wearoslib.WearOsStates
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.*
 
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
+
 /**
  * launched, when the measurementService is active
  */
-class StopActivity : AppCompatActivity(), WearOsListener,
-    AmbientModeSupport.AmbientCallbackProvider {
+@OptIn(InternalCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+class StopActivity : ComponentActivity(), WearOsListener,
+    AmbientLifecycleObserver.AmbientLifecycleCallback {
 
     private val wearOsHandler: WearOsHandler = WearOsHandler()
     private var wearOsState: WearOsStates.PresenceResult? = null
     private var job: Job? = null
-
-    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     private val handler: Handler = Handler(Looper.getMainLooper())
 
@@ -46,6 +46,8 @@ class StopActivity : AppCompatActivity(), WearOsListener,
         }
     }
 
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.stop_activity)
@@ -86,10 +88,19 @@ class StopActivity : AppCompatActivity(), WearOsListener,
 
 
         // changes colour to black, when inactive - as watch
-        ambientController = AmbientModeSupport.attach(this)
+        AmbientLifecycleObserver(this, this)
 
         // cancel from the phone by communication channel -> receiver
-        registerReceiver(broadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(
+                broadcastReceiver,
+                IntentFilter(MeasurementService.STOP_ACTIVITY),
+                RECEIVER_EXPORTED
+            )
+        } else {
+            registerReceiver(broadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY))
+        }
+
         running = true
 
         // searches for phone
@@ -123,25 +134,23 @@ class StopActivity : AppCompatActivity(), WearOsListener,
         }
     }
 
-    private inner class StopAmbientCallback : AmbientModeSupport.AmbientCallback() {
-        /**
-         * changes colour of the button to black, when inactive
-         * @param ambientDetails
-         */
-        override fun onEnterAmbient(ambientDetails: Bundle?) {
-            turnScreenBlack()
-        }
+    /**
+     * changes colour of the button to black, when inactive
+     * @param ambientDetails
+     */
+    override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
+        turnScreenBlack()
+    }
 
-        /**
-         * turns it back to red, when active
-         */
-        override fun onExitAmbient() {
-            turnScreenRed()
-        }
+    /**
+     * turns it back to red, when active
+     */
+    override fun onExitAmbient() {
+        turnScreenRed()
+    }
 
-        override fun onUpdateAmbient() {
-            // Update the content
-        }
+    override fun onUpdateAmbient() {
+        // Update the content
     }
 
     private fun turnScreenRed() {
@@ -158,9 +167,5 @@ class StopActivity : AppCompatActivity(), WearOsListener,
             this@StopActivity,
             R.color.black_list_color
         )
-    }
-
-    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
-        return StopAmbientCallback()
     }
 }

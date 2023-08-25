@@ -41,21 +41,17 @@ object Notify {
         builder.setSmallIcon(R.drawable.ic_graph)
         builder.color = ContextCompat.getColor(context, R.color.colorBlack)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.priority = NotificationManager.IMPORTANCE_DEFAULT
-            builder.setCategory(Notification.CATEGORY_SERVICE)
+        builder.priority = NotificationManager.IMPORTANCE_DEFAULT
+        builder.setCategory(Notification.CATEGORY_SERVICE)
+
+        val stopIntent = Intent(MeasurementService.STOP_SERVICE)
+        val stopPendingIntent = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }else{
+            PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val stopIntent = Intent(MeasurementService.STOP_SERVICE)
-            val stopPendingIntent = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-                PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
-            }else{
-                PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-            }
-
-            builder.addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopPendingIntent)
-        }
+        builder.addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopPendingIntent)
 
         return builder.build()
     }
@@ -80,10 +76,8 @@ object Notify {
         builder.setSmallIcon(R.drawable.ic_graph)
         builder.color = ContextCompat.getColor(context, R.color.colorBlack)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.priority = NotificationManager.IMPORTANCE_DEFAULT
-            builder.setCategory(Notification.CATEGORY_SERVICE)
-        }
+        builder.priority = NotificationManager.IMPORTANCE_DEFAULT
+        builder.setCategory(Notification.CATEGORY_SERVICE)
 
         return builder.build()
     }

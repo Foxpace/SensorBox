@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -87,6 +88,7 @@ class MeasurementActivity : AppCompatActivity() {
     }
 
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -99,8 +101,11 @@ class MeasurementActivity : AppCompatActivity() {
         Intent(this, MeasurementService::class.java).also { intent ->
             bindService(intent, viewModel.connectionMeasurement, Context.BIND_AUTO_CREATE)
         }
-
-        registerReceiver(mBroadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mBroadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY), RECEIVER_EXPORTED)
+        }else {
+            registerReceiver(mBroadcastReceiver, IntentFilter(MeasurementService.STOP_ACTIVITY))
+        }
         receiverRegistered = true
     }
 
@@ -459,7 +464,8 @@ class MeasurementActivity : AppCompatActivity() {
         val intent = Intent(MeasurementService.STOP_SERVICE)
         intent.putExtra(MeasurementService.USER, true)
         sendBroadcast(intent)
-        startActivity(Intent(this@MeasurementActivity, MainActivity::class.java))
         finish()
+        startActivity(Intent(this@MeasurementActivity, MainActivity::class.java))
+
     }
 }

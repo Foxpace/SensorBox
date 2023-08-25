@@ -132,7 +132,9 @@ open class SensorDisplayer @Inject constructor(): Displayer, TextUpdater.TextUpd
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = sensorManager.getDefaultSensor(sensorNeeds.id)
         val array: ArrayList<View> = ArrayList()
-
+        if (sensor == null) {
+            return arrayListOf()
+        }
         // pulls data from the sensor and creates views of the attributes to show
         for (sensorInfoView: SensorInfoView in SensorAttributes.getSensorInfoViews(context, sensor, icon, sensorNeeds)) {
             val view = inflater.inflate(R.layout.item_layout_sensorrow_info, null)

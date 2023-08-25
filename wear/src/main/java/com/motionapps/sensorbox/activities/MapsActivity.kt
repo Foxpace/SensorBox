@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Bundle
 import android.widget.ImageButton
-import androidx.appcompat.app.AppCompatActivity
-import androidx.wear.ambient.AmbientModeSupport
+import androidx.activity.ComponentActivity
+import androidx.wear.ambient.AmbientLifecycleObserver
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
@@ -17,7 +17,8 @@ import kotlinx.coroutines.InternalCoroutinesApi
 
 @ExperimentalCoroutinesApi
 @InternalCoroutinesApi
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport.AmbientCallbackProvider, GPSHandler.OnLocationChangedCallback {
+class MapsActivity : ComponentActivity(), OnMapReadyCallback, GPSHandler.OnLocationChangedCallback,
+    AmbientLifecycleObserver.AmbientLifecycleCallback {
 
     private lateinit var googleMap: GoogleMap
     private lateinit var mapView: MapView
@@ -33,6 +34,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
 
         val button = findViewById<ImageButton>(R.id.map_back)
         button.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        AmbientLifecycleObserver(this, this)
     }
 
     override fun onStart() {
@@ -85,25 +88,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, AmbientModeSupport
         gpsHandler.gpsOff()
     }
 
-    private inner class MapAmbient : AmbientModeSupport.AmbientCallback() {
-        override fun onEnterAmbient(ambientDetails: Bundle?) {
-            mapView.onEnterAmbient(ambientDetails)
-            gpsHandler.gpsOff()
-        }
 
-        override fun onExitAmbient() {
-            mapView.onExitAmbient()
-            gpsHandler.addCallback(this@MapsActivity, this@MapsActivity)
-        }
-
-        override fun onUpdateAmbient() {
-
-        }
+    override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
+        mapView.onEnterAmbient(null)
+        gpsHandler.gpsOff()
     }
 
-    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
-        return MapAmbient()
+    override fun onExitAmbient() {
+        mapView.onExitAmbient()
+        gpsHandler.addCallback(this@MapsActivity, this@MapsActivity)
     }
+
+    override fun onUpdateAmbient() {
+
+    }
+
 
     override fun onLocationChanged(location: Location?) {
         updateGPS(location)

@@ -65,8 +65,10 @@ class SensorMeasurement: MeasurementInterface {
     override fun startMeasurement(context: Context) {
         val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         for(holder: SensorHolder in holders){
-            val sensor: Sensor = sensorManager.getDefaultSensor(holder.sensorId)
-            sensorManager.registerListener(holder, sensor, this.params.getInt(SENSOR_SPEED))
+            val sensor: Sensor? = sensorManager.getDefaultSensor(holder.sensorId)
+            sensor?.let {
+                sensorManager.registerListener(holder, sensor, this.params.getInt(SENSOR_SPEED))
+            }
         }
     }
 

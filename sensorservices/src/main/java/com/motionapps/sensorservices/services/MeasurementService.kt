@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.hardware.SensorManager
 import android.os.*
@@ -84,7 +85,7 @@ class MeasurementService : Service(), WearOsListener {
     var paramType: Int = ENDLESS
     var paramSensorId: IntArray? = null
     private var paramInternalStorage = false
-    var paramTimeIntervals: IntArray = intArrayOf(-1)
+    private var paramTimeIntervals: IntArray = intArrayOf(-1)
     private var paramChecks: BooleanArray = booleanArrayOf(false, false, false, false, false)
 
     // main controller for measurement
@@ -98,7 +99,6 @@ class MeasurementService : Service(), WearOsListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         running = true
-
         intent?.let {
             unwrapIntent(it)
         }
@@ -110,8 +110,10 @@ class MeasurementService : Service(), WearOsListener {
                         applicationContext, getString(
                             R.string.notification_title
                         ), getString(R.string.notification_content)
-                    ), FOREGROUND_SERVICE_TYPE_LOCATION
+                    ),
+                    if (Build.VERSION.SDK_INT >= 34) FOREGROUND_SERVICE_TYPE_HEALTH else FOREGROUND_SERVICE_TYPE_LOCATION
                 )
+
             } else {
                 startForeground(
                     ONGOING_NOTIFICATION_ID,
@@ -180,6 +182,7 @@ class MeasurementService : Service(), WearOsListener {
      * registers receiver for the intent to stop service / write annotation
      * also can registers intents for battery status and controls the battery %
      */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun createBroadcastReceiver() {
         val intentFilter = IntentFilter(STOP_SERVICE)
         intentFilter.addAction(ANNOTATION)
@@ -189,7 +192,12 @@ class MeasurementService : Service(), WearOsListener {
             intentFilter.addAction(Intent.ACTION_BATTERY_LOW)
         }
 
-        registerReceiver(serviceBroadcastReceiver, intentFilter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(serviceBroadcastReceiver, intentFilter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(serviceBroadcastReceiver, intentFilter)
+        }
+
         receiver = true
     }
 
@@ -291,7 +299,7 @@ class MeasurementService : Service(), WearOsListener {
                 serviceController.onStop(this@MeasurementService)
             } // stops measurement
             savingJob.invokeOnCompletion {
-                stopForeground( STOP_FOREGROUND_REMOVE)
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 onMeasurementStateListener = null
                 wearOsJob?.cancel() // cancels Wear Os
                 wearOsHandler.onDestroy()
@@ -371,7 +379,7 @@ class MeasurementService : Service(), WearOsListener {
         const val CUSTOM_NAME = "CUSTOM_NAME"
         const val INTERNAL_STORAGE = "INTERNAL_STORAGE"
         const val OTHER = "OTHER"
-        internal const val ALARMS = "ALARMS"
+        private const val ALARMS = "ALARMS"
         internal const val NOTES = "NOTES"
         const val TIME_INTERVALS = "TIME_INTERVALS"
         const val ANDROID_SENSORS = "ANDROID_SENSORS"
