@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SensorBox</string>
-    <string name="service_type">location</string>
+    <string name="service_type">location|health</string>
 
     <string name="text_stop">Stop</string>
     <string name="notification_title">Measuring</string>

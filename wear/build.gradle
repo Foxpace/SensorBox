@@ -8,13 +8,13 @@ if (getGradle().getStartParameter().getTaskRequests().toString().contains("Relea
 }
 
 android {
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         applicationId "motionapps.sensorbox"
         minSdkVersion 25
-        targetSdkVersion 34
-        versionCode 1000045
+        targetSdkVersion 33
+        versionCode 1000046
         versionName "3.5.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug

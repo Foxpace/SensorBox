@@ -11,7 +11,7 @@
     <application>
         <service
             android:name=".services.MeasurementService"
-            android:foregroundServiceType="location|health"
+            android:foregroundServiceType="@string/service_type"
             android:enabled="true"
             android:exported="false"
             />
