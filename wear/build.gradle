@@ -14,7 +14,7 @@ android {
         applicationId "motionapps.sensorbox"
         minSdkVersion 25
         targetSdkVersion 33
-        versionCode 1000046
+        versionCode 1000047
         versionName "3.5.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
