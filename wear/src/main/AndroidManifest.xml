@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BODY_SENSORS" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -32,7 +32,8 @@
 
         <activity
             android:name=".activities.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:taskAffinity=".main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -41,11 +42,13 @@
 
         <activity
             android:name=".activities.PermissionActivityForResult"
-            android:label="@string/title_activity_permission_for_result"/>
+            android:label="@string/title_activity_permission_for_result"
+            android:taskAffinity=".main" />
 
         <activity
             android:name=".activities.PermissionActivity"
-            android:label="@string/title_activity_permission"/>
+            android:label="@string/title_activity_permission"
+            android:taskAffinity=".main" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -53,22 +56,30 @@
 
         <activity
             android:name=".activities.MapsActivity"
-            android:label="@string/title_activity_maps" />
+            android:label="@string/title_activity_maps"
+            android:taskAffinity=".main" />
         <activity
             android:name=".activities.MainSettings"
-            android:label="@string/title_activity_main_settings" />
+            android:label="@string/title_activity_main_settings"
+            android:taskAffinity=".main" />
         <activity
             android:name=".activities.SettingsPicker"
-            android:label="@string/title_activity_settings" />
+            android:label="@string/title_activity_settings"
+            android:taskAffinity=".main" />
         <activity
             android:name=".activities.PickSensorMeasure"
-            android:label="@string/title_activity_pick_sensor_measure" />
+            android:label="@string/title_activity_pick_sensor_measure"
+            android:taskAffinity=".main" />
         <activity
             android:name=".activities.StopActivity"
-            android:label="@string/title_activity_stopactivity" />
-        <activity android:name=".activities.MoveToMain" />
+            android:label="@string/title_activity_stopactivity"
+            android:taskAffinity=".main" />
+        <activity
+            android:name=".activities.MoveToMain"
+            android:taskAffinity=".main" />
 
-        <service android:name=".communication.MsgListener"
+        <service
+            android:name=".communication.MsgListener"
             android:exported="true"
             android:foregroundServiceType="dataSync">
             <intent-filter>
@@ -82,9 +93,9 @@
         </service>
         <service
             android:name=".rlRecording.RealTimeSensorService"
-            android:permission="com.foxpace.sensors.LAUNCH"
+            android:exported="true"
             android:foregroundServiceType="dataSync"
-            android:exported="true">
+            android:permission="com.foxpace.sensors.LAUNCH">
             <intent-filter>
                 <action android:name="com.foxpace.sensors.LAUNCH" />
             </intent-filter>
@@ -92,10 +103,12 @@
 
         <activity
             android:name=".activities.PickSensorShow"
-            android:label="@string/title_activity_pick_sensor" />
+            android:label="@string/title_activity_pick_sensor"
+            android:taskAffinity=".main" />
         <activity
             android:name=".charts.GraphViewer"
-            android:label="@string/title_activity_graph_viewer" />
+            android:label="@string/title_activity_graph_viewer"
+            android:taskAffinity=".main" />
 
         <property
             android:name="android.content.MEDIA_CAPABILITIES"

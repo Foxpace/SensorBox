@@ -30,6 +30,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <uses-permission android:name="android.permission.BODY_SENSORS"/>
@@ -39,81 +40,6 @@
     <uses-feature
         android:name="android.hardware.sensor.accelerometer"
         android:required="true" />
-
-    <compatible-screens>
-        <screen
-            android:screenDensity="ldpi"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="mdpi"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="hdpi"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="xhdpi"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="420"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="480"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="560"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="640"
-            android:screenSize="small" />
-        <screen
-            android:screenDensity="ldpi"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="mdpi"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="hdpi"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="xhdpi"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="420"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="480"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="560"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="640"
-            android:screenSize="normal" />
-        <screen
-            android:screenDensity="ldpi"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="mdpi"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="hdpi"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="xhdpi"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="420"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="480"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="560"
-            android:screenSize="large" />
-        <screen
-            android:screenDensity="640"
-            android:screenSize="large" />
-    </compatible-screens>
 
     <application
         android:name=".SensorBoxApp"
