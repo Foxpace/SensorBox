@@ -12,7 +12,6 @@ This repository is now archived and will no longer be actively maintained.
 
 The SensorBox provides easy way to access sensors in Android phone and Wear Os. You can customize measurements in many ways, which is suitable for development of other apps. The outputs of the app are raw outputs of the system.
 
-## [Download it on Google Play here](https://play.google.com/store/apps/details?id=motionapps.sensorbox&hl=en_CA)
 [![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
