@@ -1,5 +1,7 @@
 # SensorBox - record all your sensors to csv files
 
+This repository is now archived and will no longer be actively maintained.
+
 <p align="center">
 <img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/icon.png" width="250">
 </p>
@@ -13,7 +15,6 @@ The SensorBox provides easy way to access sensors in Android phone and Wear Os. 
 ## [Download it on Google Play here](https://play.google.com/store/apps/details?id=motionapps.sensorbox&hl=en_CA)
 [![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![fdroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/motionapps.sensorbox)](https://apt.izzysoft.de/fdroid/index/apk/motionapps.sensorbox)
 
 ## Features:
 
