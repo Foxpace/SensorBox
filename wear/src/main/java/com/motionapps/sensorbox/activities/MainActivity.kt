@@ -1,107 +1,121 @@
 package com.motionapps.sensorbox.activities
 
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
-import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
+import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.remote.interactions.RemoteActivityHelper
-import androidx.wear.widget.WearableLinearLayoutManager
-import androidx.wear.widget.WearableRecyclerView
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.adapters.MainActivityAdapter
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.ClickListenerInterface
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.PHONE_INFO
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.PRIVACY_POLICY
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.SENSOR_MEASUREMENT
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.SENSOR_SHOW
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.SETTINGS
-import com.motionapps.sensorbox.adapters.MainActivityAdapter.Companion.TERMS
-import com.motionapps.sensorservices.services.MeasurementService
-import com.motionapps.sensorservices.services.MeasurementService.MeasurementBinder
-import com.motionapps.wearoslib.WearOsHandler
-import es.dmoral.toasty.Toasty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.presentation.dashboard.WearDashboardEffect
+import com.motionapps.sensorbox.presentation.dashboard.WearDashboardIntent
+import com.motionapps.sensorbox.presentation.dashboard.WearDashboardScreen
+import com.motionapps.sensorbox.presentation.dashboard.WearDashboardViewModel
+import com.motionapps.sensorbox.presentation.dashboard.WearRoute
+import com.motionapps.sensorbox.presentation.menu.WearMenuDestination
+import com.motionapps.sensorbox.ui.theme.WearSensorBoxTheme
+import dagger.hilt.android.AndroidEntryPoint
 
-
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
-
-/**
- * MainActivity for Wear os - let you choose from activities
- */
-class MainActivity: ComponentActivity(), ClickListenerInterface {
-
-    // checks if the service is alive - switches to active state
-    private val connection: ServiceConnection = object  : ServiceConnection {
-        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-            if (iBinder is MeasurementBinder) {
-                val measurementService = iBinder.getService()
-                if (measurementService.running) {
-                    finish()
-                    startActivity(Intent(this@MainActivity, StopActivity::class.java))
-                }
-            }
-            unbindService(this)
-        }
-
-        override fun onServiceDisconnected(componentName: ComponentName) {}
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    private val viewModel: WearDashboardViewModel by viewModels()
+    private val permissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { result ->
+        viewModel.accept(WearDashboardIntent.PermissionsResolved(result.values.all { it }))
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        // adding recycleview and adapter to scroll through the activities
-        val recyclerView: WearableRecyclerView = findViewById(R.id.menu_recycler_pick_view)
-        recyclerView.layoutManager = WearableLinearLayoutManager(this)
-        recyclerView.isEdgeItemsCenteringEnabled = true
-
-        val mainActivityAdapter = MainActivityAdapter(this)
-        mainActivityAdapter.clickListener = this
-        recyclerView.adapter = mainActivityAdapter
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        bindService(
-            Intent(this, MeasurementService::class.java),
-            connection,
-            BIND_AUTO_CREATE
-        )
-    }
-
-    override fun onClick(action: Int) {
-        when(action){
-            SENSOR_MEASUREMENT -> startActivity(Intent(this, PickSensorMeasure::class.java))
-            SENSOR_SHOW -> startActivity(Intent(this, PickSensorShow::class.java))
-            PHONE_INFO -> startActivity(Intent(this, MoveToMain::class.java))
-            SETTINGS -> startActivity( Intent(this, MainSettings::class.java))
-            PRIVACY_POLICY -> startBrowser(this, R.string.link_privacy_policy)
-            TERMS -> startBrowser(this, R.string.link_terms)
+        onBackPressedDispatcher.addCallback(this) {
+            if (viewModel.state.value.route == WearRoute.MENU) {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            } else {
+                viewModel.accept(WearDashboardIntent.Back)
+            }
+        }
+        setContent {
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            LaunchedEffect(viewModel) { viewModel.effects.collect(::handleEffect) }
+            LaunchedEffect(state.preferences.keepWearDisplayOn) {
+                updateDisplayPolicy(state.preferences.keepWearDisplayOn)
+            }
+            WearSensorBoxTheme {
+                WearDashboardScreen(
+                    state = state,
+                    chartModelProducer = viewModel.chartModelProducer,
+                    accept = viewModel::accept,
+                )
+            }
         }
     }
 
+    private fun handleEffect(effect: WearDashboardEffect) {
+        when (effect) {
+            is WearDashboardEffect.RequestPermissions -> appResult(
+                AppError.Kind.PERMISSION,
+                "Request Wear permissions",
+            ) {
+                permissions.launch(effect.permissions.toTypedArray())
+            }
 
+            WearDashboardEffect.OpenPhone -> appResult(
+                AppError.Kind.EXTERNAL_ACTION,
+                "Open phone launcher",
+            ) { startActivity(Intent(this, MoveToMain::class.java)) }
 
-    companion object{
-        fun startBrowser(context: Context, urlID: Int){
+            is WearDashboardEffect.OpenUrl -> openOnPhone(effect.destination)
+        }
+    }
 
-            val remoteActivityHelper = RemoteActivityHelper(context)
-
-            remoteActivityHelper.startRemoteActivity(
-                Intent(Intent.ACTION_VIEW)
-                    .addCategory(Intent.CATEGORY_BROWSABLE)
-                    .setData( Uri.parse(context.getString(urlID))),
-                WearOsHandler().getNodeId(context)
+    private fun openOnPhone(destination: WearMenuDestination) {
+        val url = when (destination) {
+            WearMenuDestination.PRIVACY -> getString(R.string.link_privacy_policy)
+            else -> getString(R.string.link_terms)
+        }
+        val intent = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(url.toUri())
+        appResult(AppError.Kind.EXTERNAL_ACTION, "Request phone browser") {
+            RemoteActivityHelper(this).startRemoteActivity(intent)
+        }.onSuccess { request ->
+            request.addListener(
+                {
+                    appResult(AppError.Kind.EXTERNAL_ACTION, "Open phone browser") { request.get() }
+                        .fold(
+                            onSuccess = {
+                                Toast.makeText(this, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
+                            },
+                            onFailure = {
+                                Toast.makeText(this, R.string.open_phone_browser_failed, Toast.LENGTH_LONG).show()
+                            },
+                        )
+                },
+                ContextCompat.getMainExecutor(this),
             )
-            Toasty.info(context, R.string.open_phone_browser, Toasty.LENGTH_SHORT, true).show()
+        }.onFailure {
+            Toast.makeText(this, R.string.open_phone_browser_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun updateDisplayPolicy(keepDisplayOn: Boolean) {
+        if (keepDisplayOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 }
