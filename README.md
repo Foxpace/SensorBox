@@ -1,88 +1,121 @@
-# SensorBox - record all your sensors to csv files
+# SensorBox
 
-This repository is now archived and will no longer be actively maintained.
+SensorBox records raw Android and Wear OS sensor samples to local CSV files. The phone app uses Android's system folder picker; recordings never require cloud storage or an account.
 
-<p align="center">
-<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/icon.png" width="250">
-</p>
+This is the hard-cut Android 17 generation of the project. It does not retain the former Fragment/XML UI, `SharedPreferences`, Firebase, Maps, or compatibility migrations for old settings.
 
-<p align="center">
-<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/sensorbox_preview.png" width="1000">
-</p>
+## Screenshots
 
-The SensorBox provides easy way to access sensors in Android phone and Wear Os. You can customize measurements in many ways, which is suitable for development of other apps. The outputs of the app are raw outputs of the system.
+| Sensor selection | Measurement setup |
+|:---:|:---:|
+| <img src="docs/images/sensorbox-phone-record.png" alt="SensorBox sensor selection with original icons" width="280"> | <img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox measurement setup" width="280"> |
 
-[![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+| Wear dashboard | Wear live-sensor picker |
+|:---:|:---:|
+| <img src="docs/images/sensorbox-wear.png" alt="SensorBox Wear OS dashboard" width="280"> | <img src="docs/images/sensorbox-wear-live.png" alt="SensorBox Wear OS live-sensor picker" width="280"> |
 
-## Features:
+### First-run introduction
 
-Whole functionality is hidden under SensorServices library, where one foreground service operates with sensors, GPS and other APIs.
+| Welcome | Local data | Privacy and terms |
+|:---:|:---:|:---:|
+| <img src="docs/images/sensorbox-intro-welcome.png" alt="SensorBox welcome introduction" width="220"> | <img src="docs/images/sensorbox-intro-privacy.png" alt="SensorBox local-data introduction" width="220"> | <img src="docs/images/sensorbox-intro-policy.png" alt="SensorBox privacy and terms introduction" width="220"> |
 
-* stores **sensor outputs** into the csv: *timestamp, values, accuracy*
-* values from the sensors are in raw format - **no resampling**
-* pick native sensor speed limits
-* compatible with **GPS**
-* can use **Activity recognition API from Android** and **Significant motion sensor**
-* write custom annotation during measurement
-* all extra information are stored in **JSON**
-* check sensor attributes and preview of the outputs
-* measurement can be customized :
-  *  write own key words to measurement 
-  *  set up timed alarms
-  *  set up countdown to start measurement
-  *  stop on low battery measurement
-  *  lock CPU, add app to whitelist
-* compatible with **Wear Os** with similar features
+| Android lifecycle | Battery optimization | Recording folder |
+|:---:|:---:|:---:|
+| <img src="docs/images/sensorbox-intro-lifecycle.png" alt="SensorBox Android lifecycle introduction" width="220"> | <img src="docs/images/sensorbox-intro-battery.png" alt="SensorBox battery optimization introduction" width="220"> | <img src="docs/images/sensorbox-intro-storage.png" alt="SensorBox recording-folder introduction" width="220"> |
 
-## Organization of code and the libraries:
+The introduction uses the original repository artwork. Privacy Policy, Terms of Use, battery optimization, and folder selection are live native actions. Folder selection remains mandatory before setup can finish.
 
-### Code
-* whole code is in **Kotlin** (Flipper - third party - code is in Java)
-* the phone app follows **MVI architecture** - activity/fragment -> ViewModel -> repository
-  * There are 2 activities created with this architecture :
-    * **MainActivity** - created with other fragments like HomeFragment, AdvancedFragment, SettingsFragment, ...  - these **fragments share one ViewModel** defined by MainActivity. Meanwhile for the navigation is used androidx fragment navigation library.
-    * **MeasurementActivity** - alone activity to create annotations / stop the measurement if it is proceeding - **has its own ViewModel**
-* In the phone application is used **Hilt - dependency injection library** 
-* **The phone app and the Wear Os app use the same SensorService Library** which covers all the requirements from the apps. The library provides intents builders for both of them. 
-* **WearOsLib** provides easy and comprehensive code of how to find other device and send messages, send file between them. 
+## Current feature set
 
+- Record available phone or watch sensors at Android sampling periods.
+- Record foreground GPS samples alongside sensor data.
+- Run measurement work in an explicit foreground service with health/location service types.
+- Stop safely from the app, watch, notification, low-battery policy, or a paired-device command.
+- Preview a live watch sensor with a Compose-native chart.
+- Stream watch recordings to the phone with the Wear OS Channel API.
+- Store phone recordings in a user-selected Storage Access Framework folder.
+- Follow system/dynamic color with light, dark, and custom fallback palettes.
 
-### Libraries:
+## Architecture
 
-* **app / wear** - implementation for the phone / wearable respectively 
-* **CountDownDialog** - library for creation of the countdowns, with interaface to interact and custom Dialog
-* **Flipper** - [Storage access framework](https://github.com/baldapps/Flipper) created by [baldapps](https://github.com/baldapps)
-* **Sensorservices** - main background service, which registers all the sensors and other providers of the data
-* **WearOsLib** - general library for communication of the phone and wearable and vice versa
+The UI modules use unidirectional MVI:
 
-## How to build the project:
+`Composable → Intent → ViewModel → use case → repository/service → State + Effect`
 
-* clone / download the project to your machine
-* to activate google services follow steps at **[Firebase](https://console.firebase.google.com/u/0/).** Create project and get the `google-services.json`
-  * make sure, that the package id in app/wear build gradle is the same as in firebase console
-* `google-services.json` copy to the app folder and wear folder too
-* to activate Google maps, follow the steps here to create API key **[Google documentation](https://developers.google.com/maps/documentation/android-sdk/get-api-key#console)**
-* adding line to `local.properties`: **MAPS_API_KEY=YOUR_API_KEY** is enough
+UI launchers execute one-shot effects, while decisions and state transitions remain in ViewModels, reducers, and focused use cases. Hilt provides production dependencies and interfaces keep platform boundaries replaceable in tests.
 
+Modules:
 
-## Third parties:
+- `app`: phone Compose UI, MVI, permissions, native document storage, and received watch files.
+- `wear`: Wear Compose Material 3 UI, MVI, live charts, recording, and phone launch flow.
+- `core`: DataStore preferences, storage contracts, reducers, and reusable test fixtures.
+- `sensorservices`: foreground measurement service and linear sensor/GPS writers.
+- `WearOsLib`: coroutine-based connectivity, versioned command protocol, and Channel file transport.
 
-Thanks goes to:
+## Platform and toolchain
 
-* [GraphView](https://github.com/jjoe64/GraphView) - chart library 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Flipper](https://github.com/baldapps/Flipper) - storage access framework
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [AppIntro](https://github.com/AppIntro/AppIntro) - introduction to the app for the first launch
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Material dialogs](https://github.com/afollestad/material-dialogs) - dialogs with material design style
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Number picker](https://github.com/ShawnLin013/NumberPicker) - create custom number pickers
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [Android about page](https://github.com/medyo/android-about-page) - easy way to create about page
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [Licenses dialog](https://github.com/PSDev/LicensesDialog) - dialog to aggreate all licences - check out for the full licenses
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Toasty](https://github.com/GrenderG/Toasty) - The usual Toast, but with steroids 💪 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+- Android Gradle Plugin 9.3.1 and Gradle 9.7
+- Android compile/target SDK 37 (Android 17)
+- Java 17 and Kotlin 2.4.10
+- Jetpack Compose Material 3 and Wear Compose Material 3
+- Hilt 2.60.1
+- DataStore Preferences 1.2.1
+- Detekt 2 with formatting rules and no baselines
+
+Every Kotlin function is checked at a maximum of 40 lines. Compose functions therefore also stay below the requested 60-line ceiling.
+
+## Build and quality checks
+
+Install JDK 17 and Android SDK 37, then run:
+
+```shell
+./gradlew :app:assembleDebug :wear:assembleDebug
+./gradlew testDebugUnitTest detekt
+./gradlew :app:lintDebug :wear:lintDebug
+```
+
+Instrumentation test sources can be compiled without a device:
+
+```shell
+./gradlew :app:compileDebugAndroidTestKotlin :wear:compileDebugAndroidTestKotlin
+```
+
+Tests use Given/When/Then naming, reusable state/repository fixtures, coroutine test contexts, and Compose robots for end-to-end UI interactions.
+
+## Emulator integration tests
+
+The phone sensor test starts the real foreground measurement service, injects three accelerometer values through the emulator console, and verifies the generated CSV:
+
+```shell
+ANDROID_HOME="$HOME/Library/Android/sdk" \
+PHONE_SERIAL=emulator-5554 \
+tools/emulator/run_phone_sensor_test.sh
+```
+
+The Wear sync test sends a fixture CSV through the real Wear OS Channel API and verifies its exact bytes on the phone. Use an Android 17 Google Play phone AVD and a Wear OS 7 AVD. Pair them once with Android Studio's Pairing Assistant and complete the Wear companion flow before running:
+
+```shell
+ANDROID_HOME="$HOME/Library/Android/sdk" \
+PHONE_SERIAL=emulator-5554 \
+WEAR_SERIAL=emulator-5556 \
+tools/emulator/run_wear_sync_test.sh
+```
+
+The runner creates Android Studio's ADB forward/reverse bridge and fails immediately with pairing guidance when the watch reports no peer. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected Storage Access Framework directory.
+
+No Firebase project, Maps key, secrets file, or external storage permission is required.
+
+## Dependencies
+
+The former Flipper, AppIntro, Material Dialogs, NumberPicker, Android About Page, LicensesDialog, Toasty, GraphView, and custom countdown modules have been removed. Their replacements are native APIs or small project-owned Compose components.
+
+[Vico](https://github.com/patrykandpatrick/vico) is retained as the sole feature-level third-party UI library because it provides a maintained, Compose-native chart model and renderer suitable for the live Wear OS plot. AndroidX, Google Play services for Wear/location, Kotlin coroutines, Hilt, and Detekt remain infrastructure dependencies.
+
+## Privacy
+
+Measurements are initiated by the user, represented by an ongoing foreground-service notification, and written locally. SensorBox does not upload measurement data or include analytics/crash-reporting SDKs.
+
+## License
+
+SensorBox is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
