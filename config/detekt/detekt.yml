@@ -1,0 +1,165 @@
+# Rules here encode the parts of architecture.md that static analysis can verify.
+# Package-layer dependencies and exact MVI stream shapes still require architectural tests.
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  CognitiveComplexMethod:
+    active: true
+    allowedComplexity: 12
+  ComplexCondition:
+    active: true
+    allowedConditions: 4
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 12
+  LargeClass:
+    active: true
+    allowedLines: 400
+  LongMethod:
+    active: true
+    allowedLines: 60
+    ignoreAnnotated:
+      - Composable
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 6
+    allowedConstructorParameters: 8
+    ignoreDefaultParameters: true
+  NestedBlockDepth:
+    active: true
+    allowedDepth: 4
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerClass: 22
+    allowedFunctionsPerFile: 22
+
+coroutines:
+  CoroutineLaunchedInTestWithoutRunTest:
+    active: true
+  GlobalCoroutineUsage:
+    active: true
+  InjectDispatcher:
+    active: true
+  RedundantSuspendModifier:
+    active: true
+  SleepInsteadOfDelay:
+    active: true
+  SuspendFunInFinallySection:
+    active: true
+  SuspendFunSwallowedCancellation:
+    active: true
+  SuspendFunWithCoroutineScopeReceiver:
+    active: true
+  SuspendFunWithFlowReturnType:
+    active: true
+
+exceptions:
+  ErrorUsageWithThrowable:
+    active: true
+  InstanceOfCheckForException:
+    active: true
+  NotImplementedDeclaration:
+    active: true
+  ObjectExtendsThrowable:
+    active: true
+  SwallowedException:
+    active: true
+  ThrowingExceptionFromFinally:
+    active: true
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable
+      - Preview
+  PackageNaming:
+    active: true
+    packagePattern: '^[a-z]+(\.[a-z][a-zA-Z0-9]*)*$'
+
+potential-bugs:
+  CastNullableToNonNullableType:
+    active: true
+  DontDowncastCollectionTypes:
+    active: true
+  DoubleMutabilityForCollection:
+    active: true
+  ElseCaseInsteadOfExhaustiveWhen:
+    active: true
+  ExitOutsideMain:
+    active: true
+  ImplicitDefaultLocale:
+    active: true
+  NullCheckOnMutableProperty:
+    active: true
+  UnreachableCode:
+    active: true
+  UnsafeCallOnNullableType:
+    active: true
+
+style:
+  DataClassShouldBeImmutable:
+    active: true
+  MagicNumber:
+    active: false
+  ForbiddenComment:
+    active: true
+    comments:
+      - 'FIXME:'
+      - 'STOPSHIP:'
+  ForbiddenImport:
+    active: true
+    forbiddenImports:
+      - 'kotlinx.coroutines.GlobalScope: Use a lifecycle-aware or injected CoroutineScope.'
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - kotlin.io.print
+      - kotlin.io.println
+      - java.lang.Thread.sleep
+      - androidx.compose.runtime.collectAsState
+  LoopWithTooManyJumpStatements:
+    active: true
+    maxJumpCount: 1
+  MaxChainedCallsOnSameLine:
+    active: true
+    maxChainedCalls: 4
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  MultilineLambdaItParameter:
+    active: true
+  ReturnCount:
+    active: true
+    max: 3
+  ThrowsCount:
+    active: true
+    max: 2
+  UnusedImport:
+    active: true
+  UnusedParameter:
+    active: true
+    allowedNames: 'ignored|expected'
+  UnusedPrivateClass:
+    active: true
+  UnusedPrivateFunction:
+    active: true
+    ignoreAnnotated:
+      - Preview
+  UnusedPrivateProperty:
+    active: true
+  UnusedVariable:
+    active: true
+  VarCouldBeVal:
+    active: true
+  WildcardImport:
+    active: true
