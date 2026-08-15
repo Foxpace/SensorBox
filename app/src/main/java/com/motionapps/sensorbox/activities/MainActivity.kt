@@ -1,409 +1,141 @@
 package com.motionapps.sensorbox.activities
 
 import android.annotation.SuppressLint
-import android.app.Dialog
-import android.content.*
+import android.content.ClipData
+import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
-import android.view.Menu
-import android.view.MenuItem
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import androidx.preference.PreferenceManager
-import com.afollestad.materialdialogs.MaterialDialog
-import com.google.android.material.navigation.NavigationView
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.fragments.settings.SettingsFragment
-import com.motionapps.sensorbox.fragments.settings.SettingsFragment.Companion.POLICY_AGREED
-import com.motionapps.sensorbox.intro.IntroActivity
-import com.motionapps.sensorbox.viewmodels.MainViewModel
-import com.motionapps.sensorservices.services.MeasurementService
-import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED
-import com.motionapps.wearoslib.WearOsConstants.WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN
-import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO
-import com.motionapps.wearoslib.WearOsConstants.WEAR_SEND_SENSOR_INFO_EXTRA
-import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS
-import com.motionapps.wearoslib.WearOsConstants.WEAR_STATUS_EXTRA
-import com.motionapps.wearoslib.WearOsStates
-import com.motionapps.wearoslib.WearOsSyncService
+import com.motionapps.sensorbox.core.error.AppDiagnostics
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.flatMap
+import com.motionapps.sensorbox.presentation.main.MainEffect
+import com.motionapps.sensorbox.presentation.main.MainViewModel
+import com.motionapps.sensorbox.presentation.main.SensorBoxApp
+import com.motionapps.sensorbox.ui.theme.SensorBoxTheme
 import dagger.hilt.android.AndroidEntryPoint
-import es.dmoral.toasty.Toasty
-import kotlinx.coroutines.*
 
-
-/**
- * Covers all the main functionality
- * Composes different fragments like Home, Advanced, Settings, About, ...
- * Connected to MainViewModel for other functions - covers functions for advanced options too
- * Uses hilt as dependency injection framework
- */
-
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
-
-    // manages all the fragments
-    private lateinit var appBarConfiguration: AppBarConfiguration
-
-    private val mainViewModel: MainViewModel by viewModels()
-
-    private var wearOsJob: Job? = null // coroutine for Wear Os interaction
-    private var wearOsMenuItemPresence: MenuItem? = null // items in AppBar for Wear Os interaction
-    private var wearOsMenuItemSync: MenuItem? = null
-    private var dialog: Dialog? = null
-    private var materialDialog: MaterialDialog? = null
-
-    private val connectionMeasurementService: ServiceConnection = object : ServiceConnection{
-        /**
-         * Checks if the measurement is ongoing, If yes -> switch to MeasurementActivity,
-         * otherwise nothing
-         *
-         * @param componentName
-         * @param binder
-         */
-        override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
-            (binder as MeasurementService.MeasurementBinder).also {
-                val service: MeasurementService = it.getService()
-                if(service.running){
-                    switchToMeasurementActivity(service)
-                }else{
-                    unbindService(this)
-                }
-            }
-        }
-
-        override fun onServiceDisconnected(componentName: ComponentName?) {}
+class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+    private val directoryPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        viewModel.handleStorageResult(it.data)
     }
-
-    /**
-     * Starts MeasurementActivity to check on proceeding measurement
-     * Adds all the necessary info to intent by intent itself or from the service
-     * @param service : MeasurementService from binder
-     */
-    private fun switchToMeasurementActivity(service: MeasurementService){
-        val intent = Intent(this@MainActivity, MeasurementActivity::class.java)
-        if(service.intent != null){
-            intent.putExtras(service.intent!!)
-        }else{
-            intent.putExtra(MeasurementService.ANDROID_SENSORS, service.paramSensorId)
-            intent.putExtra(MeasurementService.TYPE, service.paramType)
-        }
-        finish()
-        startActivity(intent)
-    }
-
-    private var wearOsReceiverB = false // receiverRegistered
-    private val wearOsReceiver = object : BroadcastReceiver(){
-        /**
-         * Receiver for intents sent by MessageListener for Wear Os communication
-         * Covers Status of the Wear Os device and sensor info
-         * Data are passed to ViewModel
-         * @param context
-         * @param intent
-         */
-        override fun onReceive(context: Context, intent: Intent?) {
-            intent?.action?.let {
-                when(it){
-                    WEAR_SEND_SENSOR_INFO -> { // SensorInfo are divided by "\n" and specific parameters by "|"
-                        mainViewModel.onWearOsProperties(
-                            context, intent.getStringExtra(
-                                WEAR_SEND_SENSOR_INFO_EXTRA
-                            )
-                        )
-                        wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
-                    }
-                    WEAR_STATUS -> {
-                        // Wear status is one line, which consists number of
-                        // measurements, files total size, number of files, and if the measurement
-                        // is running on the wearable
-                        mainViewModel.onWearOsStatus(intent.getStringExtra(WEAR_STATUS_EXTRA))
-                    }
-                    WEAR_HEART_RATE_PERMISSION_REQUIRED -> {
-                        // hear rate sensor needs permission in order to get data - this
-                        mainViewModel.onWearOsHearRatePermissionRequired(
-                            intent.getBooleanExtra(
-                                WEAR_HEART_RATE_PERMISSION_REQUIRED_BOOLEAN,
-                                false
-                            )
-                        )
-                    }
-
-                    MeasurementService.RUNNING -> {
-                        Toasty.info(context, R.string.measurement_active, Toasty.LENGTH_LONG, true).show()
-                    }
-                    else ->{
-                        // empty
-                    }
-                }
-            }
-        }
+    private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        viewModel.handlePermissionResult()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        checkFirstUsage()
+        if (intent.action == Intent.ACTION_VIEW_PERMISSION_USAGE) viewModel.showPrivacyRationale()
+        setContent {
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            LaunchedEffect(viewModel) { viewModel.effects.collect(::handleEffect) }
+            SensorBoxTheme {
+                SensorBoxApp(state = state, onIntent = viewModel::accept)
+            }
+        }
+    }
 
-        // UI stuff
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
+    private fun handleEffect(effect: MainEffect) {
+        when (effect) {
+            MainEffect.PickStorageDirectory -> appResult(AppError.Kind.EXTERNAL_ACTION, "Open storage picker") {
+                directoryPicker.launch(storageIntent())
+            }
 
-        // drawer set up
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
-        val navView: NavigationView = findViewById(R.id.nav_view)
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
+            MainEffect.OpenPrivacyPolicy -> openWebPage(getString(R.string.link_privacy_policy))
 
-        appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.nav_home,
-                R.id.nav_advanced,
-                R.id.nav_settings,
-                R.id.nav_about
-            ), drawerLayout
+            MainEffect.OpenTermsOfUse -> openWebPage(getString(R.string.link_terms))
+
+            MainEffect.RequestBatteryOptimizationExemption -> requestBatteryOptimizationExemption()
+
+            MainEffect.ShareDiagnosticsText -> shareDiagnosticsText()
+
+            MainEffect.ShareDiagnosticsFile -> shareDiagnosticsFile()
+
+            is MainEffect.RequestPermissions -> appResult(AppError.Kind.PERMISSION, "Request app permissions") {
+                permissionRequest.launch(effect.permissions.toTypedArray())
+            }
+        }
+    }
+
+    private fun openWebPage(url: String) {
+        launchExternalIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)), "Open web page")
+    }
+
+    @SuppressLint("BatteryLife")
+    private fun requestBatteryOptimizationExemption() {
+        val intent = Intent(
+            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            Uri.parse("package:$packageName"),
         )
-
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
-
-    }
-
-    /**
-     * Check if the user is using app for the first time by sharedPreferences attribute
-     */
-    private fun checkFirstUsage(){
-
-        val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        if(!preferences.getBoolean(SettingsFragment.APP_FIRST_TIME, false)){
-            finish()
-            Intent(this@MainActivity, IntroActivity::class.java).apply {
-                startActivity(this)
-            }
-            return
+        launchExternalIntent(intent, "Request battery optimization exemption").onFailure {
+            launchExternalIntent(
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                "Open battery optimization settings",
+            )
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        setUp()
-        checkPolicy()
+    private fun shareDiagnosticsText() {
+        AppDiagnostics.readText().fold(
+            onSuccess = { diagnostics ->
+                val intent = Intent(Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
+                    .putExtra(Intent.EXTRA_TEXT, diagnostics)
+                launchShareIntent(intent).onFailure { showDiagnosticsShareFailure() }
+            },
+            onFailure = { showDiagnosticsShareFailure() },
+        )
     }
 
-    /**
-     * check, whether the user has agreed to privacy policy
-     *
-     */
-    private fun checkPolicy() {
-        val sharedPreferences: SharedPreferences =
-            PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
-        if (!sharedPreferences.getBoolean(POLICY_AGREED, false)) {
-            materialDialog = MaterialDialog(this).show {
-                title(R.string.intro_policy_button)
-                message(R.string.dialog_privacy_policy)
-                cornerRadius(16f)
-                cancelable(false)
-                cancelOnTouchOutside(false)
-                positiveButton(R.string.agree) {
-                    it.dismiss()
-                    val editor = sharedPreferences.edit()
-                    editor.putBoolean(POLICY_AGREED, true)
-                    editor.apply()
-                }
-                negativeButton(R.string.intro_policy_button) {
-                    val browserIntent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse(getString(R.string.link_privacy_policy))
-                    )
-                    startActivity(browserIntent)
-                }
-            }
-        }
+    private fun shareDiagnosticsFile() {
+        AppDiagnostics.exportFile().fold(
+            onSuccess = { file ->
+                appResult(AppError.Kind.EXTERNAL_ACTION, "Prepare diagnostics file") {
+                    val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_SEND)
+                        .setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
+                        .putExtra(Intent.EXTRA_STREAM, uri)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    intent.clipData = ClipData.newUri(contentResolver, file.name, uri)
+                    intent
+                }.flatMap(::launchShareIntent).onFailure { showDiagnosticsShareFailure() }
+            },
+            onFailure = { showDiagnosticsShareFailure() },
+        )
     }
 
-    /**
-     * Binds to service to checks, if the measurement is present, permissions check and sets up
-     * Wear Os receiver
-     */
-    private fun setUp(){
+    private fun launchShareIntent(intent: Intent): Result<Unit> =
+        launchExternalIntent(Intent.createChooser(intent, getString(R.string.diagnostics_share)), "Share diagnostics")
 
-        Intent(this, MeasurementService::class.java).also { intent ->
-            bindService(intent, connectionMeasurementService, Context.BIND_AUTO_CREATE)
-        }
-
-        registerWearOsReceiver()
-
+    private fun launchExternalIntent(intent: Intent, operation: String): Result<Unit> = appResult(
+        AppError.Kind.EXTERNAL_ACTION,
+        operation,
+    ) {
+        startActivity(intent)
     }
 
-    /**
-     * Registers WearOs intents from MsgListener
-     *
-     */
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    private fun registerWearOsReceiver(){
-        if(!wearOsReceiverB){
-            val intentFilter = IntentFilter()
-            intentFilter.addAction(WEAR_SEND_SENSOR_INFO)
-            intentFilter.addAction(WEAR_STATUS)
-            intentFilter.addAction(WEAR_HEART_RATE_PERMISSION_REQUIRED)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(wearOsReceiver, intentFilter, RECEIVER_EXPORTED)
-            } else {
-                registerReceiver(wearOsReceiver, intentFilter)
-            }
-            wearOsReceiverB = true
-        }
+    private fun showDiagnosticsShareFailure() {
+        Toast.makeText(this, R.string.diagnostics_share_failed, Toast.LENGTH_LONG).show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        if(wearOsReceiverB){
-            unregisterReceiver(wearOsReceiver)
-            wearOsReceiverB = false
-        }
-
-        mainViewModel.onDestroy()
-
-        dialog?.dismiss()
-        dialog = null
-
-        materialDialog?.dismiss()
-        materialDialog = null
-
-        wearOsJob?.cancel()
-
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        val navController = findNavController(R.id.nav_host_fragment)
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
-    }
-
-    /**
-     * Inflation of Wear Os buttons to AppBar
-     * @param menu
-     * @return
-     */
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        wearOsMenuItemPresence = menu.findItem(R.id.wear_os_action_present)
-        wearOsMenuItemSync = menu.findItem(R.id.wear_os_action_sync)
-        checkWearOs()
-        return true
-    }
-
-    /**
-     * Set up of observers of LiveData in MainViewModel
-     *
-     */
-    private fun checkWearOs() {
-
-        // show Wear Os button
-        mainViewModel.wearOsPresence.observe(this) { wearOsState ->
-            when (wearOsState) {
-                is WearOsStates.PresenceResult -> {
-                    wearOsMenuItemPresence?.isEnabled = wearOsState.present
-                    wearOsMenuItemPresence?.isVisible = wearOsState.present
-                }
-                else -> {
-                }
-            }
-        }
-
-        // Wear Os sensors synced
-        mainViewModel.wearOsContacted.observe(this) { data ->
-            if (data.isNullOrEmpty()) {
-                wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_off)
-                wearOsMenuItemPresence?.isEnabled = true
-
-
-            } else {
-                wearOsMenuItemPresence?.setIcon(R.drawable.ic_wear_os_on)
-                wearOsMenuItemPresence?.isEnabled = true
-            }
-        }
-
-        // status of Wear Os and reaction to it
-        mainViewModel.wearOsStatus.observe(this) { status ->
-            when (status) {
-                is WearOsStates.AwaitResult -> {
-                    wearOsMenuItemPresence?.isEnabled = false
-                }
-
-                is WearOsStates.Offline -> {
-                    wearOsMenuItemSync?.isEnabled = false
-                    wearOsMenuItemSync?.isVisible = false
-                }
-
-                is WearOsStates.Status -> {
-                    if (!status.running && status.totalNumberOfFiles > 0) {
-                        wearOsMenuItemSync?.isEnabled = true
-                        wearOsMenuItemSync?.isVisible = true
-                    } else {
-                        wearOsMenuItemSync?.isEnabled = false
-                        wearOsMenuItemSync?.isVisible = false
-                    }
-                }
-                else -> {
-                }
-            }
-        }
-
-        // launches search for the Wear Os device
-        wearOsJob = CoroutineScope(Dispatchers.IO).launch {
-            mainViewModel.getWearPresenceAndStatus(this@MainActivity)
-        }
-    }
-
-    /**
-     * Manages Wear Os buttons
-     *
-     * @param item
-     */
-    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        R.id.wear_os_action_present -> {
-            mainViewModel.onWearPresentClick(this)
-            true
-        }
-        R.id.wear_os_action_sync -> {
-            Intent(this, WearOsSyncService::class.java).also { intent ->
-                bindService(intent, object : ServiceConnection { // checks if sync is not running
-                    override fun onServiceConnected(
-                        componentName: ComponentName?,
-                        binder: IBinder?
-                    ) {
-                        if (!(binder as WearOsSyncService.WearOsSyncServiceBinder).getService().running) {
-                            mainViewModel.onWearSyncClick(this@MainActivity)?.let {
-                                dialog = it
-                            }
-                        } else {
-                            Toasty.info(
-                                this@MainActivity,
-                                getString(R.string.wear_os_sync_in_progress),
-                                Toasty.LENGTH_SHORT
-                            ).show()
-                        }
-                        unbindService(this)
-                    }
-
-                    override fun onServiceDisconnected(componentName: ComponentName?) {}
-                }, Context.BIND_AUTO_CREATE)
-            }
-            true
-        }
-        else -> {
-            super.onOptionsItemSelected(item)
-        }
+    private fun storageIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
     }
 }
