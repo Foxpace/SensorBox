@@ -1,202 +1,114 @@
 package com.motionapps.sensorservices.handlers.measurements
 
 import android.content.Context
+import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.SystemClock
-import android.util.Log
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.flatMap
+import com.motionapps.sensorbox.core.error.withAppError
 import com.motionapps.sensorservices.handlers.StorageHandler
-import com.motionapps.sensorservices.types.SensorNeeds
+import com.motionapps.sensorservices.serviceController.MeasurementConfig
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * creates extra.json
- * aggregates all the ranges from the sensors,starting times, notes, alarms, annotations, ...
- * as result, the json file is created
- */
+/** Collects session metadata and writes it once when the recording is closed. */
 class ExtraInfoHandler {
-    // basic info
-    var folderName: String = ""
-    var measurementType: String = ""
-    var date: String = ""
+    private var config: MeasurementConfig? = null
+    private var startedAtMillis: Long = 0L
+    private var startedAtNanos: Long = 0L
+    private val annotations = mutableListOf<Annotation>()
+    private val triggeredAlarms = mutableListOf<Long>()
+    private var written = false
 
-    private var triggered: Boolean = false // to prevent double write
-
-    // starting times
-    private var timeMillis: Long? = null
-    private var timeNanos: Long? = null
-
-
-    private val annotations: ArrayList<Annotations> = ArrayList() // by user
-    private val ranges: ArrayList<SensorRange> = ArrayList() // from sensors
-
-    private var notes: ArrayList<String>? = null // from ExtraFragment
-    private var alarms: JSONArray? = null // from AlarmNoiseHandler
-
-    /**
-     * Extra is started - beginning time stamps
-     *
-     * @param context
-     * @param internal - to avoid Wear Os or not
-     */
-    fun onStart(context: Context, internal: Boolean){
-        triggered = false
-
-        //write start
-        timeMillis = System.currentTimeMillis()
-        timeNanos = SystemClock.elapsedRealtimeNanos()
-
-        createSensorRanges(context, internal)
+    fun start(config: MeasurementConfig) {
+        this.config = config
+        startedAtMillis = System.currentTimeMillis()
+        startedAtNanos = SystemClock.elapsedRealtimeNanos()
+        annotations.clear()
+        triggeredAlarms.clear()
+        written = false
     }
 
-    /**
-     * addition of notes from ExtraFragment
-     *
-     * @param list
-     */
-    fun handleNotes(list: ArrayList<String>?) {
-        list?.let {
-            notes = it
-        }
+    fun annotate(timestampMillis: Long, text: String) {
+        text.trim().takeIf(String::isNotEmpty)?.let { annotations += Annotation(timestampMillis, it) }
     }
 
-    /**
-     * writes annotation from MeasurementActivity
-     *
-     * @param time - timestamp
-     * @param text - text to store
-     */
-    fun writeAnnotation(time: Long, text: String) {
-        if(time != -1L && text != ""){
-            annotations.add(Annotations(time, text))
-        }
+    fun alarmTriggered(timestampMillis: Long = System.currentTimeMillis()) {
+        triggeredAlarms += timestampMillis
     }
 
-    /**
-     * iterates through all sensors and picks available maximum ranges to store in json
-     *
-     * @param context
-     * @param internal
-     */
-    private fun createSensorRanges(context: Context, internal: Boolean) {
-        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        for (sensor: SensorNeeds in SensorNeeds.values()) {
-            if (internal && "WEAR" in sensor.name) {
-                sensorManager.getDefaultSensor(sensor.id)?.let {
-                    ranges.add(SensorRange(sensor.name, it.maximumRange))
+    fun write(context: Context): Result<Unit> {
+        val active = config ?: return Result.success(Unit)
+        if (written) return Result.success(Unit)
+        written = true
+        val jsonResult = appResult(AppError.Kind.MEASUREMENT, "Build measurement metadata") {
+            JSONObject().apply {
+                put("millis", startedAtMillis)
+                put("nanos", startedAtNanos)
+                put("type", active.measurementType)
+                put("date", StorageHandler.getDate(startedAtMillis))
+                put("folder", active.folderName)
+                put("notes", JSONArray(active.notes))
+                put(
+                    "annotations",
+                    JSONArray().apply {
+                        annotations.forEach { annotation ->
+                            put(
+                                JSONObject()
+                                    .put("timestamp", annotation.timestampMillis)
+                                    .put("annotation", annotation.text),
+                            )
+                        }
+                    },
+                )
+                val rangeIds = if (active.significantMotion) {
+                    active.sensorIds + Sensor.TYPE_SIGNIFICANT_MOTION
+                } else {
+                    active.sensorIds
                 }
-            } else if (!internal && "WEAR" !in sensor.name) {
-                sensorManager.getDefaultSensor(sensor.id)?.let {
-                    ranges.add(SensorRange(sensor.name, it.maximumRange))
+                put("ranges", sensorRanges(context, rangeIds))
+                put("alarms", JSONArray(triggeredAlarms))
+                put("configuredAlarmOffsetsSeconds", JSONArray(active.alarmOffsetsSeconds))
+                put("durationMillis", active.durationMillis)
+                put("activityRecognition", active.activityRecognition)
+                put("significantMotion", active.significantMotion)
+            }
+        }
+        return jsonResult.flatMap { json ->
+            val stream = if (active.useInternalStorage) {
+                StorageHandler.createFileInInternalFolder(context, active.folderName, EXTRA_FILE)
+            } else {
+                StorageHandler.createFileInFolder(context, active.folderName, "application/json", EXTRA_FILE)
+            }
+            stream.flatMap { output ->
+                appResult(AppError.Kind.STORAGE, "Write measurement metadata file") {
+                    output.use { it.write(json.toString(2).toByteArray()) }
+                }
+            }
+        }.withAppError(AppError.Kind.MEASUREMENT, "Write measurement metadata")
+    }
+
+    private fun sensorRanges(context: Context, sensorIds: IntArray): JSONArray {
+        val manager = context.getSystemService(SensorManager::class.java)
+        return JSONArray().apply {
+            sensorIds.distinct().forEach { type ->
+                manager.getDefaultSensor(type)?.let { sensor ->
+                    put(
+                        JSONObject()
+                            .put("sensor", sensor.name)
+                            .put("type", type)
+                            .put("range", sensor.maximumRange),
+                    )
                 }
             }
         }
     }
 
-    /**
-     * creation of the JSON file
-     *
-     * @param context
-     * @param internal - if it is internal storage or not
-     */
-    fun writeExtra(context: Context, internal: Boolean){
-        Log.i("SensorController", "Writing JSON file")
-        if(triggered){
-            return
-        }
+    private data class Annotation(val timestampMillis: Long, val text: String)
 
-        triggered = true
-        val jsonObject = JSONObject()
-        jsonObject.put("millis", timeMillis)
-        jsonObject.put("nanos", timeNanos)
-        jsonObject.put("type", measurementType)
-        jsonObject.put("date", date)
-
-        notes?.let {
-            putNotes(jsonObject)
-        }
-
-        if(annotations.isNotEmpty()){
-            putAnnots(jsonObject)
-        }
-
-        if(ranges.isNotEmpty()){
-            putRanges(jsonObject)
-        }
-
-        alarms?.let {
-            jsonObject.put("alarms", it)
-        }
-
-        val name = "extra.json"
-
-        val outputStream = if(internal){
-            StorageHandler.createFileInInternalFolder(context, folderName, name)
-        }else{
-            StorageHandler.createFileInFolder(context, folderName, "json", name)
-        }
-
-        outputStream?.let {
-            it.write(jsonObject.toString().toByteArray())
-            it.flush()
-            it.close()
-        }
-
+    private companion object {
+        const val EXTRA_FILE = "extra.json"
     }
-
-    /**
-     * all notes are looped and writes as JSON array
-     * @param main - JSON object
-     */
-    private fun putNotes(main: JSONObject){
-        val arrayJson = JSONArray()
-        for(note in notes!!){
-            arrayJson.put(note)
-        }
-        main.put("notes", arrayJson)
-    }
-
-    /**
-     * annotations are separated JSON objects in array with timestamp and value
-     *
-     * @param main - JSON object
-     */
-    private fun putAnnots(main: JSONObject){
-        val arrayJson = JSONArray()
-        for(annot in annotations){
-            val childJson = JSONObject()
-            childJson.put("timestamp", annot.time)
-            childJson.put("annotation", annot.text)
-            arrayJson.put(childJson)
-        }
-        main.put("annotations", arrayJson)
-    }
-
-    /**
-     * separate JSON objects with sensor and its range in JSON array
-     *
-     * @param main - JSON object
-     */
-    private fun putRanges(main: JSONObject){
-        val arrayJson = JSONArray()
-        for(sensorRange in ranges){
-            val childJson = JSONObject()
-            childJson.put("sensor", sensorRange.sensor)
-            childJson.put("range", sensorRange.range)
-            arrayJson.put(childJson)
-        }
-        main.put("ranges", arrayJson)
-    }
-
-    /**
-     * adds alarm JSON to the our main JSON
-     */
-    fun addAlarms(alarmNoiseHandler: AlarmNoiseHandler) {
-        alarms = alarmNoiseHandler.json
-    }
-
-
-    class Annotations(val time: Long, val text: String)
-    class SensorRange(val sensor: String, val range: Float)
-
 }

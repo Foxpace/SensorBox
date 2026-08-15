@@ -1,114 +1,98 @@
 package com.motionapps.sensorservices.handlers.measurements
 
 import android.content.Context
-import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.combineAppResults
+import com.motionapps.sensorbox.core.error.flatMap
+import com.motionapps.sensorbox.core.error.withAppError
 import com.motionapps.sensorservices.handlers.StorageHandler
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.FOLDER_NAME
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.INTERNAL_STORAGE
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.SENSOR_ID
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.SENSOR_SPEED
-import com.motionapps.sensorservices.types.EndHolder
 import com.motionapps.sensorservices.types.SensorHolder
-import com.motionapps.sensorservices.types.SensorNeeds
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.OutputStream
+import com.motionapps.sensorservices.types.SensorSpec
 
+class SensorMeasurement : MeasurementInterface {
+    private val holders = mutableListOf<SensorHolder>()
+    private var samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST
 
-/**
- * manages SensorHolders to store sensor samples into seperate csv files
- *
- */
-class SensorMeasurement: MeasurementInterface {
-
-    // stores all the data with adequate eventListener
-    private val holders: ArrayList<SensorHolder> = ArrayList()
-    private lateinit var params: Bundle
-
-    /**
-     * creates all the holders with adequate outputStreams and sensor to register
-     *
-     * @param context
-     * @param params - from service as bundle
-     */
-    override fun initMeasurement(context: Context, params: Bundle) {
-        this.params = params
-
-        for(sensorId: Int in params.getIntArray(SENSOR_ID)!!){
-            val sensorNeeds: SensorNeeds = SensorNeeds.getSensorById(sensorId)
-
-            val outputStream: OutputStream? = if (params.getBoolean(INTERNAL_STORAGE)) {
-                StorageHandler.createFileInInternalFolder(
-                    context,
-                    params.getString(FOLDER_NAME)!!,
-                    "$sensorNeeds.csv"
-                )
-            } else {
-                StorageHandler.createFileInFolder(
-                    context, params.getString(FOLDER_NAME)!!, "csv", "$sensorNeeds.csv"
-                )
-            }
-
-            outputStream?.let {
-                holders.add(SensorHolder(sensorId, sensorNeeds, it))
+    override fun initMeasurement(context: Context, params: Bundle): Result<Unit> {
+        samplingPeriod = params.getInt(MeasurementInterface.SENSOR_SPEED)
+        return (params.getIntArray(MeasurementInterface.SENSOR_ID) ?: intArrayOf()).fold(
+            Result.success(Unit),
+        ) { result, sensorType ->
+            result.flatMap {
+                createHolder(context, params, sensorType).map { holder ->
+                    holder?.let(holders::add)
+                    Unit
+                }
             }
         }
+            .withAppError(AppError.Kind.MEASUREMENT, "Initialize sensors")
     }
 
-    /**
-     * sensors are registered with required speed
-     *
-     * @param context
-     */
-    override fun startMeasurement(context: Context) {
-        val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        for(holder: SensorHolder in holders){
-            val sensor: Sensor? = sensorManager.getDefaultSensor(holder.sensorId)
-            sensor?.let {
-                sensorManager.registerListener(holder, sensor, this.params.getInt(SENSOR_SPEED))
+    private fun createHolder(context: Context, params: Bundle, sensorType: Int): Result<SensorHolder?> {
+        val spec = SensorSpec.fromType(sensorType) ?: return Result.success(null)
+        val stream = if (params.getBoolean(MeasurementInterface.INTERNAL_STORAGE)) {
+            StorageHandler.createFileInInternalFolder(
+                context,
+                params.getString(MeasurementInterface.FOLDER_NAME).orEmpty(),
+                spec.fileName,
+            )
+        } else {
+            StorageHandler.createFileInFolder(
+                context,
+                params.getString(MeasurementInterface.FOLDER_NAME).orEmpty(),
+                "text/csv",
+                spec.fileName,
+            )
+        }
+        return stream.map { SensorHolder(spec, it) }
+    }
+
+    override fun startMeasurement(context: Context): Result<Unit> = appResult(
+        AppError.Kind.MEASUREMENT,
+        "Access sensor manager",
+    ) {
+        context.getSystemService(SensorManager::class.java)
+    }.flatMap { sensorManager ->
+        holders.fold(Result.success(Unit)) { result, holder ->
+            result.flatMap {
+                val sensor = sensorManager.getDefaultSensor(holder.spec.type)
+                    ?: return@flatMap Result.failure(
+                        AppError(AppError.Kind.MEASUREMENT, "Find sensor ${holder.spec.type}"),
+                    )
+                appResult(AppError.Kind.MEASUREMENT, "Register sensor ${holder.spec.type}") {
+                    sensorManager.registerListener(holder, sensor, samplingPeriod)
+                }.flatMap { registered ->
+                    if (registered) {
+                        Result.success(Unit)
+                    } else {
+                        Result.failure(
+                            AppError(AppError.Kind.MEASUREMENT, "Register sensor ${holder.spec.type}"),
+                        )
+                    }
+                }
             }
         }
+    }.withAppError(AppError.Kind.MEASUREMENT, "Start sensors")
+
+    override fun pauseMeasurement(context: Context): Result<Unit> = appResult(
+        AppError.Kind.MEASUREMENT,
+        "Pause sensors",
+    ) {
+        val sensorManager = context.getSystemService(SensorManager::class.java)
+        holders.forEach(sensorManager::unregisterListener)
     }
 
-    /**
-     * unregisters holders
-     *
-     * @param context
-     */
-    override fun pauseMeasurement(context: Context) {
-        val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        for(holder: SensorHolder in holders){
-            sensorManager.unregisterListener(holder)
-        }
-
+    override suspend fun saveMeasurement(context: Context): Result<Unit> {
+        val results = holders.map { it.close() }
+        holders.clear()
+        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Save sensors")
     }
 
-    /**
-     * saves csv files
-     *
-     * @param context
-     */
-    override suspend fun saveMeasurement(context: Context) {
-        for(holder: EndHolder in holders){
-            holder.saveFile()
-        }
-        holders.removeAll(holders.toSet())
-    }
-
-    /**
-     * saves and unregisters all the sensors
-     *
-     * @param context
-     */
-    override suspend fun onDestroyMeasurement(context: Context) {
-        withContext(Dispatchers.Main){
-            pauseMeasurement(context)
-        }
-
-        withContext(Dispatchers.IO){
-            saveMeasurement(context)
-        }
-    }
+    override suspend fun onDestroyMeasurement(context: Context): Result<Unit> = listOf(
+        pauseMeasurement(context),
+        saveMeasurement(context),
+    ).combineAppResults(AppError.Kind.MEASUREMENT, "Stop sensors")
 }
