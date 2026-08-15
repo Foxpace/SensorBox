@@ -2,19 +2,21 @@ package com.motionapps.sensorservices.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.location.Location
 import android.os.Looper
 import android.util.Log
-import androidx.preference.PreferenceManager
-import com.google.android.gms.location.*
-import com.motionapps.sensorservices.services.MeasurementService
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Granularity
+import com.google.android.gms.location.LocationAvailability
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.flatMap
 
-
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
 @SuppressLint("MissingPermission")
 class GPSHandler : LocationCallback() {
 
@@ -27,6 +29,8 @@ class GPSHandler : LocationCallback() {
 
     private var registered: Boolean = false
     private var firstInit: Boolean = false
+    private var intervalSeconds: Int = DEFAULT_INTERVAL_SECONDS
+    private var minDistanceMeters: Int = DEFAULT_DISTANCE_METERS
     private val tag = "GPS_location"
 
     /**
@@ -34,8 +38,8 @@ class GPSHandler : LocationCallback() {
      *
      * @param context
      */
-    private fun firstInit(context: Context){
-        request = createRequest(context)
+    private fun firstInit(context: Context) {
+        request = createRequest()
         locationClient = LocationServices.getFusedLocationProviderClient(context)
         firstInit = true
     }
@@ -45,25 +49,26 @@ class GPSHandler : LocationCallback() {
      *
      * @param context
      */
-    private fun initialize(context: Context){
-
-        if(!firstInit){
+    private fun initialize(context: Context) {
+        if (!firstInit) {
             firstInit(context)
         }
 
         locationClient.lastLocation.addOnSuccessListener { location: Location? ->
             if (location == null) {
-                callback!!.onLastLocationSuccess(null)
+                callback?.onLastLocationSuccess(null)
             } else {
                 lastLocation = location
                 callback?.onLastLocationSuccess(location)
             }
-
-        }.addOnFailureListener {
-            callback!!.onLastLocationSuccess(null)
+        }.addOnFailureListener { error ->
+            AppError.from(AppError.Kind.MEASUREMENT, "Read last GPS location", error)
+            callback?.onLastLocationSuccess(null)
         }
 
-        locationClient.requestLocationUpdates(request, this, Looper.getMainLooper())
+        locationClient.requestLocationUpdates(request, this, Looper.getMainLooper()).addOnFailureListener { error ->
+            AppError.from(AppError.Kind.MEASUREMENT, "Request GPS updates", error)
+        }
         registered = true
     }
 
@@ -74,7 +79,7 @@ class GPSHandler : LocationCallback() {
      */
     override fun onLocationResult(locationResult: LocationResult) {
         super.onLocationResult(locationResult)
-        if (locationResult.locations.size > 0) {
+        if (locationResult.locations.isNotEmpty()) {
             lastLocation = locationResult.lastLocation
             if (lastLocation != null) {
                 callback?.onLocationChanged(lastLocation)
@@ -82,51 +87,43 @@ class GPSHandler : LocationCallback() {
         }
     }
 
-    /**
-     * changes if the location cahnges provider / GPS is off
-     *
-     * @param locationAvailability
-     */
+    /** Reports provider availability changes to the active measurement. */
     override fun onLocationAvailability(locationAvailability: LocationAvailability) {
         super.onLocationAvailability(locationAvailability)
         this.locationAvailability = locationAvailability
         callback?.onAvailabilityChanged(locationAvailability)
     }
 
-    /**
-     * removes GPS - no updates will be passed
-     *
-     */
-    fun gpsOff() {
-        if(registered){
+    /** Stops location updates for the active measurement. */
+    fun gpsOff(): Result<Unit> = appResult(AppError.Kind.MEASUREMENT, "Stop GPS updates") {
+        if (registered) {
             Log.i(tag, "Logging off location")
-            locationClient.flushLocations()
-            locationClient.removeLocationUpdates(this)
+            locationClient.flushLocations().addOnFailureListener { error ->
+                AppError.from(AppError.Kind.MEASUREMENT, "Flush GPS updates", error)
+            }
+            locationClient.removeLocationUpdates(this).addOnFailureListener { error ->
+                AppError.from(AppError.Kind.MEASUREMENT, "Remove GPS updates", error)
+            }
         }
         registered = false
     }
 
-    /**
-     * parameters for locationClient - received from sharedPreferences - user can change them in Settings
-     *
-     * @param context
-     * @return LocationRequest specified by user
-     */
-    private fun createRequest(context: Context): LocationRequest {
-        val sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        var b: LocationRequest.Builder
-        try {
-            b = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, sharedPreferences.getString(MeasurementService.GPS_TIME, "10")!!.toLong() * 1000L)
-            b.setMinUpdateDistanceMeters(sharedPreferences.getString(MeasurementService.GPS_DISTANCE, "20")!!.toFloat())
-        }catch (e: ClassCastException){
-            b = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, sharedPreferences.getInt(MeasurementService.GPS_TIME, 10) * 1000L)
-            b.setMinUpdateDistanceMeters(sharedPreferences.getInt(MeasurementService.GPS_DISTANCE, 20).toFloat())
-        }
-        b.setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
-        b.setWaitForAccurateLocation(true)
-        //registering GPS
+    /** Creates a request from the immutable measurement configuration. */
+    private fun createRequest(): LocationRequest {
+        val builder = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            intervalSeconds * 1000L,
+        )
+        builder.setMinUpdateDistanceMeters(minDistanceMeters.toFloat())
+        builder.setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+        builder.setWaitForAccurateLocation(true)
         Log.i("GPS", "location request created")
-        return b.build()
+        return builder.build()
+    }
+
+    fun configure(intervalSeconds: Int, minDistanceMeters: Int) {
+        this.intervalSeconds = intervalSeconds.coerceIn(1, MAX_INTERVAL_SECONDS)
+        this.minDistanceMeters = minDistanceMeters.coerceIn(0, MAX_DISTANCE_METERS)
     }
 
     /**
@@ -136,19 +133,25 @@ class GPSHandler : LocationCallback() {
      * @param gpsCallback - this object will get access to location and updates, previous is forgotten
      *
      */
-    fun addCallback(context: Context, gpsCallback: OnLocationChangedCallback) {
-        if(registered){
-            gpsOff()
+    fun addCallback(context: Context, gpsCallback: OnLocationChangedCallback): Result<Unit> =
+        (if (registered) gpsOff() else Result.success(Unit)).flatMap {
+            appResult(AppError.Kind.MEASUREMENT, "Register GPS callback") {
+                callback = gpsCallback
+                initialize(context)
+                gpsCallback.onLocationChanged(lastLocation)
+            }
         }
-
-        initialize(context)
-        callback = gpsCallback
-        gpsCallback.onLocationChanged(lastLocation)
-    }
 
     interface OnLocationChangedCallback {
         fun onLocationChanged(location: Location?)
         fun onLastLocationSuccess(location: Location?)
         fun onAvailabilityChanged(locationAvailability: LocationAvailability?)
+    }
+
+    private companion object {
+        const val DEFAULT_INTERVAL_SECONDS = 10
+        const val DEFAULT_DISTANCE_METERS = 20
+        const val MAX_INTERVAL_SECONDS = 3_600
+        const val MAX_DISTANCE_METERS = 10_000
     }
 }
