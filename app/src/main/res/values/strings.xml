@@ -1,309 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SensorBox</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">SensorBox</string>
-    <string name="nav_header_subtitle">Creative Motion apps</string>
-    <string name="nav_header_desc">Navigation header</string>
-
     <string name="next">Next</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Cancel</string>
-    <string name="agree">Agree</string>
-    <string name="dialog_privacy_policy">In short: Our policy is not to gather data. All the recorded sensor / GPS data are stored only locally for you. We get only technical reports, which are used to fix bugs in the SensorBox. For further details, you can read our policy at website.</string>
+    <string name="agree_and_continue">Agree and continue</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="unknown">Unknown</string>
+    <string name="unknown_with_value">Unknown (%1$d)</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="waiting">Waiting…</string>
+    <string name="ready">Ready</string>
+    <string name="granted">Granted</string>
+    <string name="required">Required</string>
+    <string name="choose">Choose</string>
+    <string name="change">Change</string>
+    <string name="view">View</string>
+    <string name="hide">Hide</string>
 
-    <!-- Activities -->
-    <string name="menu_about">About</string>
-    <string name="menu_home">Home</string>
-    <string name="menu_advanced">Advanced</string>
+    <string name="menu_home">Record</string>
     <string name="menu_settings">Settings</string>
-    <string name="sensor_info">Sensor information</string>
-    <string name="start_measurement">Start measurement</string>
-    <string name="activity_permissions_required">Permissions are required</string>
-    <string name="activity_permissions_required_text">Main purpose of SensorBox is to record all outputs to csv files.
-        For full functionality, the SensorBox needs 3 permissions:\n\n
-        \u2022 Storage - to store all csv files recorded by you\n\n
-        \u2022 Location - to capture your coordinates, the app need you to provide us unlimited access to GPS at background\n\n
-        \u2022 Physical Activity - to capture your changes in state - walking, driving, … - check Activity recognition API in settings\n\n
-        \u2022 Body Sensors - to record heart rate on Wear Os device, if available\n\nAny of your recorded data are not shared with us. They are stored only locally in your phone. Recording is started only by you. For more information, you can read our Privacy Policy in \"About\" tab.
-    </string>
+    <string name="menu_about">About</string>
 
-
-    <string name="activity_permissions_no">SensorBox will not be fully functional without permissions. If you need to change permissions, visit settings of the app.</string>
-    <string name="permission_storage">To store csv files, the app requires storage permission to access memory.\n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
-    <string name="permission_storage_toast">To store csv files, the app requires storage permission to access memory</string>
-    <string name="show_permission">Show permission</string>
-    <string name="show_permission_settings">Open settings - give permission</string>
-    <string name="permission">Permission</string>
-    <string name="heart_rate_permission_text">
-        In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\".
-        \n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
-    <string name="heart_rate_permission_rational">To use heart rate - Body sensors permission is required</string>
-
-
-    <!-- Sensor names -->
-    <string name="agg_name">Gravity</string>
-    <string name="acg_name">Acceleration</string>
-    <string name="acc_name">Linear\nacceleration</string>
-    <string name="gyro_name">Gyroscope</string>
-    <string name="magnet_name">Magnetic\ninduction</string>
-    <string name="light_name">Lightning</string>
-    <string name="proxi_name">Proximity</string>
-    <string name="temp_name">Temperature</string>
-    <string name="pressure_name">Pressure</string>
-    <string name="humi_name">Humidity</string>
-    <string name="rotation_name">Rotation\nvector</string>
-    <string name="step_counter_name">Step\ncounter</string>
-    <string name="step_detector_name">Step\ndetector</string>
-    <string name="heart_rate_name">Heart rate</string>
-
-    <string name="hours">Hours</string>
-    <string name="minutes">Minutes</string>
-    <string name="seconds">Seconds</string>
-
-
-    <!-- Sensor Info - viewer -->
-    <string name="sensor_permission">To save sensor data, give SensorBox permission to storage in settings</string>
-    <string name="sensor_info_name">Name</string>
-    <string name="sensor_info_vendor">Vendor</string>
-    <string name="sensor_info_version">Version</string>
-    <string name="sensor_info_max_range">Maximal\nrange</string>
-    <string name="sensor_info_resolution">Resolution</string>
-    <string name="sensor_info_power">Power [mA]</string>
-    <string name="sensor_info_min_delay">Minimal\ndelay [µs]</string>
-    <string name="sensor_info_max_delay">Maximal\ndelay [µs]</string>
-    <string name="sensor_info_float">%.2f</string>
-    <string name="zero">0</string>
-
-    <!--GPS-->
-    <string name="permission_gps_show">To show your location, the permission for location access is required</string>
-    <string name="permission_gps">In order to save GPS coordinates on your phone in form of csv, location services have to be enabled in the background.
-        \nList of features with usage of location:\n\n
-        \u2022 Save coordinates to csv file\n\n
-        \u2022 Show your current location on map (only in foreground)\n\n
-        The location is accessed in the background only during the measurement, while the notification is visible.
-        Therefore, you have to give permissions to use mentioned features.
-        \n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.
-    </string>
-    <string name="permission_gps_android_Q">In order to save GPS coordinates on your phone in form of csv, location services have to be enabled in the background.
-        \nList of features with usage of location:\n\n
-        \u2022 Save coordinates to csv file\n\n
-        \u2022 Show your current location on map (only in foreground)\n\n
-        The location is accessed in the background only during the measurement, while the notification is visible.
-        Therefore, you have to give permissions to use mentioned features.\n\n
-        You will be moved to settings, where you have to give unlimited access to location to the app.
-        Unfortunately, Android 10 and higher stops GPS updates, after certain period of time due to the battery restrictions.
-        Otherwise, the GPS recording would be redundant.
-    </string>
-
-    <string name="permission_notification">
-        In order to track the sensors in the background, the app needs to launch background service, which is represented by notification. No activity is taken without your knowledge - notification.
-        From Android 13, the notification can be posted only with this permission. To enable this functionality, please enable the notifications.
-    </string>
-    <string name="gps">GPS</string>
-    <string name="sensor_info_GPS_latitude">Latitude</string>
-    <string name="sensor_info_GPS_longitude">Longitude</string>
-    <string name="sensor_info_GPS_altitude">Altitude [m]</string>
-    <string name="sensor_info_GPS_accuracy">Accuracy [m]</string>
-    <string name="sensor_info_GPS_speed">Speed [m/s]</string>
-    <string name="sensor_info_GPS_bearing">Bearing [°]</string>
-    <string name="sensor_info_GPS_provider">Provider</string>
-    <string-array name="sensor_info_GPS_array">
-        <item>@string/sensor_info_GPS_latitude</item>
-        <item>@string/sensor_info_GPS_longitude</item>
-        <item>@string/sensor_info_GPS_altitude</item>
-        <item>@string/sensor_info_GPS_accuracy</item>
-        <item>@string/sensor_info_GPS_speed</item>
-        <item>@string/sensor_info_GPS_bearing</item>
-        <item>@string/sensor_info_GPS_provider</item>
-    </string-array>
-
-    <!--ADVANCED-->
-    <string name="advanced_button_long_measurement"><![CDATA[Long\nmeasurement\n\n > 60 s]]></string>
-    <string name="advanced_button_endless_measurement">Endless\nmeasurement\n\n∞</string>
-    <string name="advanced_button_short_measurement"><![CDATA[Short\nmeasurement\n\n < 60 s]]></string>
-    <string name="advanced_measurement_picker">Pick measurement</string>
-    <string name="advanced_counter_fragment">Pick time intervals</string>
-    <string name="advanced_extra_fragment">Options of measurement</string>
-    <string name="advanced_time_to_start">Time to\nstart [s]</string>
-    <string name="advanced_time_to_measure">Time to\nmeasure [s]</string>
-    <string name="advanced_hours">Hours</string>
-    <string name="advanced_minutes">Minutes</string>
-    <string name="advanced_setup_time">Set up time</string>
-    <string name="advanced_time_pass_limit">Unreachable time</string>
-    <string name="advanced_recognition_permission">To log movement recognition changes to csv files, the app requires permission for this kind of recognition.\n\nIf you picked \"Do not ask again\" or picked denied multiple times, you will be moved to settings to change the permission.</string>
-
-    <!--SETTINGS-->
-    <string name="settings_storage">Storage</string>
-    <string name="settings_folder_change">Change folder</string>
-    <string name="settings_interval_time">Time interval [s]</string>
-    <string name="settings_activity_recognition_API">Activity recognition API</string>
-    <string name="settings_app">App</string>
-    <string name="settings_activity_recognition_preference">About activity recognition</string>
-    <string name="settings_custom_annots">Customize annotations</string>
-    <string name="settings_csv_formatting">CSV formatting</string>
-    <string name="settings_csv_formatting_text">Every CSV file is composed of header, where you can find time as \"t\",
-        values of specific sensor and accuracy of the sensor as \"a\".\n\nTimestamps across sensors and activity transitions are in nanoseconds of Android system time. GPS, periodic activity recognition,
-        significant motion and other use UNIX time.\n\nTo convert sensor timestamps to UNIX time follow these steps:\n\n
-        \u2022 subtract from column nanos field from "extra.json" - this is starting time of measurement in Android system time\n\n
-        \u2022 convert nanoseconds to milliseconds\n\n
-        \u2022 add to column millis from "extra.json" - this is starting time of measurement in UNIX time\n\nAccuracy is in range from 0 to 3, where 0 means the lowest accuracy and 3 the highest.
-
-
-    </string>
-    <string name="settings_android">Android settings</string>
-    <string name="settings_android_open">Open the app in settings</string>
-    <string name="settings_wrong_input_number">Wrong input - use only digits</string>
-    <string name="settings_android_battery_optimization">Ignore battery optimization</string>
-    <string name="settings_wear_os_battery_title">About Wear Os battery optimization</string>
-    <string name="settings_wear_os_battery_text">Wear Os has aggressive battery saving routines, which prohibit to record sensors for longer period of time.
-        You can try it without any additional options, but the measurement will not provide longer measurements, then 2 mins in general. \n\nSolutions:
-        \n\u2022 use wake lock, but usually it does not to lead to reasonable solution\n\u2022 turn on always on display and
-        leave the screen on red measurement screen of the watch. The screen will become black after 1 min, but is still reactive as it would not be asleep.
-        This should be enough to keep the device alive and data flow intact. However, it can increase battery drainage.\n\nThese options can be found in settings of the Wear Os app.</string>
-    <string name="settings_no_optimisations_required">No optimisations required under Android M</string>
-    <string name="settings_annotations">Annotations</string>
-    <string name="settings_csv">Data format</string>
-    <string name="settings_version">Version of the app</string>
-    <string name="settings_interval_distance">Distance interval [m]</string>
-    <string name="settings_annotation">Annotation</string>
-    <string name="settings_add">Add</string>
-    <string name="settings_high_value_warning">The parameter is too high! Max: </string>
-    <string name="settings_empty_string">Value needs to be set </string>
-    <string name="settings_activity_recognition_permission">Allow Activity recognition permission in settings to log changes in activity</string>
-    <string name="settings_activity_recognition_title">About activity recognition</string>
-    <string name="settings_activity_recognition_text">SensorBox uses Activity Recognition Client, Google\'s API, which is native tool for
-    activity recognition for Android. The client is capable to provide basic information about movement status of a phone,
-    whether it is in a vehicle, with a person or stationary placed. \n\nThe client can recognize changes among these activities:\n\n
-        \u2022 In vehicle - 0\n
-        \u2022 On Bicycle - 1\n
-        \u2022 On foot - running/walking - 2\n
-        \u2022 Still - device is not moving - 3\n
-        \u2022 Walking - 7\n
-        \u2022 Running - 8\n\nThese data will be stored in "activity_changes.csv" with a appropriate timestamp in NANOseconds of system time. Numbers beside the activities are used to encode them in csv file. Last column "enter_exit" describes, if the activity was entered (0) or exited (1).\n\nWith the customizable frequency of updates, you can get an actual confidence of each activity in %. This data will
-    be stored in "activity_confidence.csv" with timestamps in MILLIseconds - UNIX time. There are also available this activities:\n\n
-    \u2022 Tilting - device angle relative to gravity changed significantly - 5\n
-    \u2022 Unknown - unable to detect activity - 4\n\nSum of activities do not equal to 100%, because some activities are not exclusive
-        (on foot is generalization of walking and running).
-        Moreover, the frequency of updates do not need to be precise, due to a battery optimizations of system.
-    </string>
-
-    <string-array name="sensor_speeds">
-        <item>Fastest - 0 ms</item>
-        <item>Game - 20 ms</item>
-        <item>UI - 60 ms</item>
-        <item>Normal - 200 ms</item>
-    </string-array>
-
-    <!--SETTINGS KEYS-->
-    <string name="settings_key_folder_change">folder_change</string>
-    <string name="settings_key_gps_distance">gps_distance</string>
-    <string name="settings_key_gps_time">gps_time</string>
-    <string name="settings_key_activity_recognition_period">activity_recognition_period</string>
-    <string name="settings_key_about_activity_recognition">about_activity_recognition</string>
-    <string name="settings_key_annots">annots</string>
-    <string name="settings_key_storage_details">storage_details</string>
-    <string name="settings_key_android_settings">android_settings</string>
-    <string name="settings_key_battery_settings">battery_settings</string>
-
-    <!--EXTRA-->
-    <string name="extra_name_folder">Name of\nthe folder:</string>
-    <string name="extra_edittext_hint">Optional</string>
-    <string name="extra_pick_sensor">Max delay\nfor sensors:</string>
-    <string name="extra_custom_notes">Add custom notes to JSON file</string>
-    <string name="extra_note">Note - optional</string>
-    <string name="add_custom_noise_alarms_during_measurement">Add custom noise alarms during measurement</string>
-    <string name="extra_other_options">Other options</string>
-    <string name="extra_activity_recognition_checkbox">Use activity recognition</string>
-    <string name="extra_activity_recognition_checkbox_no_permission">Use activity recognition\npermission required</string>
-    <string name="extra_significant_motion_checkbox">Use significant motion sensor</string>
-    <string name="extra_low_battery_checkbox">Stop measurement on low battery</string>
-    <string name="extra_use_wakelock_checkbox">Use wakelock - locks CPU</string>
-    <string name="extra_repeat_measurement_checkbox">Repeating measurement</string>
-    <string name="extra_only_letters">Only letters and underscores are permitted.</string>
-    <string name="extra_alarm_title">Pick time for alarm</string>
-    <string name="extra_alarm_seconds">Time [s]</string>
-    <string name="extra_alarm_minutes">Time [min]</string>
-    <string name="extra_alarm_registered">Alarm already registered</string>
-    <string name="extra_add">Add</string>
-    <string name="extra_hours_mins">%1$d h %2$d min</string>
-    <string name="extra_seconds">%1$d s</string>
-    <string name="text_stop">Stop</string>
-
-    <!--MEASUREMENT-->
-    <string name="measurement_elapsed_time">Elapsed time</string>
-    <string name="measurement_stop_button">Stop\nmeasurement</string>
-    <string name="measurement_stop">Stop</string>
-    <string name="measurement_add_annotation">Add\nannotation</string>
-    <string name="measurement_remaining_time">Remaining time</string>
-    <string name="measurement_format_long">"Measurement end:\n %s</string>
-    <string name="measurement_annot_empty">Add annotations in settings</string>
-    <string name="measurement_annot_title">Pick one item</string>
-    <string name="measurement_delete_previous">Delete previous measurement</string>
-    <string name="measurement_title_repeat">Repeat measurement ?</string>
-    <string name="measurement_repeat">Repeat</string>
-    <string name="measurement_cancel">Cancel</string>
-
-    <!--INTRO-->
-    <string name="intro_welcome">Welcome!</string>
-    <string name="intro_welcome_description">The application that can record sensors and GPS to CSV files, which is also compatible with Wear Os</string>
-    <string name="intro_incognito">Nothing is going out</string>
-    <string name="intro_incognito_description">All the measured data are stored locally. None of them are sent to any cloud. Moreover, this is open-source project. Visit our github!</string>
-    <string name="intro_policy">Our policy: just fix bugs</string>
-    <string name="intro_policy_description">We gather only error messages, which can be used to fix the app. By moving on, you agree to our Privacy Policy &amp; Terms.</string>
+    <string name="intro_welcome_title">Welcome to SensorBox</string>
+    <string name="intro_welcome_body">Record phone sensors and GPS to CSV files, with companion support for Wear OS.</string>
+    <string name="intro_incognito_title">Nothing is going out</string>
+    <string name="intro_incognito_body">Measurements stay locally on your devices. SensorBox has no analytics, cloud upload, or account requirement.</string>
+    <string name="intro_policy_title">Privacy and terms</string>
+    <string name="intro_policy_body">Review the policies before continuing. SensorBox only records when you explicitly start a measurement.</string>
     <string name="intro_policy_button">Privacy policy</string>
     <string name="intro_terms_button">Terms of use</string>
-    <string name="intro_permission">Permissions</string>
-    <string name="intro_permission_description">In order to save files or use activity recognition, GPS, we need you to give the app permissions.</string>
-    <string name="intro_allow">Allow</string>
-    <string name="intro_life_cycle_problem">App problem</string>
-    <string name="intro_battery_description">Due to the Android power saving routines, the app does not need to work properly. For example after the screen turns off, sensors can too or app gets killed by the system. Some routines are from manufacturer itself. </string>
-    <string name="intro_battery_title">Partial solution</string>
-    <string name="intro_battery_description2">To turn off Android power management, click on button above. However, manufacturer side does not have method to turn off. Usually, the way to switch it off is to go to settings -> battery -> and add app to whitelist. Even this does not guarantee proper functionality.</string>
-    <string name="intro_battery_description2_landscape">To turn off Android power management, click on button on left. However, manufacturer side does not have method to turn off. Usually, the way to switch it off is to go to settings -> battery -> and add app to whitelist. Even this does not guarantee proper functionality.</string>
-    <string name="intro_ignore_optimizations">Click to\nignore\noptimizations</string>
-    <string name="intro_ignored_optimisations">Optimisations are ignored</string>
-    <string name="intro_ignored_optimisations_error">Device does not support this option</string>
-    <string name="intro_pick_folder">Click to pick folder</string>
-    <string name="intro_pick_folder_placement">Placement of folder</string>
-    <string name="intro_pick_folder_description">Here you can pick folder, where to store all the files. Picked folder is:\n\n%s</string>
-    <string name="intro_pick_folder_description_under_Q">SensorBox folder will be created in your root directory.</string>
-    <string name="intro_deny_dont_ask">Please visit settings to give permissions to the app</string>
-    <string name="intro_deny">The permission are required for full functionality</string>
-    <string name="intro_condition_folder">Please pick folder, where to store all the measurements</string>
+    <string name="intro_lifecycle_title">Android may pause recordings</string>
+    <string name="intro_lifecycle_body">Power-saving routines can stop sensors after the screen turns off or terminate long-running work, especially on manufacturer-customized Android versions.</string>
+    <string name="intro_battery_title">Allow reliable background work</string>
+    <string name="intro_battery_body">You can ask Android to exempt SensorBox from battery optimization. This is optional and can be changed later in system settings.</string>
+    <string name="intro_battery_action">Review battery settings</string>
+    <string name="intro_storage_title">Choose a recording folder</string>
+    <string name="intro_storage_body">Android’s folder picker gives SensorBox access only to the location you choose. A folder is required before finishing setup.</string>
+    <string name="intro_storage_action">Choose folder</string>
+    <string name="intro_storage_change_action">Change folder</string>
+    <string name="intro_storage_selected">Selected folder: %1$s</string>
+    <string name="intro_back">Back</string>
+    <string name="intro_finish">Start SensorBox</string>
+    <string name="intro_page_progress">%1$d of %2$d</string>
+    <string name="dialog_privacy_policy">SensorBox does not collect or upload your sensor or GPS recordings. Your measurements stay in the folder you select. Recording begins only after your action and remains visible through a foreground-service notification.</string>
+    <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
+    <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
 
-    <!--POLICIES-->
-    <string name="link_terms">https://sensorbox-policy.vercel.app/terms_and_conditions.html</string>
-    <string name="link_privacy_policy">https://sensorbox-policy.vercel.app/privacy_policy_sensorbox.html</string>
+    <string name="about_app_description">SensorBox records raw phone and Wear OS sensor data locally using modern Android APIs.</string>
+    <string name="about_privacy_policy">Privacy policy</string>
+    <string name="about_title">About SensorBox</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_licenses">Open-source licenses</string>
+    <string name="about_summary">Version, privacy policy, and open-source licenses</string>
 
-    <!--ABOUT-->
-    <string name="about_app_description">SensorBox serves as sensor output aggregation tool. You can pick sensors, views their parameters, store them in csv files. During measurement, you can set up alarms, write notes and take annotations. Application is compatible with Wear Os. SensorBox is open source project, so you can visit github page for code.</string>
-    <string name="about_title_email">Email contact</string>
-    <string name="licenses">Open Source Licenses</string>
-    <string name="about_site_title">Visit our site</string>
-    <string name="about_privacy_policy">Read our Privacy Policy</string>
-    <string name="about_terms_of_use">Read our Terms of use</string>
-    <string name="sync_data">Download data from Wear Os</string>
-    <string name="wear_os_presence">Wear Os presence</string>
-    <string name="title_activity_main2">MainActivity</string>
-    <string name="action_settings">Settings</string>
-    <string name="app_version">Version: %s</string>
+    <string name="recording">Recording</string>
+    <string name="stop_and_save">Stop and save</string>
+    <string name="elapsed_time">Elapsed time</string>
+    <string name="sources">Sources</string>
+    <string name="gps" translatable="false">GPS</string>
+    <string name="sensor_list">Sensor list</string>
+    <string name="show_sensor_list">Show sensor list</string>
+    <string name="hide_sensor_list">Hide sensor list</string>
+    <string name="sensor_number">Sensor %1$d</string>
+    <string name="annotation">Annotation</string>
+    <string name="annotation_description">Add a timestamped marker to extra.json</string>
+    <string name="add_annotation">Add annotation</string>
 
-    <string name="google_play_link">https://play.google.com/store/apps/details?id=%s</string>
-    <string name="github_page">https://github.com/Foxpace/SensorBox</string>
-    <string name="creative_motion_mail">creativemotionapps@gmail.com</string>
-    <string name="creative_motion_web">https://creativemotion.app/</string>
+    <string name="privacy_health_data">Privacy and health data</string>
+    <string name="privacy_access_title">Why SensorBox requests access</string>
+    <string name="privacy_permissions_body">Sensor and location permissions are requested only after you select those sources and tap Start recording.</string>
+    <string name="privacy_storage_body">Recordings are written to the folder you choose through Android’s system document picker.</string>
+    <string name="privacy_heart_rate_body">Heart-rate access is used only when you explicitly select a heart-rate sensor. Background access keeps that user-started foreground recording alive while its notification is visible.</string>
+    <string name="privacy_no_upload_body">SensorBox does not upload recorded sensor or location data.</string>
 
-    <!--Wear OS-->
-    <string name="wear_os_sync_unavailable_restart">Synchronization is not available - restart connection</string>
-    <string name="wear_os_sync_in_progress">Synchronization in progress</string>
-    <string name="wear_os_active">Turn off Wear Os active measurement</string>
-    <string name="heart_rate_permission_title">Heart rate permission</string>
-    <string name="heart_rate_permission_text_wear_os">In order to get heart rate values and save them to csv file, the heart rate sensor requires \"Body sensors\" permission for Wear Os. The permission will be shown at your smartwatch after clicking the button.</string>
-    <string name="wear_os_active_measurement">Turn off Wear Os active measurement</string>
-    <string name="measurement_active">Measuring</string>
-    <string name="second_formater">%s s</string>
+    <string name="pick_sensors">Pick sensors</string>
+    <string name="phone_and_wear_ready">Phone and Wear OS ready</string>
+    <string name="choose_measurement_signals">Choose signals for this measurement</string>
+    <string name="options">Options</string>
+    <string name="sensors">Sensors</string>
+    <string name="phone_sensors">Phone</string>
+    <string name="wear_sensors">Wear OS</string>
+    <string name="selected_count">%1$d of %2$d selected</string>
+    <string name="device_location">Device location</string>
+    <string name="information_about_gps">Information about GPS</string>
+    <string name="information_about_sensor">Information about %1$s</string>
+    <string name="info_symbol" translatable="false">i</string>
+    <string name="step_one_of_two">Step 1 of 2</string>
+    <string name="continue_action">Continue</string>
+    <plurals name="sensor_count">
+        <item quantity="one">%1$d sensor</item>
+        <item quantity="other">%1$d sensors</item>
+    </plurals>
+    <plurals name="source_count">
+        <item quantity="one">%1$d source</item>
+        <item quantity="other">%1$d sources</item>
+    </plurals>
+    <string name="message_pick_source">Pick at least one sensor or GPS.</string>
+    <string name="message_storage_required">Choose a folder before recording.</string>
+    <string name="message_permission_required">Required permission was not granted.</string>
+    <string name="message_measurement_failed">The recording could not be started.</string>
 
+    <string name="measurements">Measurements</string>
+    <string name="measurement_settings">Measurement settings</string>
+    <string name="measurement_settings_subtitle">Control how measurements are recorded</string>
+    <string name="measurement_setup">Measurement setup</string>
+    <string name="source_summary_ready">%1$s ready</string>
+    <string name="recording_folder">Recording folder</string>
+    <string name="choose_recording_folder">Choose where recordings are saved</string>
+    <string name="folder_required">Folder required</string>
+    <string name="ready_to_record">Ready to record</string>
+    <string name="start_measurement">Start measurement</string>
+    <string name="custom_measurement_name">Measurement name</string>
+    <string name="custom_measurement_name_description">Optional folder-name prefix</string>
+    <string name="timed_measurement">Timed measurement</string>
+    <string name="timed_measurement_description">Stop and save automatically after a duration</string>
+    <string name="start_delay">Start delay</string>
+    <string name="measurement_duration">Duration</string>
+    <string name="measurement_notes">Notes</string>
+    <string name="measurement_notes_description">One note per line; saved in extra.json</string>
+    <string name="audible_alarm_offsets">Audible alarms</string>
+    <string name="audible_alarm_offsets_description">Seconds after start, separated by commas</string>
+    <string name="activity_recognition">Activity recognition</string>
+    <string name="activity_recognition_description">Record periodic motion-category confidence values</string>
+    <string name="activity_recognition_period">Activity update period</string>
+    <string name="significant_motion">Significant motion</string>
+    <string name="significant_motion_description">Record and re-arm the one-shot trigger sensor</string>
+    <string name="battery_guard">Battery guard</string>
+    <string name="battery_guard_settings_description">Stop a session when the battery becomes low</string>
+    <string name="battery_guard_setup_description">Stop when the battery becomes low</string>
+    <string name="keep_cpu_awake">Keep CPU awake</string>
+    <string name="keep_cpu_awake_settings_description">Use a partial wake lock while recording</string>
+    <string name="keep_cpu_awake_setup_description">Keep sampling while the screen is off</string>
+    <string name="keep_screen_awake">Keep screen awake</string>
+    <string name="keep_screen_awake_settings_description">Prevent the display from sleeping while recording</string>
+    <string name="keep_screen_awake_setup_description">Prevent display sleep while recording</string>
+    <string name="gps_interval">GPS interval</string>
+    <string name="gps_minimum_distance">GPS minimum distance</string>
+    <plurals name="seconds_count">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <plurals name="meters_count">
+        <item quantity="one">%1$d meter</item>
+        <item quantity="other">%1$d meters</item>
+    </plurals>
+    <string name="battery_optimization">Battery optimization</string>
+    <string name="battery_optimization_exempt">SensorBox is exempt from battery optimization</string>
+    <string name="battery_optimization_restricted">SensorBox may be restricted by battery-saving routines</string>
+    <string name="exclude_from_battery_saving">Exclude from battery saving</string>
+    <string name="sensor_sampling">Sensor sampling</string>
+    <string name="sensor_sampling_description">Choose how often sensor values are captured</string>
+    <string name="sampling_fastest">Fastest</string>
+    <string name="sampling_game">Game</string>
+    <string name="sampling_ui">UI</string>
+    <string name="sampling_normal">Normal</string>
+    <string name="decrement" translatable="false">−</string>
+    <string name="increment" translatable="false">+</string>
 
+    <string name="sensor_info">Sensor info</string>
+    <string name="sensor_unavailable">Sensor unavailable</string>
+    <string name="sensor_disconnected">It may have been disconnected</string>
+    <string name="preview">Preview</string>
+    <string name="gps_preview">GPS preview</string>
+    <string name="sensor_preview_title">%1$s preview</string>
+    <string name="live_location_values">Live location values</string>
+    <string name="live_sensor_values">Live sensor values</string>
+    <string name="sensor_activation_failed">This sensor could not be activated.</string>
+    <string name="waiting_sensor_data">Waiting for sensor data…</string>
+    <string name="live_chart">Live chart</string>
+    <string name="chart_time_axis">Time [s]</string>
+    <string name="chart_value_axis">Value [%1$s]</string>
+    <string name="value">Value</string>
+    <string name="value_number">Value %1$d</string>
+    <string name="sensor_value_with_unit">%1$s [%2$s]</string>
+    <string name="axis_x" translatable="false">X</string>
+    <string name="axis_y" translatable="false">Y</string>
+    <string name="axis_z" translatable="false">Z</string>
+    <string name="axis_w" translatable="false">W</string>
 
+    <string name="detail_name">Name</string>
+    <string name="detail_version">Version</string>
+    <string name="detail_vendor">Vendor</string>
+    <string name="detail_resolution">Resolution [%1$s]</string>
+    <string name="detail_power">Power [mA]</string>
+    <string name="detail_maximum_range">Maximum range [%1$s]</string>
+    <string name="detail_minimum_delay">Minimum delay</string>
+    <string name="detail_maximum_delay">Maximum delay</string>
+    <string name="detail_delay_value">%1$d µs</string>
+    <string name="detail_android_sensor_type">Android sensor type</string>
+    <string name="detail_sensor_type_value">Type %1$d</string>
+    <string name="detail_reporting_mode">Reporting mode</string>
+    <string name="detail_wakeup_sensor">Wake-up sensor</string>
+    <string name="detail_latitude">Latitude</string>
+    <string name="detail_longitude">Longitude</string>
+    <string name="detail_altitude">Altitude [m]</string>
+    <string name="detail_accuracy">Accuracy [m]</string>
+    <string name="detail_speed">Speed [m/s]</string>
+    <string name="detail_bearing">Bearing [°]</string>
+    <string name="detail_provider">Provider</string>
+    <string name="detail_available">Available</string>
+    <string name="detail_update_interval">Update interval</string>
+    <string name="detail_minimum_distance">Minimum distance</string>
+    <string name="location_permission">Location permission</string>
+    <string name="location_permission_explanation">Location permission is required to display live GPS values.</string>
+    <string name="grant_location_permission">Grant location permission</string>
+    <string name="reporting_continuous">Continuous</string>
+    <string name="reporting_on_change">On change</string>
+    <string name="reporting_one_shot">One shot</string>
+    <string name="reporting_special_trigger">Special trigger</string>
+    <string name="unit_acceleration" translatable="false">m/s²</string>
+    <string name="unit_angular_velocity" translatable="false">rad/s</string>
+    <string name="unit_percent" translatable="false" formatted="false">%</string>
+    <string name="unit_magnetic_field" translatable="false">µT</string>
+    <string name="unit_centimeters" translatable="false">cm</string>
+    <string name="unit_pressure" translatable="false">hPa</string>
+    <string name="unit_lux" translatable="false">lx</string>
+    <string name="unit_temperature" translatable="false">°C</string>
+    <string name="unit_steps">steps</string>
+    <string name="unit_heart_rate" translatable="false">bpm</string>
+    <string name="unit_none" translatable="false">−</string>
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_summary">Errors are stored locally and shared only when you choose to export them.</string>
+    <string name="diagnostics_share">Share diagnostics</string>
+    <string name="diagnostics_share_text">Send as text</string>
+    <string name="diagnostics_share_file">Send as file</string>
+    <string name="diagnostics_share_failed">Diagnostics could not be shared. The error was saved for a later attempt.</string>
 </resources>
