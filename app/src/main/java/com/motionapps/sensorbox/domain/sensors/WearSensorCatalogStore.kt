@@ -1,5 +1,6 @@
-package com.motionapps.wearoslib.protocol
+package com.motionapps.sensorbox.domain.sensors
 
+import com.motionapps.wearoslib.protocol.WearSensorInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

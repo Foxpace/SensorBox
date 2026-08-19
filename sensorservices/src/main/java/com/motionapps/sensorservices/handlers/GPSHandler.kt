@@ -14,6 +14,8 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 
@@ -62,12 +64,12 @@ class GPSHandler : LocationCallback() {
                 callback?.onLastLocationSuccess(location)
             }
         }.addOnFailureListener { error ->
-            AppError.from(AppError.Kind.MEASUREMENT, "Read last GPS location", error)
+            AppError.from(AppErrorCode.MEASUREMENT, "Read last GPS location", error)
             callback?.onLastLocationSuccess(null)
         }
 
         locationClient.requestLocationUpdates(request, this, Looper.getMainLooper()).addOnFailureListener { error ->
-            AppError.from(AppError.Kind.MEASUREMENT, "Request GPS updates", error)
+            AppError.from(AppErrorCode.MEASUREMENT, "Request GPS updates", error)
         }
         registered = true
     }
@@ -95,14 +97,14 @@ class GPSHandler : LocationCallback() {
     }
 
     /** Stops location updates for the active measurement. */
-    fun gpsOff(): Result<Unit> = appResult(AppError.Kind.MEASUREMENT, "Stop GPS updates") {
+    fun gpsOff(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Stop GPS updates") {
         if (registered) {
             Log.i(tag, "Logging off location")
             locationClient.flushLocations().addOnFailureListener { error ->
-                AppError.from(AppError.Kind.MEASUREMENT, "Flush GPS updates", error)
+                AppError.from(AppErrorCode.MEASUREMENT, "Flush GPS updates", error)
             }
             locationClient.removeLocationUpdates(this).addOnFailureListener { error ->
-                AppError.from(AppError.Kind.MEASUREMENT, "Remove GPS updates", error)
+                AppError.from(AppErrorCode.MEASUREMENT, "Remove GPS updates", error)
             }
         }
         registered = false
@@ -133,9 +135,9 @@ class GPSHandler : LocationCallback() {
      * @param gpsCallback - this object will get access to location and updates, previous is forgotten
      *
      */
-    fun addCallback(context: Context, gpsCallback: OnLocationChangedCallback): Result<Unit> =
-        (if (registered) gpsOff() else Result.success(Unit)).flatMap {
-            appResult(AppError.Kind.MEASUREMENT, "Register GPS callback") {
+    fun addCallback(context: Context, gpsCallback: OnLocationChangedCallback): AppResult<Unit> =
+        (if (registered) gpsOff() else AppResult.success(Unit)).flatMap {
+            appResult(AppErrorCode.MEASUREMENT, "Register GPS callback") {
                 callback = gpsCallback
                 initialize(context)
                 gpsCallback.onLocationChanged(lastLocation)

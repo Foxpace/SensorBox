@@ -3,6 +3,8 @@ package com.motionapps.sensorservices.handlers
 import android.content.Context
 import android.content.Intent
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
@@ -21,15 +23,15 @@ object StorageHandler {
         return SimpleDateFormat(format, Locale.getDefault()).format(calendar.time)
     }
 
-    fun createMainFolder(context: Context, intent: Intent?): Result<Unit> {
+    fun createMainFolder(context: Context, intent: Intent?): AppResult<Unit> {
         val directoryName = context.getString(R.string.app_name)
         return if (intent == null) {
             NativeDocumentStorage.hasAppDirectory(context, directoryName).flatMap { exists ->
                 if (exists) {
-                    Result.success(Unit)
+                    AppResult.success(Unit)
                 } else {
-                    Result.failure(
-                        AppError(AppError.Kind.STORAGE, "Storage directory is not configured"),
+                    AppResult.failure(
+                        AppError(AppErrorCode.STORAGE, "Storage directory is not configured"),
                     )
                 }
             }
@@ -38,34 +40,34 @@ object StorageHandler {
         }
     }
 
-    fun isFolder(context: Context): Result<Boolean> = NativeDocumentStorage.hasAppDirectory(
+    fun isFolder(context: Context): AppResult<Boolean> = NativeDocumentStorage.hasAppDirectory(
         context = context,
         appDirectoryName = context.getString(R.string.app_name),
     )
 
-    fun isAccess(context: Context): Result<Boolean> = isFolder(context)
+    fun isAccess(context: Context): AppResult<Boolean> = isFolder(context)
 
-    fun getFolderName(context: Context): Result<String> = NativeDocumentStorage.displayPath(
+    fun getFolderName(context: Context): AppResult<String> = NativeDocumentStorage.displayPath(
         context = context,
         appDirectoryName = context.getString(R.string.app_name),
     ).map { it ?: context.getString(R.string.no_path) }
 
-    fun createInternalStorageMeasurementFolder(context: Context, folderName: String): Result<Unit> {
+    fun createInternalStorageMeasurementFolder(context: Context, folderName: String): AppResult<Unit> {
         val directory = internalMeasurementDirectory(context, folderName)
-        return appResult(AppError.Kind.STORAGE, "Create internal measurement directory") {
+        return appResult(AppErrorCode.STORAGE, "Create internal measurement directory") {
             directory.exists() || directory.mkdirs()
         }.flatMap { created ->
             if (created) {
-                Result.success(Unit)
+                AppResult.success(Unit)
             } else {
-                Result.failure(
-                    AppError(AppError.Kind.STORAGE, "Create internal measurement directory"),
+                AppResult.failure(
+                    AppError(AppErrorCode.STORAGE, "Create internal measurement directory"),
                 )
             }
         }
     }
 
-    fun createFolderMeasurement(context: Context, folderName: String): Result<Unit> =
+    fun createFolderMeasurement(context: Context, folderName: String): AppResult<Unit> =
         NativeDocumentStorage.createMeasurementDirectory(
             context = context,
             appDirectoryName = context.getString(R.string.app_name),
@@ -77,7 +79,7 @@ object StorageHandler {
         folderName: String,
         mimeOfNewFile: String,
         nameOfNewFile: String,
-    ): Result<OutputStream> = NativeDocumentStorage.openMeasurementFile(
+    ): AppResult<OutputStream> = NativeDocumentStorage.openMeasurementFile(
         context = context,
         appDirectoryName = context.getString(R.string.app_name),
         measurementName = folderName,
@@ -85,23 +87,23 @@ object StorageHandler {
         fileName = nameOfNewFile,
     )
 
-    fun createFileInInternalFolder(context: Context, folderName: String, nameOfFile: String): Result<OutputStream> =
-        appResult(AppError.Kind.STORAGE, "Prepare internal measurement directory") {
+    fun createFileInInternalFolder(context: Context, folderName: String, nameOfFile: String): AppResult<OutputStream> =
+        appResult(AppErrorCode.STORAGE, "Prepare internal measurement directory") {
             val directory = internalMeasurementDirectory(context, folderName)
             directory to (directory.exists() || directory.mkdirs())
         }.flatMap { (directory, ready) ->
             if (!ready) {
-                Result.failure(
-                    AppError(AppError.Kind.STORAGE, "Create internal measurement directory"),
+                AppResult.failure(
+                    AppError(AppErrorCode.STORAGE, "Create internal measurement directory"),
                 )
             } else {
-                appResult(AppError.Kind.STORAGE, "Open internal measurement file") {
+                appResult(AppErrorCode.STORAGE, "Open internal measurement file") {
                     FileOutputStream(File(directory, nameOfFile))
                 }
             }
         }
 
-    fun deleteByNameOfFolder(context: Context, deleteFolder: String): Result<Unit> =
+    fun deleteByNameOfFolder(context: Context, deleteFolder: String): AppResult<Unit> =
         NativeDocumentStorage.deleteMeasurement(
             context = context,
             appDirectoryName = context.getString(R.string.app_name),

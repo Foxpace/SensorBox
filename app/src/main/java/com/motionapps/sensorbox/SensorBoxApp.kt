@@ -1,8 +1,10 @@
 package com.motionapps.sensorbox
 
 import android.app.Application
-import com.motionapps.sensorbox.core.error.AppDiagnostics
+import com.motionapps.sensorbox.core.error.FileDiagnostics
+import com.motionapps.sensorbox.domain.paired.PhoneRecordingSessionObserver
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * building block for the Hilt dependency injection framework
@@ -10,8 +12,15 @@ import dagger.hilt.android.HiltAndroidApp
  */
 @HiltAndroidApp
 class SensorBoxApp : Application() {
+    @Inject
+    lateinit var diagnostics: FileDiagnostics
+
+    @Inject
+    lateinit var recordingSessionObserver: PhoneRecordingSessionObserver
+
     override fun onCreate() {
         super.onCreate()
-        AppDiagnostics.install(this)
+        diagnostics.installUncaughtExceptionHandler()
+        recordingSessionObserver.start()
     }
 }

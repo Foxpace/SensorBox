@@ -1,5 +1,6 @@
 package com.motionapps.wearoslib.connectivity
 
+import com.motionapps.sensorbox.core.error.AppResult
 import kotlinx.coroutines.flow.Flow
 
 interface WearConnectionRepository {
@@ -7,5 +8,5 @@ interface WearConnectionRepository {
 
     suspend fun findNode(capability: String): WearNode?
 
-    suspend fun sendMessage(capability: String, path: String, payload: ByteArray): Result<Unit>
+    suspend fun sendMessage(capability: String, path: String, payload: ByteArray): AppResult<Unit>
 }

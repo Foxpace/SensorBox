@@ -3,6 +3,8 @@ package com.motionapps.sensorbox.emulator
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.domain.sync.SyncWearMeasurementsUseCase
 import com.motionapps.wearoslib.connectivity.GooglePlayWearConnectionRepository
 import com.motionapps.wearoslib.files.GooglePlayWearFileTransferClient
@@ -41,12 +43,16 @@ class WearToPhoneSyncSenderEmulatorTest {
     }
 
     private suspend fun syncWhenPhoneBecomesReachable(sync: SyncWearMeasurementsUseCase): Int {
-        var lastFailure: Throwable? = null
+        var lastFailure: AppError? = null
         repeat(MAX_ATTEMPTS) {
-            sync().onSuccess { return it }.onFailure { lastFailure = it }
+            when (val result = sync()) {
+                is AppResult.Success -> return result.value
+                is AppResult.Failure -> lastFailure = result.error
+            }
             delay(POLL_INTERVAL_MILLIS)
         }
-        throw AssertionError("Phone emulator did not become reachable", lastFailure)
+        val message = "Phone emulator did not become reachable: ${lastFailure?.code}"
+        throw AssertionError(message, lastFailure?.cause)
     }
 
     private companion object {

@@ -11,14 +11,14 @@ class MeasurementSetupScreenTest {
 
     @Test
     fun givenConfiguredSetupWhenStartIsTappedThenMeasurementIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         MeasurementSetupScreenRobot(composeRule)
             .givenMeasurementSetup { actualIntent = it }
             .thenFolderAndSettingsAreVisible()
             .whenStartMeasurementIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.StartMeasurement, actualIntent)
+            assertEquals(RecordingIntent.StartMeasurement, actualIntent)
         }
     }
 }

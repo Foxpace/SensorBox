@@ -2,6 +2,8 @@ package com.motionapps.sensorbox.domain.sync
 
 import com.google.android.gms.wearable.ChannelClient
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.suspendFlatMap
 import com.motionapps.wearoslib.files.WearFilePathCodec
@@ -12,14 +14,14 @@ class ReceiveWearFileUseCase @Inject constructor(
     private val transferClient: WearFileTransferClient,
     private val destination: WearFileDestination,
 ) {
-    suspend operator fun invoke(channel: ChannelClient.Channel): Result<Unit> =
+    suspend operator fun invoke(channel: ChannelClient.Channel): AppResult<Unit> =
         WearFilePathCodec.decode(channel.path).suspendFlatMap { metadata ->
             destination.isReady().flatMap { ready ->
                 if (ready) {
-                    Result.success(Unit)
+                    AppResult.success(Unit)
                 } else {
-                    Result.failure(
-                        AppError(AppError.Kind.STORAGE, "Receive Wear file"),
+                    AppResult.failure(
+                        AppError(AppErrorCode.STORAGE, "Receive Wear file"),
                     )
                 }
             }.suspendFlatMap {

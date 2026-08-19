@@ -3,6 +3,8 @@ package com.motionapps.sensorbox.domain.sync
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
@@ -15,11 +17,14 @@ import javax.inject.Singleton
 
 @Singleton
 class WearFileDestination @Inject constructor(@ApplicationContext private val context: Context) {
-    fun isReady(): Result<Boolean> = hasConfiguredDirectory().map { configured -> configured || isDebugBuild() }
+    fun isReady(): AppResult<Boolean> = hasConfiguredDirectory().map { configured -> configured || isDebugBuild() }
 
-    fun copy(metadata: WearFileMetadata, input: InputStream): Result<Unit> {
+    fun copy(metadata: WearFileMetadata, input: InputStream): AppResult<Unit> {
         val measurementName = "WEAR_${metadata.measurementName}"
-        val configured = hasConfiguredDirectory().getOrElse { return Result.failure(it) }
+        val configuredResult = hasConfiguredDirectory()
+        val configured = configuredResult.getOrNull() ?: return AppResult.failure(
+            checkNotNull(configuredResult.errorOrNull()),
+        )
         return if (configured) {
             copyToConfiguredDirectory(measurementName, metadata.fileName, input)
         } else {
@@ -27,26 +32,29 @@ class WearFileDestination @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    private fun copyToConfiguredDirectory(measurementName: String, fileName: String, input: InputStream): Result<Unit> =
-        NativeDocumentStorage.copyToMeasurement(
-            context = context,
-            input = input,
-            appDirectoryName = APP_DIRECTORY,
-            measurementName = measurementName,
-            fileName = fileName,
-            mimeType = mimeType(fileName),
-        )
+    private fun copyToConfiguredDirectory(
+        measurementName: String,
+        fileName: String,
+        input: InputStream,
+    ): AppResult<Unit> = NativeDocumentStorage.copyToMeasurement(
+        context = context,
+        input = input,
+        appDirectoryName = APP_DIRECTORY,
+        measurementName = measurementName,
+        fileName = fileName,
+        mimeType = mimeType(fileName),
+    )
 
-    private fun copyToDebugDirectory(measurementName: String, fileName: String, input: InputStream): Result<Unit> {
-        if (!isDebugBuild()) return Result.failure(AppError(AppError.Kind.STORAGE, "Copy debug Wear file"))
-        return appResult(AppError.Kind.STORAGE, "Prepare debug Wear directory") {
+    private fun copyToDebugDirectory(measurementName: String, fileName: String, input: InputStream): AppResult<Unit> {
+        if (!isDebugBuild()) return AppResult.failure(AppError(AppErrorCode.STORAGE, "Copy debug Wear file"))
+        return appResult(AppErrorCode.STORAGE, "Prepare debug Wear directory") {
             val directory = File(context.filesDir, "$APP_DIRECTORY/$measurementName")
             directory to (directory.isDirectory || directory.mkdirs())
         }.flatMap { (directory, ready) ->
             if (!ready) {
-                Result.failure(AppError(AppError.Kind.STORAGE, "Prepare debug Wear directory"))
+                AppResult.failure(AppError(AppErrorCode.STORAGE, "Prepare debug Wear directory"))
             } else {
-                appResult(AppError.Kind.STORAGE, "Copy debug Wear file") {
+                appResult(AppErrorCode.STORAGE, "Copy debug Wear file") {
                     File(directory, fileName).outputStream().use(input::copyTo)
                     Unit
                 }
@@ -54,7 +62,7 @@ class WearFileDestination @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    private fun hasConfiguredDirectory(): Result<Boolean> = NativeDocumentStorage.hasAppDirectory(
+    private fun hasConfiguredDirectory(): AppResult<Boolean> = NativeDocumentStorage.hasAppDirectory(
         context,
         APP_DIRECTORY,
     )

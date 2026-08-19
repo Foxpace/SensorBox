@@ -2,18 +2,16 @@ package com.motionapps.sensorservices.handlers.measurements
 
 import android.content.Context
 import android.location.Location
-import android.os.Bundle
 import com.google.android.gms.location.LocationAvailability
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.StorageHandler
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.FOLDER_NAME
-import com.motionapps.sensorservices.handlers.measurements.MeasurementInterface.Companion.INTERNAL_STORAGE
-import com.motionapps.sensorservices.services.MeasurementService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.OutputStream
@@ -23,9 +21,7 @@ import java.io.OutputStream
  *
  * @property gpsHandler - manages access to GPS
  */
-class GPSMeasurement constructor(private val gpsHandler: GPSHandler) :
-    MeasurementInterface,
-    GPSHandler.OnLocationChangedCallback {
+class GPSMeasurement constructor(private val gpsHandler: GPSHandler) : GPSHandler.OnLocationChangedCallback {
 
     private var outputStream: OutputStream? = null
     private var writeFailure: AppError? = null
@@ -37,29 +33,35 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) :
      * @param context
      * @param params - from the service
      */
-    override fun initMeasurement(context: Context, params: Bundle): Result<Unit> {
+    fun prepare(
+        context: Context,
+        folderName: String,
+        useInternalStorage: Boolean,
+        intervalSeconds: Int,
+        minimumDistanceMeters: Int,
+    ): AppResult<Unit> {
         gpsHandler.configure(
-            intervalSeconds = params.getInt(MeasurementService.GPS_INTERVAL_SECONDS, 10),
-            minDistanceMeters = params.getInt(MeasurementService.GPS_DISTANCE_METERS, 20),
+            intervalSeconds = intervalSeconds,
+            minDistanceMeters = minimumDistanceMeters,
         )
-        val stream = if (params.getBoolean(INTERNAL_STORAGE)) {
+        val stream = if (useInternalStorage) {
             StorageHandler.createFileInInternalFolder(
                 context,
-                params.getString(FOLDER_NAME).orEmpty(),
+                folderName,
                 "gps.csv",
             )
         } else {
             StorageHandler.createFileInFolder(
                 context,
-                params.getString(FOLDER_NAME).orEmpty(),
+                folderName,
                 "csv",
                 "gps.csv",
             )
         }
         return stream.flatMap { output ->
             outputStream = output
-            appResult(AppError.Kind.STORAGE, "Write GPS header") { output.write(header.toByteArray()) }
-        }.withAppError(AppError.Kind.MEASUREMENT, "Initialize GPS measurement")
+            appResult(AppErrorCode.STORAGE, "Write GPS header") { output.write(header.toByteArray()) }
+        }.withAppError(AppErrorCode.MEASUREMENT, "Initialize GPS measurement")
     }
 
     /**
@@ -83,31 +85,31 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) :
      * @param context
      */
 
-    override fun startMeasurement(context: Context): Result<Unit> = gpsHandler.addCallback(context, this)
-        .withAppError(AppError.Kind.MEASUREMENT, "Start GPS")
+    fun start(context: Context): AppResult<Unit> = gpsHandler.addCallback(context, this)
+        .withAppError(AppErrorCode.MEASUREMENT, "Start GPS")
 
     /**
      * turns off the GPS
      *
      * @param context
      */
-    override fun pauseMeasurement(context: Context): Result<Unit> = gpsHandler.gpsOff()
-        .withAppError(AppError.Kind.MEASUREMENT, "Pause GPS")
+    private fun pause(): AppResult<Unit> = gpsHandler.gpsOff()
+        .withAppError(AppErrorCode.MEASUREMENT, "Pause GPS")
 
     /**
      * outputStream is saved and closed
      *
      * @param context
      */
-    override suspend fun saveMeasurement(context: Context): Result<Unit> {
+    private suspend fun save(): AppResult<Unit> {
         val stream = outputStream
-        val results = mutableListOf<Result<*>>()
-        results += appResult(AppError.Kind.STORAGE, "Flush GPS measurement") { stream?.flush() }
-        writeFailure?.let { results += Result.failure<Unit>(it) }
-        results += appResult(AppError.Kind.STORAGE, "Close GPS measurement") { stream?.close() }
+        val results = mutableListOf<AppResult<*>>()
+        results += appResult(AppErrorCode.STORAGE, "Flush GPS measurement") { stream?.flush() }
+        writeFailure?.let { results += AppResult.failure(it) }
+        results += appResult(AppErrorCode.STORAGE, "Close GPS measurement") { stream?.close() }
         outputStream = null
         writeFailure = null
-        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Save GPS measurement")
+        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Save GPS measurement")
     }
 
     /**
@@ -115,10 +117,10 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) :
      *
      * @param context
      */
-    override suspend fun onDestroyMeasurement(context: Context): Result<Unit> = listOf(
-        withContext(Dispatchers.Main) { pauseMeasurement(context) },
-        withContext(Dispatchers.IO) { saveMeasurement(context) },
-    ).combineAppResults(AppError.Kind.MEASUREMENT, "Stop GPS measurement")
+    suspend fun stop(): AppResult<Unit> = listOf(
+        withContext(Dispatchers.Main) { pause() },
+        withContext(Dispatchers.IO) { save() },
+    ).combineAppResults(AppErrorCode.MEASUREMENT, "Stop GPS measurement")
 
     /**
      * called on GPS change
@@ -127,9 +129,9 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) :
      */
     override fun onLocationChanged(location: Location?) {
         location?.let { loc: Location ->
-            appResult(AppError.Kind.STORAGE, "Write GPS sample") {
+            appResult(AppErrorCode.STORAGE, "Write GPS sample") {
                 outputStream?.write(createLocationStamp(loc).toByteArray())
-            }.onFailure { writeFailure = it as AppError }
+            }.onFailure { writeFailure = it }
         }
     }
 

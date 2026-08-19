@@ -9,6 +9,7 @@ import javax.inject.Inject
 
 class MeasurementIntentFactory @Inject constructor(@ApplicationContext private val context: Context) {
     fun create(request: MeasurementLaunchRequest): Intent = Intent(context, MeasurementService::class.java).apply {
+        putExtra(MeasurementService.SESSION_ID, request.sessionId)
         putExtra(MeasurementService.FOLDER_NAME, request.folderName)
         putExtra(MeasurementService.INTERNAL_STORAGE, request.useInternalStorage)
         putExtra(MeasurementService.ANDROID_SENSORS, request.sensorIds.toIntArray())
@@ -26,7 +27,6 @@ class MeasurementIntentFactory @Inject constructor(@ApplicationContext private v
         putExtra(MeasurementService.ACTIVITY_RECOGNITION, request.activityRecognition)
         putExtra(MeasurementService.ACTIVITY_RECOGNITION_PERIOD_SECONDS, request.activityRecognitionPeriodSeconds)
         putExtra(MeasurementService.SIGNIFICANT_MOTION, request.significantMotion)
-        putExtra(MeasurementService.CONTROLS_WEAR_MEASUREMENT, request.controlsWearMeasurement)
     }
 
     fun newFolderName(customName: String = "", measurementType: String = "ENDLESS"): String {

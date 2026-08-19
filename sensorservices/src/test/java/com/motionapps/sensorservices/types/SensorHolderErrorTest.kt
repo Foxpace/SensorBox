@@ -2,6 +2,7 @@ package com.motionapps.sensorservices.types
 
 import android.hardware.Sensor
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,9 +18,9 @@ class SensorHolderErrorTest {
 
         val result = holder.close()
 
-        val error = result.exceptionOrNull()
+        val error = result.errorOrNull()
         assertTrue(error is AppError)
-        assertEquals(AppError.Kind.STORAGE, (error as AppError).kind)
+        assertEquals(AppErrorCode.STORAGE, (error as AppError).code)
     }
 
     private class FailingOutputStream : OutputStream() {
