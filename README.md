@@ -43,15 +43,19 @@ The UI modules use unidirectional MVI:
 
 `Composable → Intent → ViewModel → use case → repository/service → State + Effect`
 
-UI launchers execute one-shot effects, while decisions and state transitions remain in ViewModels, reducers, and focused use cases. Hilt provides production dependencies and interfaces keep platform boundaries replaceable in tests.
+UI launchers execute one-shot effects, while decisions and state transitions remain in workflow-owned ViewModels, reducers, and focused use cases. The phone shell owns navigation only. Hilt provides production dependencies and interfaces keep platform boundaries replaceable in tests.
 
 Modules:
 
-- `app`: phone Compose UI, MVI, permissions, native document storage, and received watch files.
+- `app`: phone Compose UI, workflow-owned MVI, paired-recording policy, permissions, and received watch files.
 - `wear`: Wear Compose Material 3 UI, MVI, live charts, recording, and phone launch flow.
-- `core`: DataStore preferences, storage contracts, reducers, and reusable test fixtures.
-- `sensorservices`: foreground measurement service and linear sensor/GPS writers.
-- `WearOsLib`: coroutine-based connectivity, versioned command protocol, and Channel file transport.
+- `core-common`: platform-neutral `AppResult`, stable application errors, and diagnostics contracts.
+- `recording-core`: pure Kotlin recording state machine, source roles, scheduling, and cleanup policy.
+- `core`: Android DataStore preferences, document storage, local rotating diagnostics, and reusable test fixtures.
+- `sensorservices`: Android recording adapters, foreground host, and linear sensor/GPS writers. It has no Wear dependency.
+- `WearOsLib`: coroutine-based connectivity, strict protocol v2 command encoding, and Channel file transport. App policy stays in `app` and `wear`.
+
+Paired phone/watch recording is all-or-nothing: both sides prepare before either commits, commands are session-correlated and idempotent, timeouts use bounded retries, and rejection or timeout compensates both sides.
 
 ## Platform and toolchain
 
