@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.suspendAppResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -13,15 +15,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Preferences>) : AppPreferencesRepository {
-    override val preferences: Flow<Result<AppPreferences>> = dataStore.data
-        .map { values -> Result.success(values.toAppPreferences()) }
+    override val preferences: Flow<AppResult<AppPreferences>> = dataStore.data
+        .map { values -> AppResult.success(values.toAppPreferences()) }
         .catch { error ->
             if (error is CancellationException) throw error
-            emit(Result.failure(AppError.from(AppError.Kind.PREFERENCES, "Read preferences", error)))
+            emit(AppResult.failure(AppError.from(AppErrorCode.PREFERENCES, "Read preferences", error)))
         }
 
-    override suspend fun dispatch(intent: AppPreferencesIntent): Result<Unit> = suspendAppResult(
-        AppError.Kind.PREFERENCES,
+    override suspend fun dispatch(intent: AppPreferencesIntent): AppResult<Unit> = suspendAppResult(
+        AppErrorCode.PREFERENCES,
         "Update preferences",
     ) {
         dataStore.edit { values ->

@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":core-common"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.play.services.wearable)
@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
+    testFixturesImplementation(project(":core-common"))
     testFixturesImplementation(libs.coroutines.core)
 }
 

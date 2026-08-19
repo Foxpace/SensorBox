@@ -3,7 +3,8 @@ package com.motionapps.wearoslib.files
 import android.content.Context
 import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.Wearable
-import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.suspendAppResult
 import com.motionapps.sensorbox.core.error.suspendFlatMap
@@ -22,36 +23,36 @@ class GooglePlayWearFileTransferClient @Inject constructor(@ApplicationContext c
         nodeId: String,
         metadata: WearFileMetadata,
         input: () -> java.io.InputStream,
-    ): Result<Unit> = withContext(Dispatchers.IO) {
+    ): AppResult<Unit> = withContext(Dispatchers.IO) {
         WearFilePathCodec.encode(metadata).suspendFlatMap { path ->
-            suspendAppResult(AppError.Kind.CONNECTIVITY, "Open Wear channel") {
+            suspendAppResult(AppErrorCode.CONNECTIVITY, "Open Wear channel") {
                 channelClient.openChannel(nodeId, path).await()
             }
         }.suspendFlatMap { channel ->
-            val transfer = suspendAppResult(AppError.Kind.CONNECTIVITY, "Write Wear channel") {
+            val transfer = suspendAppResult(AppErrorCode.CONNECTIVITY, "Write Wear channel") {
                 input().use { source ->
                     channelClient.getOutputStream(channel).await().use(source::copyTo)
                 }
             }
-            val close = suspendAppResult(AppError.Kind.CONNECTIVITY, "Close Wear channel") {
+            val close = suspendAppResult(AppErrorCode.CONNECTIVITY, "Close Wear channel") {
                 channelClient.close(channel).await()
             }
-            listOf(transfer, close).combineAppResults(AppError.Kind.CONNECTIVITY, "Send Wear file")
-        }.withAppError(AppError.Kind.CONNECTIVITY, "Send Wear file")
+            listOf(transfer, close).combineAppResults(AppErrorCode.CONNECTIVITY, "Send Wear file")
+        }.withAppError(AppErrorCode.CONNECTIVITY, "Send Wear file")
     }
 
     override suspend fun receive(
         channel: ChannelClient.Channel,
-        consume: (java.io.InputStream) -> Result<Unit>,
-    ): Result<Unit> = withContext(Dispatchers.IO) {
-        val transfer = suspendAppResult(AppError.Kind.CONNECTIVITY, "Open Wear input stream") {
+        consume: (java.io.InputStream) -> AppResult<Unit>,
+    ): AppResult<Unit> = withContext(Dispatchers.IO) {
+        val transfer = suspendAppResult(AppErrorCode.CONNECTIVITY, "Open Wear input stream") {
             channelClient.getInputStream(channel).await()
         }.suspendFlatMap { input ->
             input.use(consume)
         }
-        val close = suspendAppResult(AppError.Kind.CONNECTIVITY, "Close Wear channel") {
+        val close = suspendAppResult(AppErrorCode.CONNECTIVITY, "Close Wear channel") {
             channelClient.close(channel).await()
         }
-        listOf(transfer, close).combineAppResults(AppError.Kind.CONNECTIVITY, "Receive Wear file")
+        listOf(transfer, close).combineAppResults(AppErrorCode.CONNECTIVITY, "Receive Wear file")
     }
 }

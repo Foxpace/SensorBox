@@ -1,5 +1,8 @@
 package com.motionapps.wearoslib.connectivity
 
+import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.AppError
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -7,7 +10,7 @@ class FakeWearConnectionRepository(
     initialConnection: WearConnection = WearConnection.Disconnected,
 ) : WearConnectionRepository {
     private val connection = MutableStateFlow(initialConnection)
-    private var sendResult: Result<Unit> = Result.success(Unit)
+    private var sendResult: AppResult<Unit> = AppResult.success(Unit)
 
     val sentMessages = mutableListOf<SentWearMessage>()
 
@@ -20,7 +23,7 @@ class FakeWearConnectionRepository(
         capability: String,
         path: String,
         payload: ByteArray,
-    ): Result<Unit> {
+    ): AppResult<Unit> {
         sentMessages += SentWearMessage(capability, path, payload.copyOf())
         return sendResult
     }
@@ -29,8 +32,8 @@ class FakeWearConnectionRepository(
         connection.value = newConnection
     }
 
-    fun failSending(error: Throwable) {
-        sendResult = Result.failure(error)
+    fun failSending(error: AppError) {
+        sendResult = AppResult.failure(error)
     }
 }
 
