@@ -5,6 +5,7 @@ import android.hardware.SensorManager
 import com.motionapps.sensorservices.services.MeasurementService
 
 data class MeasurementConfig(
+    val sessionId: String,
     val folderName: String,
     val useInternalStorage: Boolean,
     val sensorIds: IntArray,
@@ -22,10 +23,10 @@ data class MeasurementConfig(
     val activityRecognition: Boolean,
     val activityRecognitionPeriodSeconds: Int,
     val significantMotion: Boolean,
-    val controlsWearMeasurement: Boolean,
 ) {
     companion object {
         fun from(intent: Intent): MeasurementConfig = MeasurementConfig(
+            sessionId = intent.getStringExtra(MeasurementService.SESSION_ID).orEmpty(),
             folderName = intent.getStringExtra(MeasurementService.FOLDER_NAME).orEmpty(),
             useInternalStorage = intent.getBooleanExtra(MeasurementService.INTERNAL_STORAGE, false),
             sensorIds = intent.getIntArrayExtra(MeasurementService.ANDROID_SENSORS) ?: intArrayOf(),
@@ -53,7 +54,6 @@ data class MeasurementConfig(
                 30,
             ).coerceAtLeast(1),
             significantMotion = intent.getBooleanExtra(MeasurementService.SIGNIFICANT_MOTION, false),
-            controlsWearMeasurement = intent.getBooleanExtra(MeasurementService.CONTROLS_WEAR_MEASUREMENT, false),
         )
     }
 }

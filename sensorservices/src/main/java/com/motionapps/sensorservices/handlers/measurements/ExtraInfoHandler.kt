@@ -4,7 +4,8 @@ import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.SystemClock
-import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
@@ -39,11 +40,11 @@ class ExtraInfoHandler {
         triggeredAlarms += timestampMillis
     }
 
-    fun write(context: Context): Result<Unit> {
-        val active = config ?: return Result.success(Unit)
-        if (written) return Result.success(Unit)
+    fun write(context: Context): AppResult<Unit> {
+        val active = config ?: return AppResult.success(Unit)
+        if (written) return AppResult.success(Unit)
         written = true
-        val jsonResult = appResult(AppError.Kind.MEASUREMENT, "Build measurement metadata") {
+        val jsonResult = appResult(AppErrorCode.MEASUREMENT, "Build measurement metadata") {
             JSONObject().apply {
                 put("millis", startedAtMillis)
                 put("nanos", startedAtNanos)
@@ -83,11 +84,11 @@ class ExtraInfoHandler {
                 StorageHandler.createFileInFolder(context, active.folderName, "application/json", EXTRA_FILE)
             }
             stream.flatMap { output ->
-                appResult(AppError.Kind.STORAGE, "Write measurement metadata file") {
+                appResult(AppErrorCode.STORAGE, "Write measurement metadata file") {
                     output.use { it.write(json.toString(2).toByteArray()) }
                 }
             }
-        }.withAppError(AppError.Kind.MEASUREMENT, "Write measurement metadata")
+        }.withAppError(AppErrorCode.MEASUREMENT, "Write measurement metadata")
     }
 
     private fun sensorRanges(context: Context, sensorIds: IntArray): JSONArray {

@@ -4,6 +4,7 @@ sealed interface MeasurementSessionState {
     data object Idle : MeasurementSessionState
 
     data class Running(
+        val sessionId: String,
         val folderName: String,
         val startedAtElapsedRealtime: Long,
         val sensorIds: List<Int>,

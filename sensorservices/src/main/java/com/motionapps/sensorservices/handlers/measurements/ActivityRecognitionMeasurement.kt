@@ -1,6 +1,7 @@
 package com.motionapps.sensorservices.handlers.measurements
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,7 +9,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.ActivityRecognition
 import com.google.android.gms.location.ActivityRecognitionClient
@@ -18,6 +18,8 @@ import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.ActivityTransitionResult
 import com.google.android.gms.location.DetectedActivity
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.flatMap
@@ -26,7 +28,7 @@ import com.motionapps.sensorservices.handlers.StorageHandler
 import java.io.OutputStream
 
 /** Records periodic Google Activity Recognition confidence values. */
-class ActivityRecognitionMeasurement(private val periodSeconds: Int) : MeasurementInterface {
+class ActivityRecognitionMeasurement(private val periodSeconds: Int) {
     private var client: ActivityRecognitionClient? = null
     private var updatesPendingIntent: PendingIntent? = null
     private var transitionsPendingIntent: PendingIntent? = null
@@ -64,32 +66,30 @@ class ActivityRecognitionMeasurement(private val periodSeconds: Int) : Measureme
         }
     }
 
-    override fun initMeasurement(context: Context, params: Bundle): Result<Unit> {
-        val folder = params.getString(MeasurementInterface.FOLDER_NAME).orEmpty()
-        val internal = params.getBoolean(MeasurementInterface.INTERNAL_STORAGE)
-        val updatesResult = if (internal) {
-            StorageHandler.createFileInInternalFolder(context, folder, UPDATES_FILE_NAME)
+    fun prepare(context: Context, folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
+        val updatesResult = if (useInternalStorage) {
+            StorageHandler.createFileInInternalFolder(context, folderName, UPDATES_FILE_NAME)
         } else {
-            StorageHandler.createFileInFolder(context, folder, "text/csv", UPDATES_FILE_NAME)
+            StorageHandler.createFileInFolder(context, folderName, "text/csv", UPDATES_FILE_NAME)
         }
         return updatesResult.flatMap { updates ->
             updatesOutput = updates
-            val transitionsResult = if (internal) {
-                StorageHandler.createFileInInternalFolder(context, folder, TRANSITIONS_FILE_NAME)
+            val transitionsResult = if (useInternalStorage) {
+                StorageHandler.createFileInInternalFolder(context, folderName, TRANSITIONS_FILE_NAME)
             } else {
-                StorageHandler.createFileInFolder(context, folder, "text/csv", TRANSITIONS_FILE_NAME)
+                StorageHandler.createFileInFolder(context, folderName, "text/csv", TRANSITIONS_FILE_NAME)
             }
             transitionsResult.onFailure {
-                appResult(AppError.Kind.STORAGE, "Close incomplete activity measurement") { updates.close() }
+                appResult(AppErrorCode.STORAGE, "Close incomplete activity measurement") { updates.close() }
             }.flatMap { transitions ->
                 transitionsOutput = transitions
                 initializeResources(context)
             }
-        }.withAppError(AppError.Kind.MEASUREMENT, "Initialize activity recognition")
+        }.withAppError(AppErrorCode.MEASUREMENT, "Initialize activity recognition")
     }
 
-    private fun initializeResources(context: Context): Result<Unit> = appResult(
-        AppError.Kind.MEASUREMENT,
+    private fun initializeResources(context: Context): AppResult<Unit> = appResult(
+        AppErrorCode.MEASUREMENT,
         "Initialize activity recognition resources",
     ) {
         updatesOutput?.write(
@@ -97,11 +97,7 @@ class ActivityRecognitionMeasurement(private val periodSeconds: Int) : Measureme
         )
         transitionsOutput?.write("t_nanos;activity;enter_exit\n".toByteArray())
         val filter = IntentFilter(ACTION_UPDATE).apply { addAction(ACTION_TRANSITION) }
-        if (Build.VERSION.SDK_INT >= 33) {
-            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            context.registerReceiver(receiver, filter)
-        }
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         receiverRegistered = true
         client = ActivityRecognition.getClient(context)
         updatesPendingIntent = PendingIntent.getBroadcast(
@@ -118,43 +114,42 @@ class ActivityRecognitionMeasurement(private val periodSeconds: Int) : Measureme
         )
     }
 
-    override fun startMeasurement(context: Context): Result<Unit> {
-        if (Build.VERSION.SDK_INT >= 29 &&
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACTIVITY_RECOGNITION,
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return Result.failure(AppError(AppError.Kind.PERMISSION, "Start activity recognition"))
+    @SuppressLint("MissingPermission")
+    fun start(context: Context): AppResult<Unit> {
+        if (!hasPermission(context)) {
+            return AppResult.failure(AppError(AppErrorCode.PERMISSION, "Start activity recognition"))
         }
-        return appResult(AppError.Kind.MEASUREMENT, "Start activity recognition") {
+        return appResult(AppErrorCode.MEASUREMENT, "Start activity recognition") {
             updatesPendingIntent?.let {
                 client?.requestActivityUpdates(periodSeconds.coerceAtLeast(1) * 1_000L, it)
                     ?.addOnFailureListener { error ->
-                        AppError.from(AppError.Kind.MEASUREMENT, "Request activity updates", error)
+                        AppError.from(AppErrorCode.MEASUREMENT, "Request activity updates", error)
                     }
             }
             transitionsPendingIntent?.let {
                 client?.requestActivityTransitionUpdates(ActivityTransitionRequest(ACTIVITY_TRANSITIONS), it)
                     ?.addOnFailureListener { error ->
-                        AppError.from(AppError.Kind.MEASUREMENT, "Request activity transitions", error)
+                        AppError.from(AppErrorCode.MEASUREMENT, "Request activity transitions", error)
                     }
             }
         }
     }
 
-    override fun pauseMeasurement(context: Context): Result<Unit> = appResult(
-        AppError.Kind.MEASUREMENT,
+    @SuppressLint("MissingPermission")
+    private fun pause(context: Context): AppResult<Unit> = appResult(
+        AppErrorCode.MEASUREMENT,
         "Pause activity recognition",
     ) {
-        updatesPendingIntent?.let {
-            client?.removeActivityUpdates(it)?.addOnFailureListener { error ->
-                AppError.from(AppError.Kind.MEASUREMENT, "Remove activity updates", error)
+        if (hasPermission(context)) {
+            updatesPendingIntent?.let {
+                client?.removeActivityUpdates(it)?.addOnFailureListener { error ->
+                    AppError.from(AppErrorCode.MEASUREMENT, "Remove activity updates", error)
+                }
             }
-        }
-        transitionsPendingIntent?.let {
-            client?.removeActivityTransitionUpdates(it)?.addOnFailureListener { error ->
-                AppError.from(AppError.Kind.MEASUREMENT, "Remove activity transitions", error)
+            transitionsPendingIntent?.let {
+                client?.removeActivityTransitionUpdates(it)?.addOnFailureListener { error ->
+                    AppError.from(AppErrorCode.MEASUREMENT, "Remove activity transitions", error)
+                }
             }
         }
         if (receiverRegistered) {
@@ -163,33 +158,39 @@ class ActivityRecognitionMeasurement(private val periodSeconds: Int) : Measureme
         receiverRegistered = false
     }
 
-    override suspend fun saveMeasurement(context: Context): Result<Unit> {
-        val results = mutableListOf<Result<*>>()
-        results += appResult(AppError.Kind.STORAGE, "Close activity updates") {
+    private suspend fun save(): AppResult<Unit> {
+        val results = mutableListOf<AppResult<*>>()
+        results += appResult(AppErrorCode.STORAGE, "Close activity updates") {
             updatesOutput?.close()
         }
-        results += appResult(AppError.Kind.STORAGE, "Close activity transitions") {
+        results += appResult(AppErrorCode.STORAGE, "Close activity transitions") {
             transitionsOutput?.close()
         }
-        writeFailure?.let { results += Result.failure<Unit>(it) }
+        writeFailure?.let { results += AppResult.failure(it) }
         updatesOutput = null
         transitionsOutput = null
         writeFailure = null
-        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Save activity recognition")
+        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Save activity recognition")
     }
 
-    override suspend fun onDestroyMeasurement(context: Context): Result<Unit> {
-        val results = listOf(pauseMeasurement(context), saveMeasurement(context))
+    suspend fun stop(context: Context): AppResult<Unit> {
+        val results = listOf(pause(context), save())
         updatesPendingIntent = null
         transitionsPendingIntent = null
         client = null
-        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Stop activity recognition")
+        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Stop activity recognition")
     }
 
     private inline fun recordWriteFailure(operation: String, block: () -> Unit) {
         if (writeFailure != null) return
-        appResult(AppError.Kind.STORAGE, operation, block).onFailure { writeFailure = it as AppError }
+        appResult(AppErrorCode.STORAGE, operation, block).onFailure { writeFailure = it }
     }
+
+    private fun hasPermission(context: Context): Boolean = Build.VERSION.SDK_INT < 29 ||
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACTIVITY_RECOGNITION,
+        ) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
         const val ACTION_UPDATE = "com.motionapps.sensorbox.ACTIVITY_RECOGNITION_UPDATE"

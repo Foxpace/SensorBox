@@ -4,6 +4,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.suspendAppResult
@@ -25,7 +27,7 @@ class SensorHolder(val spec: SensorSpec, outputStream: OutputStream) : SensorEve
             writer.append(spec.header)
             for (sample in samples) writer.appendLine(sample.toCsv(spec.axisCount))
         } catch (error: IOException) {
-            writerFailure = AppError.from(AppError.Kind.STORAGE, "Write ${spec.fileName}", error)
+            writerFailure = AppError.from(AppErrorCode.STORAGE, "Write ${spec.fileName}", error)
             samples.close()
         }
     }
@@ -44,21 +46,21 @@ class SensorHolder(val spec: SensorSpec, outputStream: OutputStream) : SensorEve
             ),
         )
         if (result.isFailure && writerFailure == null) {
-            writerFailure = AppError(AppError.Kind.STORAGE, "Buffer ${spec.fileName}")
+            writerFailure = AppError(AppErrorCode.STORAGE, "Buffer ${spec.fileName}")
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
-    suspend fun close(): Result<Unit> {
+    suspend fun close(): AppResult<Unit> {
         samples.close()
-        val results = mutableListOf<Result<*>>()
-        results += suspendAppResult(AppError.Kind.STORAGE, "Finish ${spec.fileName} writer") { writerJob.await() }
-        writerFailure?.let { results += Result.failure<Unit>(it) }
-        results += appResult(AppError.Kind.STORAGE, "Flush ${spec.fileName}") { writer.flush() }
-        results += appResult(AppError.Kind.STORAGE, "Close ${spec.fileName}") { writer.close() }
+        val results = mutableListOf<AppResult<*>>()
+        results += suspendAppResult(AppErrorCode.STORAGE, "Finish ${spec.fileName} writer") { writerJob.await() }
+        writerFailure?.let { results += AppResult.failure(it) }
+        results += appResult(AppErrorCode.STORAGE, "Flush ${spec.fileName}") { writer.flush() }
+        results += appResult(AppErrorCode.STORAGE, "Close ${spec.fileName}") { writer.close() }
         scope.cancel()
-        return results.combineAppResults(AppError.Kind.STORAGE, "Close ${spec.fileName}")
+        return results.combineAppResults(AppErrorCode.STORAGE, "Close ${spec.fileName}")
     }
 }
 

@@ -2,8 +2,9 @@ package com.motionapps.sensorservices.handlers.measurements
 
 import android.content.Context
 import android.hardware.SensorManager
-import android.os.Bundle
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.flatMap
@@ -12,37 +13,48 @@ import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.types.SensorHolder
 import com.motionapps.sensorservices.types.SensorSpec
 
-class SensorMeasurement : MeasurementInterface {
+class SensorMeasurement {
     private val holders = mutableListOf<SensorHolder>()
     private var samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST
 
-    override fun initMeasurement(context: Context, params: Bundle): Result<Unit> {
-        samplingPeriod = params.getInt(MeasurementInterface.SENSOR_SPEED)
-        return (params.getIntArray(MeasurementInterface.SENSOR_ID) ?: intArrayOf()).fold(
-            Result.success(Unit),
+    fun prepare(
+        context: Context,
+        folderName: String,
+        useInternalStorage: Boolean,
+        sensorTypes: Set<Int>,
+        samplingPeriod: Int,
+    ): AppResult<Unit> {
+        this.samplingPeriod = samplingPeriod
+        return sensorTypes.sorted().fold(
+            AppResult.success(Unit),
         ) { result, sensorType ->
             result.flatMap {
-                createHolder(context, params, sensorType).map { holder ->
+                createHolder(context, folderName, useInternalStorage, sensorType).map { holder ->
                     holder?.let(holders::add)
                     Unit
                 }
             }
         }
-            .withAppError(AppError.Kind.MEASUREMENT, "Initialize sensors")
+            .withAppError(AppErrorCode.MEASUREMENT, "Initialize sensors")
     }
 
-    private fun createHolder(context: Context, params: Bundle, sensorType: Int): Result<SensorHolder?> {
-        val spec = SensorSpec.fromType(sensorType) ?: return Result.success(null)
-        val stream = if (params.getBoolean(MeasurementInterface.INTERNAL_STORAGE)) {
+    private fun createHolder(
+        context: Context,
+        folderName: String,
+        useInternalStorage: Boolean,
+        sensorType: Int,
+    ): AppResult<SensorHolder?> {
+        val spec = SensorSpec.fromType(sensorType) ?: return AppResult.success(null)
+        val stream = if (useInternalStorage) {
             StorageHandler.createFileInInternalFolder(
                 context,
-                params.getString(MeasurementInterface.FOLDER_NAME).orEmpty(),
+                folderName,
                 spec.fileName,
             )
         } else {
             StorageHandler.createFileInFolder(
                 context,
-                params.getString(MeasurementInterface.FOLDER_NAME).orEmpty(),
+                folderName,
                 "text/csv",
                 spec.fileName,
             )
@@ -50,49 +62,49 @@ class SensorMeasurement : MeasurementInterface {
         return stream.map { SensorHolder(spec, it) }
     }
 
-    override fun startMeasurement(context: Context): Result<Unit> = appResult(
-        AppError.Kind.MEASUREMENT,
+    fun start(context: Context): AppResult<Unit> = appResult(
+        AppErrorCode.MEASUREMENT,
         "Access sensor manager",
     ) {
         context.getSystemService(SensorManager::class.java)
     }.flatMap { sensorManager ->
-        holders.fold(Result.success(Unit)) { result, holder ->
+        holders.fold(AppResult.success(Unit)) { result, holder ->
             result.flatMap {
                 val sensor = sensorManager.getDefaultSensor(holder.spec.type)
-                    ?: return@flatMap Result.failure(
-                        AppError(AppError.Kind.MEASUREMENT, "Find sensor ${holder.spec.type}"),
+                    ?: return@flatMap AppResult.failure(
+                        AppError(AppErrorCode.MEASUREMENT, "Find sensor ${holder.spec.type}"),
                     )
-                appResult(AppError.Kind.MEASUREMENT, "Register sensor ${holder.spec.type}") {
+                appResult(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}") {
                     sensorManager.registerListener(holder, sensor, samplingPeriod)
                 }.flatMap { registered ->
                     if (registered) {
-                        Result.success(Unit)
+                        AppResult.success(Unit)
                     } else {
-                        Result.failure(
-                            AppError(AppError.Kind.MEASUREMENT, "Register sensor ${holder.spec.type}"),
+                        AppResult.failure(
+                            AppError(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}"),
                         )
                     }
                 }
             }
         }
-    }.withAppError(AppError.Kind.MEASUREMENT, "Start sensors")
+    }.withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
 
-    override fun pauseMeasurement(context: Context): Result<Unit> = appResult(
-        AppError.Kind.MEASUREMENT,
+    private fun pause(context: Context): AppResult<Unit> = appResult(
+        AppErrorCode.MEASUREMENT,
         "Pause sensors",
     ) {
         val sensorManager = context.getSystemService(SensorManager::class.java)
         holders.forEach(sensorManager::unregisterListener)
     }
 
-    override suspend fun saveMeasurement(context: Context): Result<Unit> {
+    private suspend fun save(): AppResult<Unit> {
         val results = holders.map { it.close() }
         holders.clear()
-        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Save sensors")
+        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Save sensors")
     }
 
-    override suspend fun onDestroyMeasurement(context: Context): Result<Unit> = listOf(
-        pauseMeasurement(context),
-        saveMeasurement(context),
-    ).combineAppResults(AppError.Kind.MEASUREMENT, "Stop sensors")
+    suspend fun stop(context: Context): AppResult<Unit> = listOf(
+        pause(context),
+        save(),
+    ).combineAppResults(AppErrorCode.MEASUREMENT, "Stop sensors")
 }
