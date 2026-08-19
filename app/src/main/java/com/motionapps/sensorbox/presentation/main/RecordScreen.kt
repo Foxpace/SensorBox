@@ -36,7 +36,7 @@ import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 
 @Composable
-fun RecordScreen(state: MainState, onIntent: (MainIntent) -> Unit, modifier: Modifier = Modifier) {
+fun RecordScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize()) {
         RecordContent(state, onIntent)
         SensorSelectionActionBar(state, onIntent, Modifier.align(Alignment.BottomCenter))
@@ -44,27 +44,27 @@ fun RecordScreen(state: MainState, onIntent: (MainIntent) -> Unit, modifier: Mod
 }
 
 @Composable
-private fun RecordContent(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 132.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { RecordHeader(state) { onIntent(MainIntent.Navigate(MainRoute.SETTINGS)) } }
+        item { RecordHeader(state) { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) } }
         item { DeviceSectionHeader(stringResource(R.string.phone_sensors)) }
         item { SensorSectionHeader(phoneSourceCount(state), state.sensors.size + 1) }
         item {
             GpsRow(
                 selected = state.includesGps,
-                onToggle = { onIntent(MainIntent.ToggleGps) },
-                onInfo = { onIntent(MainIntent.OpenSensorDetails(null)) },
+                onToggle = { onIntent(RecordingIntent.ToggleGps) },
+                onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
             )
         }
         items(state.sensors, key = SensorDescriptor::type) { sensor ->
             SensorRow(
                 sensor = sensor,
                 selected = sensor.type in state.selectedSensorIds,
-                onToggle = { onIntent(MainIntent.ToggleSensor(sensor.type)) },
-                onInfo = { onIntent(MainIntent.OpenSensorDetails(sensor.type)) },
+                onToggle = { onIntent(RecordingIntent.ToggleSensor(sensor.type)) },
+                onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
             )
         }
         if (state.isWearConnected) {
@@ -73,20 +73,20 @@ private fun RecordContent(state: MainState, onIntent: (MainIntent) -> Unit) {
             item {
                 GpsRow(
                     selected = state.wearIncludesGps,
-                    onToggle = { onIntent(MainIntent.ToggleWearGps) },
-                    onInfo = { onIntent(MainIntent.OpenSensorDetails(null)) },
+                    onToggle = { onIntent(RecordingIntent.ToggleWearGps) },
+                    onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
                 )
             }
             items(state.wearSensors, key = { "wear_${it.type}" }) { sensor ->
                 SensorRow(
                     sensor = sensor,
                     selected = sensor.type in state.selectedWearSensorIds,
-                    onToggle = { onIntent(MainIntent.ToggleWearSensor(sensor.type)) },
-                    onInfo = { onIntent(MainIntent.OpenSensorDetails(sensor.type)) },
+                    onToggle = { onIntent(RecordingIntent.ToggleWearSensor(sensor.type)) },
+                    onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
                 )
             }
         }
-        item { MainMessageText(state.message) }
+        item { RecordingMessageText(state.message) }
     }
 }
 
@@ -123,7 +123,7 @@ private fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) 
 }
 
 @Composable
-private fun RecordHeader(state: MainState, onOptions: () -> Unit) {
+private fun RecordHeader(state: RecordingState, onOptions: () -> Unit) {
     val optionsDescription = stringResource(R.string.options)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         SensorBoxScreenHeader(
@@ -210,29 +210,34 @@ private fun sensorBorderColor(selected: Boolean) =
     if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
 
 @Composable
-private fun SensorSelectionActionBar(state: MainState, onIntent: (MainIntent) -> Unit, modifier: Modifier = Modifier) {
+private fun SensorSelectionActionBar(
+    state: RecordingState,
+    onIntent: (RecordingIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val sensorCount = selectedSourceCount(state)
     SensorBoxBottomAction(
         title = pluralStringResource(R.plurals.sensor_count, sensorCount, sensorCount),
         description = stringResource(R.string.step_one_of_two),
         buttonLabel = stringResource(R.string.continue_action),
         enabled = sensorCount > 0,
-        onClick = { onIntent(MainIntent.OpenMeasurementSetup) },
+        onClick = { onIntent(RecordingIntent.OpenMeasurementSetup) },
         modifier = modifier,
     )
 }
 
-private fun phoneSourceCount(state: MainState): Int = state.selectedSensorIds.size + if (state.includesGps) 1 else 0
+private fun phoneSourceCount(state: RecordingState): Int =
+    state.selectedSensorIds.size + if (state.includesGps) 1 else 0
 
-private fun wearSourceCount(state: MainState): Int =
+private fun wearSourceCount(state: RecordingState): Int =
     state.selectedWearSensorIds.size + if (state.wearIncludesGps) 1 else 0
 
-private fun selectedSourceCount(state: MainState): Int = phoneSourceCount(state) + wearSourceCount(state) +
+private fun selectedSourceCount(state: RecordingState): Int = phoneSourceCount(state) + wearSourceCount(state) +
     (if (state.activityRecognition) 1 else 0) + (if (state.significantMotion) 1 else 0)
 
 @Composable
-fun MainMessageText(message: MainMessage) {
-    if (message == MainMessage.NONE) return
+fun RecordingMessageText(message: RecordingMessage) {
+    if (message == RecordingMessage.NONE) return
     Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
         Text(
             stringResource(messageTextResource(message)),
@@ -243,10 +248,10 @@ fun MainMessageText(message: MainMessage) {
 }
 
 @StringRes
-private fun messageTextResource(message: MainMessage): Int = when (message) {
-    MainMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source
-    MainMessage.STORAGE_REQUIRED -> R.string.message_storage_required
-    MainMessage.PERMISSION_REQUIRED -> R.string.message_permission_required
-    MainMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed
-    MainMessage.NONE -> R.string.app_name
+private fun messageTextResource(message: RecordingMessage): Int = when (message) {
+    RecordingMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source
+    RecordingMessage.STORAGE_REQUIRED -> R.string.message_storage_required
+    RecordingMessage.PERMISSION_REQUIRED -> R.string.message_permission_required
+    RecordingMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed
+    RecordingMessage.NONE -> R.string.app_name
 }

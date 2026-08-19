@@ -8,12 +8,11 @@ import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import com.motionapps.sensorbox.ui.theme.SensorBoxTheme
 
 class MeasurementSetupScreenRobot(private val rule: ComposeContentTestRule) {
-    fun givenMeasurementSetup(onIntent: (MainIntent) -> Unit = {}) = apply {
+    fun givenMeasurementSetup(onIntent: (RecordingIntent) -> Unit = {}) = apply {
         rule.setContent {
             SensorBoxTheme {
                 MeasurementSetupScreen(
-                    state = MainState(
-                        route = MainRoute.SETUP,
+                    state = RecordingState(
                         sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture", false)),
                         selectedSensorIds = setOf(1),
                         storagePath = "Fixture/SensorBox",

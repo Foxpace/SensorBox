@@ -14,20 +14,22 @@ import androidx.compose.ui.test.performClick
 import com.motionapps.sensorbox.ui.theme.SensorBoxTheme
 
 class OnboardingScreenRobot(private val rule: ComposeContentTestRule) {
-    var lastIntent: MainIntent? = null
+    var lastIntent: OnboardingIntent? = null
         private set
 
     fun givenInteractiveOnboarding(page: Int = 0, storagePath: String? = null) = apply {
         rule.setContent {
             var state by remember {
-                mutableStateOf(
-                    MainState(route = MainRoute.ONBOARDING, onboardingPage = page, storagePath = storagePath),
-                )
+                mutableStateOf(OnboardingState(page = page, storagePath = storagePath))
             }
             SensorBoxTheme {
                 OnboardingScreen(state) { intent ->
                     lastIntent = intent
-                    state = MainReducer.reduce(state, intent).state
+                    state = when (intent) {
+                        OnboardingIntent.AdvanceOnboarding -> state.copy(page = state.page + 1)
+                        OnboardingIntent.RetreatOnboarding -> state.copy(page = (state.page - 1).coerceAtLeast(0))
+                        else -> state
+                    }
                 }
             }
         }

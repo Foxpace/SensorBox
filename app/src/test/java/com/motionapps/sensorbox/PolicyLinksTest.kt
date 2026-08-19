@@ -1,9 +1,9 @@
 package com.motionapps.sensorbox
 
-import java.io.File
-import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 
 class PolicyLinksTest {
     @Test

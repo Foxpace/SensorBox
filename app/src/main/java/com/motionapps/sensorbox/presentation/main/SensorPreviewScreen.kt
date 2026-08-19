@@ -50,7 +50,7 @@ import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import kotlin.math.max
 
 @Composable
-fun SensorPreviewScreen(state: MainState, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SensorPreviewScreen(state: RecordingState, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val sensor = state.detailsSensorType?.let { type -> state.sensors.firstOrNull { it.type == type } }
     val title = when {
         state.detailsSensorType == null -> stringResource(R.string.gps_preview)
@@ -310,7 +310,7 @@ private fun ChartLegend(label: String, color: Color) {
 }
 
 @Composable
-private fun GpsPreview(state: MainState) {
+private fun GpsPreview(state: RecordingState) {
     var permissionRevision by remember { mutableIntStateOf(0) }
     val permissionRequest = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),

@@ -33,7 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.motionapps.sensorbox.BuildConfig
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.appResult
 
 @Composable
@@ -83,7 +83,7 @@ private fun AboutDialogBody(onPrivacy: () -> Unit) {
 fun OpenSourceLicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val resources = LocalContext.current.resources
     val licenses = remember(resources) {
-        appResult(AppError.Kind.STORAGE, "Load open source licenses") {
+        appResult(AppErrorCode.STORAGE, "Load open source licenses") {
             loadOpenSourceLicenses(resources)
         }.getOrDefault(emptyList())
     }

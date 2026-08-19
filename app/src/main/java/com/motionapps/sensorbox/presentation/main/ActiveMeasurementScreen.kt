@@ -53,7 +53,7 @@ import com.motionapps.sensorbox.ui.theme.SensorBoxRecording
 import com.motionapps.sensorservices.session.MeasurementSessionState
 
 @Composable
-fun ActiveMeasurementScreen(state: MainState, onIntent: (MainIntent) -> Unit, modifier: Modifier = Modifier) {
+fun ActiveMeasurementScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, modifier: Modifier = Modifier) {
     val session = state.session as? MeasurementSessionState.Running ?: return
     Column(
         modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp),
@@ -74,14 +74,14 @@ fun ActiveMeasurementScreen(state: MainState, onIntent: (MainIntent) -> Unit, mo
         }
         SensorBoxDangerButton(
             label = stringResource(R.string.stop_and_save),
-            onClick = { onIntent(MainIntent.StopMeasurement) },
+            onClick = { onIntent(RecordingIntent.StopMeasurement) },
             modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 @Composable
-private fun AnnotationEditor(onIntent: (MainIntent) -> Unit) {
+private fun AnnotationEditor(onIntent: (RecordingIntent) -> Unit) {
     var annotation by remember { mutableStateOf("") }
     SensorBoxPanel {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -97,7 +97,7 @@ private fun AnnotationEditor(onIntent: (MainIntent) -> Unit) {
                 label = stringResource(R.string.add_annotation),
                 onClick = {
                     annotation.trim().takeIf(String::isNotEmpty)?.let {
-                        onIntent(MainIntent.AddAnnotation(it))
+                        onIntent(RecordingIntent.AddAnnotation(it))
                         annotation = ""
                     }
                 },
@@ -168,7 +168,7 @@ private fun MeasurementTimer(elapsedSeconds: Long, folderName: String) {
 }
 
 @Composable
-private fun MeasurementSummary(state: MainState, session: MeasurementSessionState.Running) {
+private fun MeasurementSummary(state: RecordingState, session: MeasurementSessionState.Running) {
     var expanded by remember { mutableStateOf(false) }
     val sources = recordingSourceNames(state, session, LocalContext.current.resources)
     SensorBoxPanel {
@@ -230,7 +230,7 @@ private fun RecordingSourceList(sources: List<String>) {
 }
 
 private fun recordingSourceNames(
-    state: MainState,
+    state: RecordingState,
     session: MeasurementSessionState.Running,
     resources: Resources,
 ): List<String> = buildList {

@@ -11,62 +11,62 @@ class RecordScreenTest {
 
     @Test
     fun givenRecordScreenWhenSensorIsTappedThenToggleIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen { actualIntent = it }
             .thenRecordingActionIsVisible()
             .whenAccelerometerIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.ToggleSensor(1), actualIntent)
+            assertEquals(RecordingIntent.ToggleSensor(1), actualIntent)
         }
     }
 
     @Test
     fun givenRecordScreenWhenSensorInfoIsTappedThenDetailsIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen { actualIntent = it }
             .whenAccelerometerInfoIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.OpenSensorDetails(1), actualIntent)
+            assertEquals(RecordingIntent.OpenSensorDetails(1), actualIntent)
         }
     }
 
     @Test
     fun givenSelectedSensorWhenContinueIsTappedThenSetupIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen(selected = true) { actualIntent = it }
             .whenContinueIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.OpenMeasurementSetup, actualIntent)
+            assertEquals(RecordingIntent.OpenMeasurementSetup, actualIntent)
         }
     }
 
     @Test
     fun givenRecordScreenWhenGpsIsTappedThenToggleGpsIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen { actualIntent = it }
             .whenGpsIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.ToggleGps, actualIntent)
+            assertEquals(RecordingIntent.ToggleGps, actualIntent)
         }
     }
 
     @Test
     fun givenOnlyGpsSelectedWhenContinueIsTappedThenSetupIntentIsSent() {
-        var actualIntent: MainIntent? = null
+        var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen(gpsSelected = true) { actualIntent = it }
             .whenContinueIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(MainIntent.OpenMeasurementSetup, actualIntent)
+            assertEquals(RecordingIntent.OpenMeasurementSetup, actualIntent)
         }
     }
 }

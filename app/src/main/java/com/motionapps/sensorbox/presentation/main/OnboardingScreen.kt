@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import com.motionapps.sensorbox.R
 
 @Composable
-fun OnboardingScreen(state: MainState, onIntent: (MainIntent) -> Unit) {
-    val pageIndex = state.onboardingPage.coerceIn(ONBOARDING_PAGES.indices)
+fun OnboardingScreen(state: OnboardingState, onIntent: (OnboardingIntent) -> Unit) {
+    val pageIndex = state.page.coerceIn(ONBOARDING_PAGES.indices)
     val page = ONBOARDING_PAGES[pageIndex]
     BoxWithConstraints(
         modifier = Modifier
@@ -53,9 +53,9 @@ fun OnboardingScreen(state: MainState, onIntent: (MainIntent) -> Unit) {
 private fun OnboardingLayout(
     pageIndex: Int,
     page: OnboardingPage,
-    state: MainState,
+    state: OnboardingState,
     isLandscape: Boolean,
-    onIntent: (MainIntent) -> Unit,
+    onIntent: (OnboardingIntent) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -79,13 +79,13 @@ private fun OnboardingLayout(
 }
 
 @Composable
-private fun OnboardingHeader(pageIndex: Int, onIntent: (MainIntent) -> Unit) {
+private fun OnboardingHeader(pageIndex: Int, onIntent: (OnboardingIntent) -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().height(52.dp)) {
             if (pageIndex > 0) {
                 SensorBoxBackButton(
                     label = stringResource(R.string.intro_back),
-                    onClick = { onIntent(MainIntent.RetreatOnboarding) },
+                    onClick = { onIntent(OnboardingIntent.RetreatOnboarding) },
                     modifier = Modifier.align(Alignment.CenterStart),
                 )
             }
@@ -118,9 +118,9 @@ private fun OnboardingProgress(pageIndex: Int) {
 @Composable
 private fun OnboardingMessage(
     page: OnboardingPage,
-    state: MainState,
+    state: OnboardingState,
     isLandscape: Boolean,
-    onIntent: (MainIntent) -> Unit,
+    onIntent: (OnboardingIntent) -> Unit,
 ) {
     if (isLandscape) {
         LandscapeOnboardingMessage(page, state, onIntent)
@@ -130,7 +130,11 @@ private fun OnboardingMessage(
 }
 
 @Composable
-private fun PortraitOnboardingMessage(page: OnboardingPage, state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun PortraitOnboardingMessage(
+    page: OnboardingPage,
+    state: OnboardingState,
+    onIntent: (OnboardingIntent) -> Unit,
+) {
     Column(
         modifier = Modifier
             .widthIn(max = ONBOARDING_MESSAGE_MAX_WIDTH)
@@ -148,7 +152,11 @@ private fun PortraitOnboardingMessage(page: OnboardingPage, state: MainState, on
 }
 
 @Composable
-private fun LandscapeOnboardingMessage(page: OnboardingPage, state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun LandscapeOnboardingMessage(
+    page: OnboardingPage,
+    state: OnboardingState,
+    onIntent: (OnboardingIntent) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -208,7 +216,7 @@ private fun OnboardingText(page: OnboardingPage) {
 }
 
 @Composable
-private fun OnboardingPageActions(action: OnboardingAction, path: String?, onIntent: (MainIntent) -> Unit) {
+private fun OnboardingPageActions(action: OnboardingAction, path: String?, onIntent: (OnboardingIntent) -> Unit) {
     when (action) {
         OnboardingAction.NONE -> Unit
         OnboardingAction.POLICIES -> PolicyActions(onIntent)
@@ -218,38 +226,38 @@ private fun OnboardingPageActions(action: OnboardingAction, path: String?, onInt
 }
 
 @Composable
-private fun PolicyActions(onIntent: (MainIntent) -> Unit) {
+private fun PolicyActions(onIntent: (OnboardingIntent) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         SensorBoxSecondaryButton(
             label = stringResource(R.string.intro_policy_button),
-            onClick = { onIntent(MainIntent.OpenPrivacyPolicy) },
+            onClick = { onIntent(OnboardingIntent.OpenPrivacyPolicy) },
             modifier = Modifier.weight(1f),
         )
         SensorBoxSecondaryButton(
             label = stringResource(R.string.intro_terms_button),
-            onClick = { onIntent(MainIntent.OpenTermsOfUse) },
+            onClick = { onIntent(OnboardingIntent.OpenTermsOfUse) },
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
-private fun BatteryAction(onIntent: (MainIntent) -> Unit) {
+private fun BatteryAction(onIntent: (OnboardingIntent) -> Unit) {
     SensorBoxSecondaryButton(
         label = stringResource(R.string.intro_battery_action),
-        onClick = { onIntent(MainIntent.RequestBatteryOptimizationExemption) },
+        onClick = { onIntent(OnboardingIntent.RequestBatteryOptimizationExemption) },
         modifier = Modifier.fillMaxWidth(),
     )
 }
 
 @Composable
-private fun StorageAction(path: String?, onIntent: (MainIntent) -> Unit) {
+private fun StorageAction(path: String?, onIntent: (OnboardingIntent) -> Unit) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         SensorBoxSecondaryButton(
             label = stringResource(
                 if (path == null) R.string.intro_storage_action else R.string.intro_storage_change_action,
             ),
-            onClick = { onIntent(MainIntent.ChooseStorage) },
+            onClick = { onIntent(OnboardingIntent.ChooseStorage) },
             modifier = Modifier.fillMaxWidth(),
         )
         if (path != null) {
@@ -269,7 +277,7 @@ private fun OnboardingControls(
     pageIndex: Int,
     hasStorage: Boolean,
     isLandscape: Boolean,
-    onIntent: (MainIntent) -> Unit,
+    onIntent: (OnboardingIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isLastPage = pageIndex == ONBOARDING_PAGES.lastIndex
@@ -285,8 +293,8 @@ private fun OnboardingControls(
     }
 }
 
-private fun onboardingForwardIntent(isLastPage: Boolean): MainIntent =
-    if (isLastPage) MainIntent.CompleteOnboarding else MainIntent.AdvanceOnboarding
+private fun onboardingForwardIntent(isLastPage: Boolean): OnboardingIntent =
+    if (isLastPage) OnboardingIntent.CompleteOnboarding else OnboardingIntent.AdvanceOnboarding
 
 private data class OnboardingPage(
     @StringRes val title: Int,

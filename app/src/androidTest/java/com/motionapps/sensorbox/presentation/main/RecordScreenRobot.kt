@@ -12,13 +12,12 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
     fun givenRecordScreen(
         selected: Boolean = false,
         gpsSelected: Boolean = false,
-        onIntent: (MainIntent) -> Unit = {},
+        onIntent: (RecordingIntent) -> Unit = {},
     ) = apply {
         rule.setContent {
             SensorBoxTheme {
                 RecordScreen(
-                    state = MainState(
-                        route = MainRoute.RECORD,
+                    state = RecordingState(
                         sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture", false)),
                         selectedSensorIds = if (selected) setOf(1) else emptySet(),
                         includesGps = gpsSelected,
