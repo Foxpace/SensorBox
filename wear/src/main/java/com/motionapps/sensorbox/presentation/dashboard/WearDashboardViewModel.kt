@@ -3,6 +3,8 @@ package com.motionapps.sensorbox.presentation.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.preferences.AppPreferencesIntent
 import com.motionapps.sensorbox.core.preferences.AppPreferencesRepository
 import com.motionapps.sensorbox.domain.measurement.WearMeasurementControlUseCase
@@ -112,7 +114,7 @@ class WearDashboardViewModel @Inject constructor(
         sensorJob = viewModelScope.launch {
             observeSensorValues(sensorType)
                 .catch { error ->
-                    AppError.from(AppError.Kind.MEASUREMENT, "Observe live sensor", error)
+                    AppError.from(AppErrorCode.MEASUREMENT, "Observe live sensor", error)
                     showSensorError()
                 }
                 .collect(::publishSensorValue)
@@ -188,7 +190,7 @@ class WearDashboardViewModel @Inject constructor(
 
     private var sampleBuffer: List<Float> = emptyList()
 
-    private fun Result<*>.showFailure() {
+    private fun AppResult<*>.showFailure() {
         if (isFailure) showOperationFailure()
     }
 

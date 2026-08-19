@@ -68,7 +68,7 @@
 
                 <data
                     android:host="*"
-                    android:pathPrefix="/sensorbox/v1/wear"
+                    android:pathPrefix="/sensorbox/v2/wear"
                     android:scheme="wear" />
             </intent-filter>
         </service>

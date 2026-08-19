@@ -2,6 +2,8 @@ package com.motionapps.sensorbox.domain.sync
 
 import android.content.Context
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.suspendAppResult
 import com.motionapps.sensorbox.core.error.suspendFlatMap
@@ -19,25 +21,25 @@ class SyncWearMeasurementsUseCase @Inject constructor(
     private val connectionRepository: WearConnectionRepository,
     private val transferClient: WearFileTransferClient,
 ) {
-    suspend operator fun invoke(): Result<Int> = suspendAppResult(AppError.Kind.CONNECTIVITY, "Find phone") {
+    suspend operator fun invoke(): AppResult<Int> = suspendAppResult(AppErrorCode.CONNECTIVITY, "Find phone") {
         connectionRepository.findNode(PHONE_APP_CAPABILITY)
     }.suspendFlatMap { node ->
         if (node == null) {
-            return@suspendFlatMap Result.failure(AppError(AppError.Kind.CONNECTIVITY, "Find connected phone"))
+            return@suspendFlatMap AppResult.failure(AppError(AppErrorCode.CONNECTIVITY, "Find connected phone"))
         }
-        appResult(AppError.Kind.STORAGE, "List Wear measurements", ::measurementFiles).suspendFlatMap { files ->
-            var transferResult: Result<Unit> = Result.success(Unit)
+        appResult(AppErrorCode.STORAGE, "List Wear measurements", ::measurementFiles).suspendFlatMap { files ->
+            var transferResult: AppResult<Unit> = AppResult.success(Unit)
             for (file in files) {
                 if (transferResult.isFailure) break
                 transferResult = sendFile(node.id, file)
             }
             transferResult.map { files.size }
         }
-    }.withAppError(AppError.Kind.CONNECTIVITY, "Sync Wear measurements")
+    }.withAppError(AppErrorCode.CONNECTIVITY, "Sync Wear measurements")
 
-    private suspend fun sendFile(nodeId: String, file: File): Result<Unit> {
+    private suspend fun sendFile(nodeId: String, file: File): AppResult<Unit> {
         val measurementName = file.parentFile?.name
-            ?: return Result.failure(AppError(AppError.Kind.STORAGE, "Read Wear measurement folder"))
+            ?: return AppResult.failure(AppError(AppErrorCode.STORAGE, "Read Wear measurement folder"))
         return transferClient.send(
             nodeId = nodeId,
             metadata = WearFileMetadata(measurementName, file.name),
