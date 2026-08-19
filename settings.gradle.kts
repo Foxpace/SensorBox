@@ -26,6 +26,8 @@ rootProject.name = "SensorBox"
 include(
     ":app",
     ":core",
+    ":core-common",
+    ":recording-core",
     ":sensorservices",
     ":wear",
     ":wearoslib",
