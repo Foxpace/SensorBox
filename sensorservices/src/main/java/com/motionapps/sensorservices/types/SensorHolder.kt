@@ -3,151 +3,75 @@ package com.motionapps.sensorservices.types
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
-import kotlinx.coroutines.*
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.combineAppResults
+import com.motionapps.sensorbox.core.error.suspendAppResult
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import java.io.IOException
 import java.io.OutputStream
 
-/**
- *  registers specific sensor and saves it to CSV file
- *
- * @property sensorId - if of the sensor to register
- * @property outputStream - appropriate file outputStream
- *
- * @param sensorNeeds -
- */
-class SensorHolder(
-    val sensorId: Int,
-    sensorNeeds: SensorNeeds,
-    private val outputStream: OutputStream
-) : SensorEventListener, EndHolder {
-
-    private val lineFormat: String =
-        "%d;%d;%s%d\n" // format of the line, %s in created by loop with size of required axes
-    private val axes: Int = sensorNeeds.count
-    private var isWriting: Boolean = false
-    private var buffer: StringBuffer = StringBuffer(10000)
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-
-    init {
-        scope.launch {
-            withContext(Dispatchers.IO) {
-                outputStream.write(sensorNeeds.head.toByteArray())
-            }
-        }
-        scope.launch {
-            withContext(Dispatchers.IO){
-                while (isActive){
-                    delay(10000L)
-                    if (queue1.isNotEmpty()){
-                        isWriting = true
-                        val copy = queue1.toMutableList()
-                        queue1.clear()
-                        copy.forEach { sensorOutput -> formatLine(sensorOutput) }
-                        writeBuffer()
-                        isWriting = false
-                    }
-
-                    if (queue2.isNotEmpty() && !isWriting){
-                        val copy = queue2.toMutableList()
-                        queue2.clear()
-                        copy.forEach { sensorOutput -> formatLine(sensorOutput) }
-                        writeBuffer()
-                    }
-                }
-            }
-
+class SensorHolder(val spec: SensorSpec, outputStream: OutputStream) : SensorEventListener {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val samples = Channel<SensorSample>(capacity = Channel.BUFFERED)
+    private val writer = outputStream.bufferedWriter()
+    private val writerJob = scope.async {
+        try {
+            writer.append(spec.header)
+            for (sample in samples) writer.appendLine(sample.toCsv(spec.axisCount))
+        } catch (error: IOException) {
+            writerFailure = AppError.from(AppError.Kind.STORAGE, "Write ${spec.fileName}", error)
+            samples.close()
         }
     }
 
-    private var queue1 = ArrayList<SensorOutput>()
-    private var queue2 = ArrayList<SensorOutput>()
+    @Volatile
+    private var writerFailure: AppError? = null
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (isWriting){
-            queue2.add(SensorOutput(event))
-            return
-        }
-        queue1.add(SensorOutput(event))
-    }
-
-    private fun formatLine(sensorOutput: SensorOutput){
-        var values = ""
-        for (i in 0 until axes) {
-            values += sensorOutput.values[i].toString() + ";" // formatting values
-        }
-
-        buffer.append(
-            lineFormat.format(
-                sensorOutput.timestamp,
-                sensorOutput.timeStampUnix,
-                values,
-                sensorOutput.accuracy
-            )
+        if (writerFailure != null) return
+        val result = samples.trySend(
+            SensorSample(
+                sensorTimestampNanos = event.timestamp,
+                unixTimestampMillis = System.currentTimeMillis(),
+                values = event.values.copyOf(spec.axisCount),
+                accuracy = event.accuracy,
+            ),
         )
+        if (result.isFailure && writerFailure == null) {
+            writerFailure = AppError(AppError.Kind.STORAGE, "Buffer ${spec.fileName}")
+        }
     }
 
-    private fun writeBuffer() {
-        val bufferToWrite = buffer.toString()
-        buffer.setLength(0)
-        outputStream.write(bufferToWrite.toByteArray())
-    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
-
-    override suspend fun saveFile() {
+    suspend fun close(): Result<Unit> {
+        samples.close()
+        val results = mutableListOf<Result<*>>()
+        results += suspendAppResult(AppError.Kind.STORAGE, "Finish ${spec.fileName} writer") { writerJob.await() }
+        writerFailure?.let { results += Result.failure<Unit>(it) }
+        results += appResult(AppError.Kind.STORAGE, "Flush ${spec.fileName}") { writer.flush() }
+        results += appResult(AppError.Kind.STORAGE, "Close ${spec.fileName}") { writer.close() }
         scope.cancel()
-        if(isWriting){
-            return
-        }
-
-        if (queue1.isNotEmpty()){
-            withContext(Dispatchers.IO){
-                queue1.forEach{ output -> formatLine(output)}
-                writeBuffer()
-            }
-        }
-
-        if (queue2.isNotEmpty()){
-            withContext(Dispatchers.IO){
-                queue2.forEach{ output -> formatLine(output)}
-                writeBuffer()
-            }
-        }
+        return results.combineAppResults(AppError.Kind.STORAGE, "Close ${spec.fileName}")
     }
+}
 
-    data class SensorOutput(
-        val timestamp: Long,
-        val timeStampUnix: Long,
-        val values: FloatArray,
-        val accuracy: Int
-    ) {
-
-        constructor(sensorOutput: SensorEvent) : this(
-            sensorOutput.timestamp,
-            System.currentTimeMillis(),
-            sensorOutput.values,
-            sensorOutput.accuracy
-        )
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as SensorOutput
-
-            if (timestamp != other.timestamp) return false
-            if (accuracy != other.accuracy) return false
-            if (!values.contentEquals(other.values)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = timestamp.hashCode()
-            result += accuracy.hashCode()
-            result = 31 * result + values.contentHashCode()
-            return result
-        }
+class SensorSample(
+    val sensorTimestampNanos: Long,
+    val unixTimestampMillis: Long,
+    val values: FloatArray,
+    val accuracy: Int,
+) {
+    fun toCsv(axisCount: Int): String = buildString {
+        append(sensorTimestampNanos).append(';')
+        append(unixTimestampMillis).append(';')
+        values.take(axisCount).forEach { value -> append(value).append(';') }
+        append(accuracy)
     }
-
-
 }
