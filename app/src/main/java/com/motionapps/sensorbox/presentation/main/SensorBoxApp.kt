@@ -34,23 +34,48 @@ import androidx.navigation3.ui.NavDisplay
 import com.motionapps.sensorservices.session.MeasurementSessionState
 
 @Composable
-fun SensorBoxApp(state: MainState, onIntent: (MainIntent) -> Unit) {
-    if (!state.hasLoadedPreferences) {
+fun SensorBoxApp(
+    mainState: MainState,
+    onboardingState: OnboardingState,
+    recordingState: RecordingState,
+    settingsState: SettingsState,
+    onNavigate: (MainRoute) -> Unit,
+    onOnboardingIntent: (OnboardingIntent) -> Unit,
+    onRecordingIntent: (RecordingIntent) -> Unit,
+    onSettingsIntent: (SettingsIntent) -> Unit,
+) {
+    if (!mainState.hasLoadedPreferences) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
         return
     }
-    if (state.preferences.keepPhoneDisplayOn && state.session is MeasurementSessionState.Running) {
-        KeepScreenAwake()
-    }
-    SensorBoxNavHost(state, onIntent)
+    if (mainState.keepScreenAwake && mainState.session is MeasurementSessionState.Running) KeepScreenAwake()
+    SensorBoxNavHost(
+        mainState = mainState,
+        onboardingState = onboardingState,
+        recordingState = recordingState,
+        settingsState = settingsState,
+        onNavigate = onNavigate,
+        onOnboardingIntent = onOnboardingIntent,
+        onRecordingIntent = onRecordingIntent,
+        onSettingsIntent = onSettingsIntent,
+    )
 }
 
 @Composable
-private fun SensorBoxNavHost(state: MainState, onIntent: (MainIntent) -> Unit) {
-    val backStack = rememberNavBackStack(state.route)
-    val displayedRoute = state.displayedRoute()
+private fun SensorBoxNavHost(
+    mainState: MainState,
+    onboardingState: OnboardingState,
+    recordingState: RecordingState,
+    settingsState: SettingsState,
+    onNavigate: (MainRoute) -> Unit,
+    onOnboardingIntent: (OnboardingIntent) -> Unit,
+    onRecordingIntent: (RecordingIntent) -> Unit,
+    onSettingsIntent: (SettingsIntent) -> Unit,
+) {
+    val backStack = rememberNavBackStack(mainState.route)
+    val displayedRoute = mainState.displayedRoute()
     SynchronizeBackStack(backStack, displayedRoute)
-    val navigateBack = { navigateBack(state, backStack, onIntent) }
+    val navigateBack = { navigateBack(mainState, backStack, onNavigate) }
 
     NavDisplay(
         backStack = backStack,
@@ -62,8 +87,12 @@ private fun SensorBoxNavHost(state: MainState, onIntent: (MainIntent) -> Unit) {
             entry<MainRoute> { route ->
                 RouteContent(
                     route = route,
-                    state = state,
-                    onIntent = onIntent,
+                    onboardingState = onboardingState,
+                    recordingState = recordingState,
+                    settingsState = settingsState,
+                    onOnboardingIntent = onOnboardingIntent,
+                    onRecordingIntent = onRecordingIntent,
+                    onSettingsIntent = onSettingsIntent,
                     onBack = navigateBack,
                 )
             }
@@ -80,10 +109,7 @@ private fun MainState.displayedRoute() = if (session is MeasurementSessionState.
 @Composable
 private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute: MainRoute) {
     LaunchedEffect(displayedRoute) {
-        if (
-            displayedRoute != MainRoute.ACTIVE_MEASUREMENT &&
-            backStack.lastOrNull() == MainRoute.ACTIVE_MEASUREMENT
-        ) {
+        if (displayedRoute != MainRoute.ACTIVE_MEASUREMENT && backStack.lastOrNull() == MainRoute.ACTIVE_MEASUREMENT) {
             backStack.removeLastOrNull()
         }
         if (backStack.lastOrNull() != displayedRoute) {
@@ -93,11 +119,11 @@ private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute
     }
 }
 
-private fun navigateBack(state: MainState, backStack: NavBackStack<NavKey>, onIntent: (MainIntent) -> Unit) {
+private fun navigateBack(state: MainState, backStack: NavBackStack<NavKey>, onNavigate: (MainRoute) -> Unit) {
     if (state.session is MeasurementSessionState.Running) return
     if (backStack.size > 1) backStack.removeLastOrNull()
     val destination = backStack.lastOrNull() as? MainRoute ?: MainRoute.RECORD
-    if (destination != MainRoute.ACTIVE_MEASUREMENT) onIntent(MainIntent.Navigate(destination))
+    if (destination != MainRoute.ACTIVE_MEASUREMENT) onNavigate(destination)
 }
 
 private fun MainRoute.isRootDestination() = when (this) {
@@ -116,31 +142,42 @@ private fun MainRoute.isRootDestination() = when (this) {
 }
 
 @Composable
-private fun RouteContent(route: MainRoute, state: MainState, onIntent: (MainIntent) -> Unit, onBack: () -> Unit) {
+private fun RouteContent(
+    route: MainRoute,
+    onboardingState: OnboardingState,
+    recordingState: RecordingState,
+    settingsState: SettingsState,
+    onOnboardingIntent: (OnboardingIntent) -> Unit,
+    onRecordingIntent: (RecordingIntent) -> Unit,
+    onSettingsIntent: (SettingsIntent) -> Unit,
+    onBack: () -> Unit,
+) {
     when (route) {
-        MainRoute.ONBOARDING -> OnboardingScreen(state, onIntent)
+        MainRoute.ONBOARDING -> OnboardingScreen(onboardingState, onOnboardingIntent)
 
         MainRoute.ACTIVE_MEASUREMENT -> FullScreen { modifier ->
-            ActiveMeasurementScreen(state, onIntent, modifier)
+            ActiveMeasurementScreen(recordingState, onRecordingIntent, modifier)
         }
 
         MainRoute.SENSOR_DETAILS -> FullScreen { modifier ->
-            SensorDetailsScreen(state, onBack, { onIntent(MainIntent.Navigate(MainRoute.SENSOR_PREVIEW)) }, modifier)
+            SensorDetailsScreen(
+                recordingState,
+                onBack,
+                { onRecordingIntent(RecordingIntent.Navigate(MainRoute.SENSOR_PREVIEW)) },
+                modifier,
+            )
         }
 
         MainRoute.SENSOR_PREVIEW -> FullScreen { modifier ->
-            SensorPreviewScreen(state = state, onBack = onBack, modifier = modifier)
+            SensorPreviewScreen(state = recordingState, onBack = onBack, modifier = modifier)
         }
 
         MainRoute.SETUP -> FullScreen { modifier ->
             MeasurementSetupScreen(
-                state = state,
-                onIntent = onIntent,
+                state = recordingState,
+                onIntent = onRecordingIntent,
                 modifier = modifier,
-                onBack = {
-                    onIntent(MainIntent.ReturnToSensorSelection)
-                    onBack()
-                },
+                onBack = { onRecordingIntent(RecordingIntent.ReturnToSensorSelection) },
             )
         }
 
@@ -148,10 +185,17 @@ private fun RouteContent(route: MainRoute, state: MainState, onIntent: (MainInte
             OpenSourceLicensesScreen(onBack = onBack, modifier = modifier)
         }
 
-        MainRoute.RECORD -> FullScreen { modifier -> RecordScreen(state, onIntent, modifier) }
+        MainRoute.RECORD -> FullScreen { modifier ->
+            RecordScreen(recordingState, onRecordingIntent, modifier)
+        }
 
         MainRoute.SETTINGS -> FullScreen { modifier ->
-            SettingsScreen(state = state, onIntent = onIntent, modifier = modifier, onBack = onBack)
+            SettingsScreen(
+                state = settingsState,
+                onIntent = onSettingsIntent,
+                modifier = modifier,
+                onBack = onBack,
+            )
         }
 
         MainRoute.PRIVACY -> FullScreen { modifier -> PrivacyScreen(onBack, modifier) }
@@ -179,11 +223,6 @@ private fun screenFadeInTween() = tween<Float>(SCREEN_FADE_IN_MILLIS, easing = F
 
 private fun screenFadeOutTween() = tween<Float>(SCREEN_FADE_OUT_MILLIS, easing = FastOutSlowInEasing)
 
-private const val SCREEN_TRANSITION_MILLIS = 300
-private const val SCREEN_FADE_IN_MILLIS = 240
-private const val SCREEN_FADE_OUT_MILLIS = 180
-private const val SCREEN_SLIDE_DIVISOR = 5
-
 @Composable
 private fun KeepScreenAwake() {
     val view = LocalView.current
@@ -202,13 +241,14 @@ private fun FullScreen(content: @Composable (Modifier) -> Unit) {
             contentAlignment = Alignment.TopCenter,
         ) {
             content(
-                Modifier
-                    .widthIn(max = ADAPTIVE_CONTENT_MAX_WIDTH)
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
+                Modifier.widthIn(max = ADAPTIVE_CONTENT_MAX_WIDTH).fillMaxWidth().fillMaxHeight(),
             )
         }
     }
 }
 
+private const val SCREEN_TRANSITION_MILLIS = 300
+private const val SCREEN_FADE_IN_MILLIS = 240
+private const val SCREEN_FADE_OUT_MILLIS = 180
+private const val SCREEN_SLIDE_DIVISOR = 5
 private val ADAPTIVE_CONTENT_MAX_WIDTH = 840.dp
