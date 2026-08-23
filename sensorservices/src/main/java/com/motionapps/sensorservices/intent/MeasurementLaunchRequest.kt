@@ -1,6 +1,7 @@
 package com.motionapps.sensorservices.intent
 
 data class MeasurementLaunchRequest(
+    val sessionId: String = java.util.UUID.randomUUID().toString(),
     val folderName: String,
     val useInternalStorage: Boolean,
     val sensorIds: Set<Int>,
@@ -18,5 +19,4 @@ data class MeasurementLaunchRequest(
     val activityRecognition: Boolean = false,
     val activityRecognitionPeriodSeconds: Int = 30,
     val significantMotion: Boolean = false,
-    val controlsWearMeasurement: Boolean = false,
 )
