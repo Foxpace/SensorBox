@@ -1,9 +1,7 @@
 package com.motionapps.sensorbox
 
 import android.app.Application
-import android.content.Context
-import android.os.Build
-import androidx.multidex.MultiDex
+import com.motionapps.sensorbox.core.error.AppDiagnostics
 import dagger.hilt.android.HiltAndroidApp
 
 /**
@@ -11,13 +9,9 @@ import dagger.hilt.android.HiltAndroidApp
  *
  */
 @HiltAndroidApp
-class SensorBoxApp: Application(){
-
-    override fun attachBaseContext(context: Context?) {
-        super.attachBaseContext(context)
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
-            MultiDex.install(this)
-        }
+class SensorBoxApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        AppDiagnostics.install(this)
     }
-
 }
