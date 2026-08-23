@@ -18,7 +18,7 @@ class MeasurementMetadataSerializationTest {
         val metadata = MeasurementMetadata(
             millis = 100L,
             nanos = 200L,
-            type = "TIMED",
+            type = "RECORDING",
             date = "23. 08. 2026 12:00:00",
             folder = "fixture",
             notes = listOf("note"),
@@ -52,6 +52,8 @@ class MeasurementMetadataSerializationTest {
             json.keys,
         )
         assertEquals(100L, json.getValue("millis").jsonPrimitive.long)
+        assertEquals("RECORDING", json.getValue("type").jsonPrimitive.content)
+        assertEquals(60_000L, json.getValue("durationMillis").jsonPrimitive.long)
         assertEquals("note", json.getValue("notes").jsonArray.single().jsonPrimitive.content)
         val annotation = json.getValue("annotations").jsonArray.single().jsonObject
         val range = json.getValue("ranges").jsonArray.single().jsonObject

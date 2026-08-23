@@ -17,7 +17,7 @@ interface RecordingWorkflowGateway {
 
     fun persistStorage(resultIntent: Intent?): AppResult<Unit>
 
-    fun missingPermissions(request: MeasurementRequest, includesHeartRate: Boolean): Set<String>
+    fun missingPermissions(request: MeasurementRequest): Set<String>
 
     suspend fun start(request: MeasurementRequest): AppResult<Unit>
 
@@ -42,8 +42,8 @@ class AndroidRecordingWorkflowGateway @Inject constructor(
         ?.let(documentStorage::persist)
         ?: AppResult.failure(AppError(AppErrorCode.STORAGE, "Select recording storage directory"))
 
-    override fun missingPermissions(request: MeasurementRequest, includesHeartRate: Boolean): Set<String> =
-        measurementPermissions.missingPermissions(request, includesHeartRate)
+    override fun missingPermissions(request: MeasurementRequest): Set<String> =
+        measurementPermissions.missingPermissions(request)
 
     override suspend fun start(request: MeasurementRequest): AppResult<Unit> = measurementControl.start(request)
 

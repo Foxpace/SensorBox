@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationAvailability
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.core.format.ValueFormats
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
+import com.motionapps.sensorbox.domain.sensors.SensorReportingMode
 import com.motionapps.sensorservices.handlers.GPSHandler
 
 @Composable
@@ -234,12 +236,12 @@ internal fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun reportingModeLabel(mode: Int): String = when (mode) {
-    0 -> stringResource(R.string.reporting_continuous)
-    1 -> stringResource(R.string.reporting_on_change)
-    2 -> stringResource(R.string.reporting_one_shot)
-    3 -> stringResource(R.string.reporting_special_trigger)
-    else -> stringResource(R.string.unknown_with_value, mode)
+private fun reportingModeLabel(mode: SensorReportingMode): String = when (mode) {
+    SensorReportingMode.CONTINUOUS -> stringResource(R.string.reporting_continuous)
+    SensorReportingMode.ON_CHANGE -> stringResource(R.string.reporting_on_change)
+    SensorReportingMode.ONE_SHOT -> stringResource(R.string.reporting_one_shot)
+    SensorReportingMode.SPECIAL_TRIGGER -> stringResource(R.string.reporting_special_trigger)
+    SensorReportingMode.UNKNOWN -> stringResource(R.string.unknown)
 }
 
 @Composable
@@ -263,12 +265,10 @@ internal fun sensorUnit(type: Int): String = when (type) {
 
     Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR -> stringResource(R.string.unit_steps)
 
-    Sensor.TYPE_HEART_RATE -> stringResource(R.string.unit_heart_rate)
-
     else -> stringResource(R.string.unit_none)
 }
 
-internal fun formatDecimal(value: Number): String = "%.2f".format(value.toDouble())
+internal fun formatDecimal(value: Number): String = ValueFormats.decimal(value)
 
 @Composable
 private fun locationAvailabilityLabel(isAvailable: Boolean?): String = when (isAvailable) {

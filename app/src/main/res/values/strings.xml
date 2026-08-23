@@ -10,7 +10,6 @@
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="unknown">Unknown</string>
-    <string name="unknown_with_value">Unknown (%1$d)</string>
     <string name="unavailable">Unavailable</string>
     <string name="waiting">Waiting…</string>
     <string name="ready">Ready</string>
@@ -74,7 +73,6 @@
     <string name="privacy_access_title">Why SensorBox requests access</string>
     <string name="privacy_permissions_body">Sensor and location permissions are requested only after you select those sources and tap Start recording.</string>
     <string name="privacy_storage_body">Recordings are written to the folder you choose through Android’s system document picker.</string>
-    <string name="privacy_heart_rate_body">Heart-rate access is used only when you explicitly select a heart-rate sensor. Background access keeps that user-started foreground recording alive while its notification is visible.</string>
     <string name="privacy_no_upload_body">SensorBox does not upload recorded sensor or location data.</string>
 
     <string name="pick_sensors">Pick sensors</string>
@@ -116,8 +114,6 @@
     <string name="start_measurement">Start measurement</string>
     <string name="custom_measurement_name">Measurement name</string>
     <string name="custom_measurement_name_description">Optional folder-name prefix</string>
-    <string name="timed_measurement">Timed measurement</string>
-    <string name="timed_measurement_description">Stop and save automatically after a duration</string>
     <string name="start_delay">Start delay</string>
     <string name="measurement_duration">Duration</string>
     <string name="measurement_notes">Notes</string>
@@ -221,7 +217,6 @@
     <string name="unit_lux" translatable="false">lx</string>
     <string name="unit_temperature" translatable="false">°C</string>
     <string name="unit_steps">steps</string>
-    <string name="unit_heart_rate" translatable="false">bpm</string>
     <string name="unit_none" translatable="false">−</string>
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_summary">Errors are stored locally and shared only when you choose to export them.</string>

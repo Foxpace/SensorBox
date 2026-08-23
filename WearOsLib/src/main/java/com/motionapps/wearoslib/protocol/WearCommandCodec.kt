@@ -11,7 +11,7 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 
 object WearCommandCodec {
-    const val PROTOCOL_VERSION = 2
+    const val PROTOCOL_VERSION = 3
 
     fun encode(command: WearCommand): AppResult<ByteArray> = validate(command).flatMap {
         appResult(AppErrorCode.CONNECTIVITY, "Encode Wear command") {
@@ -28,7 +28,7 @@ object WearCommandCodec {
 
     fun decode(payload: ByteArray): AppResult<WearCommand> = appResult(
         AppErrorCode.CONNECTIVITY,
-        "Decode Wear protocol v2 command",
+        "Decode Wear protocol v3 command",
     ) {
         DataInputStream(ByteArrayInputStream(payload)).use { input ->
             require(input.readInt() == MAGIC) { "Unsupported Wear protocol magic" }
@@ -40,7 +40,7 @@ object WearCommandCodec {
     private fun validate(command: WearCommand): AppResult<Unit> = if (command.isValid()) {
         AppResult.success(Unit)
     } else {
-        AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear protocol v2 command"))
+        AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear protocol v3 command"))
     }
 
     private fun DataOutputStream.writeCommand(command: WearCommand) {
@@ -84,7 +84,6 @@ object WearCommandCodec {
         writeByte(command.request.sensorIds.size)
         command.request.sensorIds.forEach(::writeInt)
         writeLong(command.request.durationMillis)
-        writeUTF(command.request.measurementType)
     }
 
     private fun DataOutputStream.writeAcknowledgement(command: WearCommand.Acknowledgement) {
@@ -104,7 +103,6 @@ object WearCommandCodec {
             writeInt(sensor.type)
             writeUTF(sensor.name)
             writeUTF(sensor.vendor)
-            writeBoolean(sensor.isHeartRate)
         }
     }
 
@@ -135,7 +133,6 @@ object WearCommandCodec {
                 sensorIds = sensorIds,
                 includesGps = includesGps,
                 durationMillis = readLong(),
-                measurementType = readUTF(),
             ),
         )
     }
@@ -152,11 +149,11 @@ object WearCommandCodec {
         val count = readUnsignedByte()
         require(count <= MAX_SENSORS) { "Too many Wear sensors" }
         return WearCommand.SensorList(
-            List(count) { WearSensorInfo(readInt(), readUTF(), readUTF(), readBoolean()) },
+            List(count) { WearSensorInfo(readInt(), readUTF(), readUTF()) },
         )
     }
 
-    private const val MAGIC = 0x53425832
+    private const val MAGIC = 0x53425833
     private const val TYPE_LAUNCH_PHONE = 1
     private const val TYPE_SYNC_MEASUREMENTS = 2
     private const val TYPE_REQUEST_SENSOR_LIST = 3
@@ -170,7 +167,6 @@ object WearCommandCodec {
 
 private const val MAX_SENSORS = 64
 private const val MAX_FOLDER_LENGTH = 100
-private const val MAX_TYPE_LENGTH = 32
 private const val MAX_SENSOR_TEXT_LENGTH = 100
 private const val MAX_SESSION_ID_LENGTH = 128
 
@@ -200,8 +196,7 @@ private fun WearCommand.PrepareRecording.isValid(): Boolean = validSessionId(ses
     request.folderName.isNotBlank() &&
     request.folderName.length <= MAX_FOLDER_LENGTH &&
     request.sensorIds.size <= MAX_SENSORS &&
-    request.durationMillis >= 0L &&
-    request.measurementType.length <= MAX_TYPE_LENGTH
+    request.durationMillis >= 0L
 
 private fun WearCommand.Acknowledgement.isValid(): Boolean = validSessionId(sessionId) &&
     failureCount >= 0 &&

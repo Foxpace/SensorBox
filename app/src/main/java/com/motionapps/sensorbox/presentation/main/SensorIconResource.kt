@@ -25,5 +25,4 @@ private val SENSOR_ICON_RESOURCES = mapOf(
     Sensor.TYPE_AMBIENT_TEMPERATURE to R.drawable.ic_temperature,
     Sensor.TYPE_STEP_COUNTER to R.drawable.ic_steps,
     Sensor.TYPE_STEP_DETECTOR to R.drawable.ic_steps_detector,
-    Sensor.TYPE_HEART_RATE to R.drawable.ic_heart_rate,
 )

@@ -2,6 +2,7 @@ package com.motionapps.sensorbox.presentation.main
 
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.preferences.AppPreferences
+import com.motionapps.sensorbox.domain.measurement.MeasurementRequest
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import com.motionapps.sensorservices.session.MeasurementSessionState
 
@@ -22,7 +23,6 @@ data class RecordingState(
     val selectedWearSensorIds: Set<Int> = emptySet(),
     val wearIncludesGps: Boolean = false,
     val customMeasurementName: String = "",
-    val measurementType: String = "ENDLESS",
     val startDelaySeconds: Int = 0,
     val durationSeconds: Int = 0,
     val notes: String = "",
@@ -37,7 +37,28 @@ data class RecordingState(
     val isWearConnected: Boolean = false,
     val message: RecordingMessage = RecordingMessage.NONE,
     val errorCode: AppErrorCode? = null,
-)
+) {
+    fun toMeasurementRequest() = MeasurementRequest(
+        sensorIds = selectedSensorIds,
+        includesGps = includesGps,
+        samplingPeriodIndex = preferences.recording.sensorSamplingPeriod,
+        stopOnLowBattery = preferences.recording.restrictMeasurementOnLowBattery,
+        useWakeLock = preferences.recording.useWakeLock,
+        gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
+        gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
+        wearSensorIds = selectedWearSensorIds,
+        wearIncludesGps = wearIncludesGps,
+        customName = customMeasurementName,
+        delaySeconds = startDelaySeconds,
+        durationSeconds = durationSeconds.coerceAtLeast(0),
+        notes = notes.lines().map(String::trim).filter(String::isNotEmpty),
+        alarmOffsetsSeconds = alarmOffsets.split(',', ';', ' ')
+            .mapNotNull(String::toIntOrNull).filter { it >= 0 },
+        activityRecognition = activityRecognition,
+        activityRecognitionPeriodSeconds = activityRecognitionPeriodSeconds,
+        significantMotion = significantMotion,
+    )
+}
 
 sealed interface RecordingIntent {
     data class Navigate(val route: MainRoute) : RecordingIntent
@@ -53,7 +74,6 @@ sealed interface RecordingIntent {
     data object StopMeasurement : RecordingIntent
     data object ClearMessage : RecordingIntent
     data class SetCustomMeasurementName(val value: String) : RecordingIntent
-    data class SetMeasurementType(val value: String) : RecordingIntent
     data class SetStartDelay(val seconds: Int) : RecordingIntent
     data class SetDuration(val seconds: Int) : RecordingIntent
     data class SetNotes(val value: String) : RecordingIntent
@@ -117,8 +137,6 @@ object RecordingReducer {
 
     private fun reduceConfiguration(state: RecordingState, intent: RecordingIntent): RecordingNext = when (intent) {
         is RecordingIntent.SetCustomMeasurementName -> RecordingNext(state.copy(customMeasurementName = intent.value))
-
-        is RecordingIntent.SetMeasurementType -> RecordingNext(state.copy(measurementType = intent.value))
 
         is RecordingIntent.SetStartDelay -> RecordingNext(
             state.copy(startDelaySeconds = intent.seconds.coerceAtLeast(0)),

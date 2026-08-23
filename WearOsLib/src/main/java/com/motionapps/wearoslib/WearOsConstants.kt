@@ -2,7 +2,7 @@ package com.motionapps.wearoslib
 
 object WearOsConstants {
     const val PHONE_APP_CAPABILITY = "phone_app"
-    const val PHONE_MESSAGE_PATH = "/sensorbox/v2/phone"
+    const val PHONE_MESSAGE_PATH = "/sensorbox/v3/phone"
     const val WEAR_APP_CAPABILITY = "wear_app"
-    const val WEAR_MESSAGE_PATH = "/sensorbox/v2/wear"
+    const val WEAR_MESSAGE_PATH = "/sensorbox/v3/wear"
 }

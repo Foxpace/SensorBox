@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.core.format.ValueFormats
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import kotlin.math.max
 
@@ -293,12 +294,12 @@ private fun DrawScope.drawSensorLines(
 private fun List<TimedSensorSample>.durationSeconds(): Float =
     if (size < 2) 0f else (last().timestampNanos - first().timestampNanos) / NANOS_PER_SECOND
 
-private fun formatChartTime(seconds: Float): String = "%.1f".format(seconds)
+private fun formatChartTime(seconds: Float): String = ValueFormats.decimal(seconds, fractionDigits = 1)
 
 private fun formatChartValue(value: Float): String = when {
-    kotlin.math.abs(value) >= 100f -> "%.0f".format(value)
-    kotlin.math.abs(value) >= 10f -> "%.1f".format(value)
-    else -> "%.2f".format(value)
+    kotlin.math.abs(value) >= 100f -> ValueFormats.decimal(value, fractionDigits = 0)
+    kotlin.math.abs(value) >= 10f -> ValueFormats.decimal(value, fractionDigits = 1)
+    else -> ValueFormats.decimal(value)
 }
 
 @Composable

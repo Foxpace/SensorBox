@@ -2,7 +2,6 @@ package com.motionapps.sensorbox.domain.measurement
 
 import android.content.Context
 import android.content.Intent
-import android.hardware.SensorManager
 import androidx.core.content.ContextCompat
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
@@ -52,7 +51,10 @@ class AndroidPhoneRecordingController @Inject constructor(
                     AppResult.success(
                         PreparedPhoneRecording(
                             sessionId = sessionId,
-                            launchRequest = request.toLaunchRequest(sessionId),
+                            launchRequest = request.toLaunchRequest(
+                                sessionId,
+                                intentFactory.newFolderName(request.customName),
+                            ),
                         ),
                     )
                 }
@@ -94,39 +96,5 @@ class AndroidPhoneRecordingController @Inject constructor(
         val stopIntent = Intent(context, MeasurementService::class.java)
             .setAction(MeasurementService.ACTION_STOP)
         context.startService(stopIntent)
-    }
-
-    private fun MeasurementRequest.toLaunchRequest(sessionId: String): MeasurementLaunchRequest =
-        MeasurementLaunchRequest(
-            sessionId = sessionId,
-            folderName = intentFactory.newFolderName(customName, measurementType),
-            useInternalStorage = false,
-            sensorIds = sensorIds,
-            sensorSamplingPeriod = samplingPeriod(samplingPeriodIndex),
-            includesGps = includesGps,
-            stopOnLowBattery = stopOnLowBattery,
-            useWakeLock = useWakeLock,
-            gpsIntervalSeconds = gpsIntervalSeconds,
-            gpsMinDistanceMeters = gpsMinDistanceMeters,
-            measurementType = measurementType,
-            durationMillis = durationSeconds.coerceAtLeast(0) * 1_000L,
-            notes = notes,
-            alarmOffsetsSeconds = alarmOffsetsSeconds,
-            activityRecognition = activityRecognition,
-            activityRecognitionPeriodSeconds = activityRecognitionPeriodSeconds,
-            significantMotion = significantMotion,
-        )
-
-    private fun samplingPeriod(index: Int): Int = SENSOR_PERIODS.getOrElse(index) {
-        SensorManager.SENSOR_DELAY_FASTEST
-    }
-
-    private companion object {
-        val SENSOR_PERIODS = intArrayOf(
-            SensorManager.SENSOR_DELAY_FASTEST,
-            SensorManager.SENSOR_DELAY_GAME,
-            SensorManager.SENSOR_DELAY_UI,
-            SensorManager.SENSOR_DELAY_NORMAL,
-        )
     }
 }

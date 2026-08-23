@@ -49,7 +49,7 @@ private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingI
         item { SensorBoxTopAppBar(stringResource(R.string.measurement_setup), onBack) }
         item { StorageSetupPanel(state.storagePath) { onIntent(RecordingIntent.ChooseStorage) } }
         item { MeasurementNameSetup(state, onIntent) }
-        item { TimingSetup(state, onIntent) }
+        item { RecordingTimingSetup(state, onIntent) }
         item { NotesAndAlarmsSetup(state, onIntent) }
         item {
             SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
@@ -83,13 +83,8 @@ private fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingInte
 }
 
 @Composable
-private fun TimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        BooleanSetting(
-            title = stringResource(R.string.timed_measurement),
-            description = stringResource(R.string.timed_measurement_description),
-            checked = state.measurementType == "TIMED",
-        ) { onIntent(RecordingIntent.SetMeasurementType(if (it) "TIMED" else "ENDLESS")) }
         StepSetting(
             stringResource(R.string.start_delay),
             state.startDelaySeconds,
@@ -97,19 +92,13 @@ private fun TimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Un
             0,
             86_400,
         ) { onIntent(RecordingIntent.SetStartDelay(it)) }
-        if (state.measurementType == "TIMED") {
-            StepSetting(
-                stringResource(R.string.measurement_duration),
-                state.durationSeconds.coerceAtLeast(1),
-                pluralStringResource(
-                    R.plurals.seconds_count,
-                    state.durationSeconds.coerceAtLeast(1),
-                    state.durationSeconds.coerceAtLeast(1),
-                ),
-                1,
-                86_400,
-            ) { onIntent(RecordingIntent.SetDuration(it)) }
-        }
+        StepSetting(
+            stringResource(R.string.measurement_duration),
+            state.durationSeconds,
+            pluralStringResource(R.plurals.seconds_count, state.durationSeconds, state.durationSeconds),
+            0,
+            86_400,
+        ) { onIntent(RecordingIntent.SetDuration(it)) }
     }
 }
 

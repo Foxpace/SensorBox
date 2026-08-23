@@ -2,12 +2,10 @@ package com.motionapps.sensorservices.intent
 
 import android.content.Context
 import android.content.Intent
+import com.motionapps.sensorbox.core.time.ClockFormats
 import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.services.MeasurementService
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 class MeasurementIntentFactory @Inject constructor(
@@ -25,7 +23,6 @@ class MeasurementIntentFactory @Inject constructor(
         putExtra(MeasurementService.USE_WAKE_LOCK, request.useWakeLock)
         putExtra(MeasurementService.GPS_INTERVAL_SECONDS, request.gpsIntervalSeconds)
         putExtra(MeasurementService.GPS_DISTANCE_METERS, request.gpsMinDistanceMeters)
-        putExtra(MeasurementService.MEASUREMENT_TYPE, request.measurementType)
         putExtra(MeasurementService.START_AT_EPOCH_MILLIS, request.startAtEpochMillis)
         putExtra(MeasurementService.DURATION_MILLIS, request.durationMillis)
         putStringArrayListExtra(MeasurementService.NOTES, ArrayList(request.notes))
@@ -35,15 +32,14 @@ class MeasurementIntentFactory @Inject constructor(
         putExtra(MeasurementService.SIGNIFICANT_MOTION, request.significantMotion)
     }
 
-    fun newFolderName(customName: String = "", measurementType: String = "ENDLESS"): String {
+    fun newFolderName(customName: String = ""): String {
         val prefix = customName.trim().replace(INVALID_NAME_CHARS, "_").trim('_').take(MAX_PREFIX_LENGTH)
-            .ifBlank { if (measurementType == "TIMED") "timed" else "recording" }
-        val timestamp = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date(clock.nowMillis()))
+            .ifBlank { "recording" }
+        val timestamp = ClockFormats.folderTimestamp(clock.nowMillis())
         return "${prefix}_$timestamp"
     }
 
     private companion object {
-        const val DATE_FORMAT = "yyyy-MM-dd_HH-mm-ss"
         const val MAX_PREFIX_LENGTH = 60
         val INVALID_NAME_CHARS = Regex("[^A-Za-z0-9._-]+")
     }

@@ -53,7 +53,7 @@ Modules:
 - `recording-core`: pure Kotlin recording state machine, source roles, scheduling, and cleanup policy.
 - `core`: Android DataStore preferences, document storage, local rotating diagnostics, and reusable test fixtures.
 - `sensorservices`: Android recording adapters, foreground host, and linear sensor/GPS writers. It has no Wear dependency.
-- `WearOsLib`: coroutine-based connectivity, strict protocol v2 command encoding, and Channel file transport. App policy stays in `app` and `wear`.
+- `WearOsLib`: coroutine-based connectivity, strict protocol v3 command encoding, and Channel file transport. App policy stays in `app` and `wear`.
 
 Paired phone/watch recording is all-or-nothing: both sides prepare before either commits, commands are session-correlated and idempotent, timeouts use bounded retries, and rejection or timeout compensates both sides.
 

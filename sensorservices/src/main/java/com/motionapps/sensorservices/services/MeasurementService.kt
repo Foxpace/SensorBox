@@ -295,7 +295,6 @@ class MeasurementService : Service() {
         const val USE_WAKE_LOCK = "USE_WAKE_LOCK"
         const val GPS_INTERVAL_SECONDS = "GPS_INTERVAL_SECONDS"
         const val GPS_DISTANCE_METERS = "GPS_DISTANCE_METERS"
-        const val MEASUREMENT_TYPE = "MEASUREMENT_TYPE"
         const val START_AT_EPOCH_MILLIS = "START_AT_EPOCH_MILLIS"
         const val DURATION_MILLIS = "DURATION_MILLIS"
         const val NOTES = "NOTES"

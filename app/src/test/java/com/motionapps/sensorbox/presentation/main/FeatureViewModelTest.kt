@@ -158,7 +158,7 @@ private class FakeRecordingWorkflow : RecordingWorkflowGateway {
 
     override fun persistStorage(resultIntent: Intent?): AppResult<Unit> = AppResult.success(Unit)
 
-    override fun missingPermissions(request: MeasurementRequest, includesHeartRate: Boolean): Set<String> = emptySet()
+    override fun missingPermissions(request: MeasurementRequest): Set<String> = emptySet()
 
     override suspend fun start(request: MeasurementRequest): AppResult<Unit> = startResult
 

@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.core.format.ValueFormats
 import com.motionapps.sensorbox.ui.theme.SensorBoxRecording
 import com.motionapps.sensorservices.session.MeasurementSessionState
 
@@ -162,7 +163,7 @@ private fun MeasurementTimer(elapsedSeconds: Long, folderName: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.elapsed_time), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(10.dp))
-        Text(formatElapsed(elapsedSeconds), style = MaterialTheme.typography.displayLarge)
+        Text(ValueFormats.elapsedSeconds(elapsedSeconds), style = MaterialTheme.typography.displayLarge)
         Text(folderName, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
     }
 }
@@ -249,13 +250,6 @@ private fun SummaryValue(value: String, label: String) {
         Text(value, style = MaterialTheme.typography.headlineMedium)
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-private fun formatElapsed(seconds: Long): String {
-    val hours = seconds / 3_600
-    val minutes = seconds % 3_600 / 60
-    val remainingSeconds = seconds % 60
-    return "%02d:%02d:%02d".format(hours, minutes, remainingSeconds)
 }
 
 private const val RECORDING_PULSE_MILLIS = 850

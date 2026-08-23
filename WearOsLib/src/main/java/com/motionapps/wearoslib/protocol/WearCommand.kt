@@ -33,7 +33,6 @@ data class WearRecordingRequest(
     val sensorIds: List<Int>,
     val includesGps: Boolean,
     val durationMillis: Long = 0L,
-    val measurementType: String = "ENDLESS",
 )
 
 enum class WearSessionCommand {
@@ -58,4 +57,4 @@ enum class WearStopReason {
     SERVICE_DESTROYED,
 }
 
-data class WearSensorInfo(val type: Int, val name: String, val vendor: String, val isHeartRate: Boolean)
+data class WearSensorInfo(val type: Int, val name: String, val vendor: String)

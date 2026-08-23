@@ -13,7 +13,6 @@ data class MeasurementLaunchRequest(
     val useWakeLock: Boolean,
     val gpsIntervalSeconds: Int,
     val gpsMinDistanceMeters: Int,
-    val measurementType: String = "ENDLESS",
     val startAtEpochMillis: Long = SystemEpochClock.nowMillis(),
     val durationMillis: Long = 0L,
     val notes: List<String> = emptyList(),

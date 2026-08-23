@@ -12,7 +12,6 @@ enum class SensorSpec(val type: Int, val axisCount: Int, val fileName: String, v
     ),
     GRAVITY(Sensor.TYPE_GRAVITY, 3, "gravity.csv", "t_sensor;t_unix;x;y;z;accuracy\n"),
     GYROSCOPE(Sensor.TYPE_GYROSCOPE, 3, "gyroscope.csv", "t_sensor;t_unix;x;y;z;accuracy\n"),
-    HEART_RATE(Sensor.TYPE_HEART_RATE, 1, "heart_rate.csv", "t_sensor;t_unix;bpm;accuracy\n"),
     LIGHT(Sensor.TYPE_LIGHT, 1, "light.csv", "t_sensor;t_unix;value;accuracy\n"),
     LINEAR_ACCELERATION(
         Sensor.TYPE_LINEAR_ACCELERATION,
