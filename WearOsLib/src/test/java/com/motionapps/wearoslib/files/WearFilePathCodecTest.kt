@@ -7,7 +7,7 @@ import org.junit.Test
 class WearFilePathCodecTest {
     @Test
     fun `Given safe metadata When encoded and decoded Then names survive`() {
-        val given = WearFileMetadata("recording_2026-08-13_12-30-00", "heart_rate.csv")
+        val given = WearFileMetadata("recording_2026-08-13_12-30-00", "accelerometer.csv")
 
         val actual = WearFilePathCodec.decode(WearFilePathCodec.encode(given).getOrThrow())
 

@@ -101,7 +101,7 @@ class RecordingViewModel @Inject constructor(
 
     fun handlePermissionResult() {
         val request = state.value.toMeasurementRequest()
-        val missing = workflow.missingPermissions(request, state.value.includesHeartRate())
+        val missing = workflow.missingPermissions(request)
         if (missing.isEmpty()) {
             startMeasurement()
         } else {
@@ -188,7 +188,6 @@ class RecordingViewModel @Inject constructor(
                             type = sensor.type,
                             name = sensor.name,
                             vendor = sensor.vendor,
-                            isHeartRate = sensor.isHeartRate,
                         )
                     },
                 )
@@ -223,7 +222,7 @@ class RecordingViewModel @Inject constructor(
     }
 
     private fun requestMissingPermissions(request: MeasurementRequest): Set<String>? {
-        val permissions = workflow.missingPermissions(request, state.value.includesHeartRate())
+        val permissions = workflow.missingPermissions(request)
         return permissions.takeIf(Set<String>::isNotEmpty)
     }
 
@@ -255,32 +254,6 @@ class RecordingViewModel @Inject constructor(
             message = RecordingMessage.MEASUREMENT_FAILED,
             errorCode = error?.code ?: AppErrorCode.UNKNOWN,
         )
-    }
-
-    private fun RecordingState.toMeasurementRequest() = MeasurementRequest(
-        sensorIds = selectedSensorIds,
-        includesGps = includesGps,
-        samplingPeriodIndex = preferences.recording.sensorSamplingPeriod,
-        stopOnLowBattery = preferences.recording.restrictMeasurementOnLowBattery,
-        useWakeLock = preferences.recording.useWakeLock,
-        gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
-        gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
-        wearSensorIds = selectedWearSensorIds,
-        wearIncludesGps = wearIncludesGps,
-        customName = customMeasurementName,
-        measurementType = measurementType,
-        delaySeconds = startDelaySeconds,
-        durationSeconds = if (measurementType == "TIMED") durationSeconds.coerceAtLeast(1) else 0,
-        notes = notes.lines().map(String::trim).filter(String::isNotEmpty),
-        alarmOffsetsSeconds = alarmOffsets.split(',', ';', ' ')
-            .mapNotNull(String::toIntOrNull).filter { it >= 0 },
-        activityRecognition = activityRecognition,
-        activityRecognitionPeriodSeconds = activityRecognitionPeriodSeconds,
-        significantMotion = significantMotion,
-    )
-
-    private fun RecordingState.includesHeartRate(): Boolean = sensors.any {
-        it.isHeartRate && it.type in selectedSensorIds
     }
 
     private fun MeasurementRequest.hasAnySource(): Boolean = sensorIds.isNotEmpty() || includesGps ||

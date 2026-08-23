@@ -15,6 +15,7 @@ import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.motionapps.wearoslib.protocol.SendWearCommandUseCase
 import com.motionapps.wearoslib.protocol.WearAcknowledgementOutcome
 import com.motionapps.wearoslib.protocol.WearCommand
+import com.motionapps.wearoslib.protocol.WearCommandCodec
 import com.motionapps.wearoslib.protocol.WearRecordingRequest
 import com.motionapps.wearoslib.protocol.WearSessionCommand
 import com.motionapps.wearoslib.protocol.WearStopReason
@@ -184,7 +185,7 @@ class PairedRecordingCoordinator @Inject constructor(
                 context = mapOf(
                     "sessionId" to sessionId,
                     "retryCount" to RETRY_COUNT.toString(),
-                    "protocolVersion" to "2",
+                    "protocolVersion" to WearCommandCodec.PROTOCOL_VERSION.toString(),
                 ),
                 isRetryable = true,
             ),
@@ -221,7 +222,7 @@ class PairedRecordingCoordinator @Inject constructor(
                         "sessionId" to sessionId,
                         "retryCount" to retryCount.toString(),
                         "failureCount" to failureCount.toString(),
-                        "protocolVersion" to "2",
+                        "protocolVersion" to WearCommandCodec.PROTOCOL_VERSION.toString(),
                     ),
                 ),
             )

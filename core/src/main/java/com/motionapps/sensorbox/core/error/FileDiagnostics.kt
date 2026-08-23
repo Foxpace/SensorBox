@@ -1,18 +1,16 @@
 package com.motionapps.sensorbox.core.error
 
 import android.content.Context
+import com.motionapps.sensorbox.core.time.ClockFormats
 import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.core.time.SystemEpochClock
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlin.time.Instant
 
 data class DiagnosticMetadata(
     val appVersion: String,
@@ -99,7 +97,7 @@ class FileDiagnostics internal constructor(
     }
 
     private fun DiagnosticEvent.toDiagnosticEntry(): String = buildString {
-        val timestamp = SimpleDateFormat(TIMESTAMP_FORMAT, Locale.US).format(Date(clock.nowMillis()))
+        val timestamp = ClockFormats.diagnosticTimestamp(clock.nowMillis())
         append(timestamp).append(" | ").append(severity).append(" | ").append(code).append(" | ")
             .append(operation.safeText()).appendLine()
         append("message=").append(diagnosticMessage.safeText()).appendLine()
@@ -166,7 +164,6 @@ class FileDiagnostics internal constructor(
         const val FILE_PREFIX = "sensorbox-diagnostics-"
         const val FILE_SUFFIX = ".txt"
         const val EXPORT_FILE_NAME = "sensorbox-diagnostics-export.txt"
-        const val TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         const val ENTRY_SEPARATOR = "---"
         const val NO_DIAGNOSTICS = "No diagnostics have been recorded.\n"
         const val MAX_ENTRY_CHARS = 32_000

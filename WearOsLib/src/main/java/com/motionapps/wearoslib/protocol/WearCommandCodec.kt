@@ -11,7 +11,7 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 
 object WearCommandCodec {
-    const val PROTOCOL_VERSION = 2
+    const val PROTOCOL_VERSION = 3
 
     fun encode(command: WearCommand): AppResult<ByteArray> = validate(command).flatMap {
         appResult(AppErrorCode.CONNECTIVITY, "Encode Wear command") {
@@ -28,7 +28,7 @@ object WearCommandCodec {
 
     fun decode(payload: ByteArray): AppResult<WearCommand> = appResult(
         AppErrorCode.CONNECTIVITY,
-        "Decode Wear protocol v2 command",
+        "Decode Wear protocol v3 command",
     ) {
         DataInputStream(ByteArrayInputStream(payload)).use { input ->
             require(input.readInt() == MAGIC) { "Unsupported Wear protocol magic" }
@@ -40,7 +40,7 @@ object WearCommandCodec {
     private fun validate(command: WearCommand): AppResult<Unit> = if (command.isValid()) {
         AppResult.success(Unit)
     } else {
-        AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear protocol v2 command"))
+        AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear protocol v3 command"))
     }
 
     private fun DataOutputStream.writeCommand(command: WearCommand) {
@@ -104,7 +104,6 @@ object WearCommandCodec {
             writeInt(sensor.type)
             writeUTF(sensor.name)
             writeUTF(sensor.vendor)
-            writeBoolean(sensor.isHeartRate)
         }
     }
 
@@ -152,11 +151,11 @@ object WearCommandCodec {
         val count = readUnsignedByte()
         require(count <= MAX_SENSORS) { "Too many Wear sensors" }
         return WearCommand.SensorList(
-            List(count) { WearSensorInfo(readInt(), readUTF(), readUTF(), readBoolean()) },
+            List(count) { WearSensorInfo(readInt(), readUTF(), readUTF()) },
         )
     }
 
-    private const val MAGIC = 0x53425832
+    private const val MAGIC = 0x53425833
     private const val TYPE_LAUNCH_PHONE = 1
     private const val TYPE_SYNC_MEASUREMENTS = 2
     private const val TYPE_REQUEST_SENSOR_LIST = 3

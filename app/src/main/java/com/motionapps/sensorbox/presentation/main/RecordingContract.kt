@@ -2,6 +2,7 @@ package com.motionapps.sensorbox.presentation.main
 
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.preferences.AppPreferences
+import com.motionapps.sensorbox.domain.measurement.MeasurementRequest
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import com.motionapps.sensorservices.session.MeasurementSessionState
 
@@ -37,7 +38,29 @@ data class RecordingState(
     val isWearConnected: Boolean = false,
     val message: RecordingMessage = RecordingMessage.NONE,
     val errorCode: AppErrorCode? = null,
-)
+) {
+    fun toMeasurementRequest() = MeasurementRequest(
+        sensorIds = selectedSensorIds,
+        includesGps = includesGps,
+        samplingPeriodIndex = preferences.recording.sensorSamplingPeriod,
+        stopOnLowBattery = preferences.recording.restrictMeasurementOnLowBattery,
+        useWakeLock = preferences.recording.useWakeLock,
+        gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
+        gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
+        wearSensorIds = selectedWearSensorIds,
+        wearIncludesGps = wearIncludesGps,
+        customName = customMeasurementName,
+        measurementType = measurementType,
+        delaySeconds = startDelaySeconds,
+        durationSeconds = if (measurementType == "TIMED") durationSeconds.coerceAtLeast(1) else 0,
+        notes = notes.lines().map(String::trim).filter(String::isNotEmpty),
+        alarmOffsetsSeconds = alarmOffsets.split(',', ';', ' ')
+            .mapNotNull(String::toIntOrNull).filter { it >= 0 },
+        activityRecognition = activityRecognition,
+        activityRecognitionPeriodSeconds = activityRecognitionPeriodSeconds,
+        significantMotion = significantMotion,
+    )
+}
 
 sealed interface RecordingIntent {
     data class Navigate(val route: MainRoute) : RecordingIntent

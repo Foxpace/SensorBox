@@ -29,9 +29,6 @@ fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             )
         }
         item { Text(stringResource(R.string.privacy_storage_body)) }
-        item {
-            Text(stringResource(R.string.privacy_heart_rate_body))
-        }
         item { Text(stringResource(R.string.privacy_no_upload_body)) }
     }
 }

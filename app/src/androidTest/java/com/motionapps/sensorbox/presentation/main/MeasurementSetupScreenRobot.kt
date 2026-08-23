@@ -13,7 +13,7 @@ class MeasurementSetupScreenRobot(private val rule: ComposeContentTestRule) {
             SensorBoxTheme {
                 MeasurementSetupScreen(
                     state = RecordingState(
-                        sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture", false)),
+                        sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture")),
                         selectedSensorIds = setOf(1),
                         storagePath = "Fixture/SensorBox",
                     ),

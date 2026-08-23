@@ -7,7 +7,7 @@ import org.junit.Test
 
 class WearCommandCodecTest {
     @Test
-    fun `Given protocol v2 commands When round tripped Then every field survives`() {
+    fun `Given protocol v3 commands When round tripped Then every field survives`() {
         val request = WearRecordingRequest(
             folderName = "shared_session",
             sensorIds = listOf(1, 4, 21),
@@ -19,7 +19,7 @@ class WearCommandCodecTest {
             WearCommand.LaunchPhone,
             WearCommand.SyncMeasurements,
             WearCommand.RequestSensorList,
-            WearCommand.SensorList(listOf(WearSensorInfo(21, "Heart rate", "Fixture", isHeartRate = true))),
+            WearCommand.SensorList(listOf(WearSensorInfo(1, "Accelerometer", "Fixture"))),
             WearCommand.PrepareRecording("session-123", request),
             WearCommand.CommitRecording("session-123", 1_800_000_000_000L),
             WearCommand.AbortRecording("session-123"),
@@ -52,10 +52,24 @@ class WearCommandCodecTest {
     }
 
     @Test
+    fun `Given a protocol v2 header When decoded Then it is rejected`() {
+        val v2Payload = byteArrayOf(0x53, 0x42, 0x58, 0x32, 0x02, 0x01)
+
+        assertTrue(WearCommandCodec.decode(v2Payload).isFailure)
+    }
+
+    @Test
     fun `Given trailing bytes When decoded Then payload is rejected`() {
         val valid = WearCommandCodec.encode(WearCommand.LaunchPhone).getOrThrow()
 
         assertTrue(WearCommandCodec.decode(valid + byteArrayOf(99)).isFailure)
+    }
+
+    @Test
+    fun `Given a truncated v3 payload When decoded Then it is rejected`() {
+        val malformed = byteArrayOf(0x53, 0x42, 0x58, 0x33, 0x03)
+
+        assertTrue(WearCommandCodec.decode(malformed).isFailure)
     }
 
     @Test

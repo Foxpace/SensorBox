@@ -43,17 +43,6 @@
             </intent-filter>
         </activity>
 
-        <activity-alias
-            android:name=".HealthPermissionRationaleActivity"
-            android:exported="true"
-            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
-            android:targetActivity=".activities.MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-            </intent-filter>
-        </activity-alias>
-
         <service
             android:name=".MsgListener"
             android:exported="true">
@@ -61,7 +50,7 @@
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/sensorbox/v2/phone"
+                    android:pathPrefix="/sensorbox/v3/phone"
                     android:scheme="wear" />
             </intent-filter>
             <intent-filter>

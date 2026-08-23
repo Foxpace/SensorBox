@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.motionapps.sensorbox.core.time.SystemEpochClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.motionapps.sensorservices.intent.MeasurementIntentFactory
@@ -51,7 +52,7 @@ class PhoneSensorRecordingEmulatorTest {
     private fun hasAccelerometer(): Boolean = context.getSystemService(SensorManager::class.java)
         .getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
 
-    private fun recordingIntent(): Intent = MeasurementIntentFactory(context).create(
+    private fun recordingIntent(): Intent = MeasurementIntentFactory(context, SystemEpochClock).create(
         MeasurementLaunchRequest(
             folderName = MEASUREMENT_NAME,
             useInternalStorage = true,

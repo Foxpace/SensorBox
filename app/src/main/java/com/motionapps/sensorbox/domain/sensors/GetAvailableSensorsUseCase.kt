@@ -11,7 +11,7 @@ class GetAvailableSensorsUseCase @Inject constructor(@ApplicationContext context
 
     operator fun invoke(): List<SensorDescriptor> = sensorManager
         .getSensorList(Sensor.TYPE_ALL)
-        .filter { it.type in SUPPORTED_SENSOR_TYPES }
+        .filter { it.type in PHONE_SENSOR_TYPES }
         .distinctBy(Sensor::getType)
         .map { it.toDescriptor() }
         .sortedBy(SensorDescriptor::name)
@@ -20,7 +20,6 @@ class GetAvailableSensorsUseCase @Inject constructor(@ApplicationContext context
         type = type,
         name = name,
         vendor = vendor,
-        isHeartRate = type == Sensor.TYPE_HEART_RATE,
         version = version,
         stringType = stringType,
         maximumRange = maximumRange,
@@ -28,26 +27,31 @@ class GetAvailableSensorsUseCase @Inject constructor(@ApplicationContext context
         power = power,
         minimumDelayMicros = minDelay,
         maximumDelayMicros = maxDelay,
-        reportingMode = reportingMode,
+        reportingMode = reportingMode.toSensorReportingMode(),
         isWakeUpSensor = isWakeUpSensor,
     )
+}
 
-    private companion object {
-        val SUPPORTED_SENSOR_TYPES = setOf(
-            Sensor.TYPE_ACCELEROMETER,
-            Sensor.TYPE_AMBIENT_TEMPERATURE,
-            Sensor.TYPE_GRAVITY,
-            Sensor.TYPE_GYROSCOPE,
-            Sensor.TYPE_HEART_RATE,
-            Sensor.TYPE_LIGHT,
-            Sensor.TYPE_LINEAR_ACCELERATION,
-            Sensor.TYPE_MAGNETIC_FIELD,
-            Sensor.TYPE_PRESSURE,
-            Sensor.TYPE_PROXIMITY,
-            Sensor.TYPE_RELATIVE_HUMIDITY,
-            Sensor.TYPE_ROTATION_VECTOR,
-            Sensor.TYPE_STEP_COUNTER,
-            Sensor.TYPE_STEP_DETECTOR,
-        )
-    }
+internal val PHONE_SENSOR_TYPES = setOf(
+    Sensor.TYPE_ACCELEROMETER,
+    Sensor.TYPE_AMBIENT_TEMPERATURE,
+    Sensor.TYPE_GRAVITY,
+    Sensor.TYPE_GYROSCOPE,
+    Sensor.TYPE_LIGHT,
+    Sensor.TYPE_LINEAR_ACCELERATION,
+    Sensor.TYPE_MAGNETIC_FIELD,
+    Sensor.TYPE_PRESSURE,
+    Sensor.TYPE_PROXIMITY,
+    Sensor.TYPE_RELATIVE_HUMIDITY,
+    Sensor.TYPE_ROTATION_VECTOR,
+    Sensor.TYPE_STEP_COUNTER,
+    Sensor.TYPE_STEP_DETECTOR,
+)
+
+internal fun Int.toSensorReportingMode(): SensorReportingMode = when (this) {
+    Sensor.REPORTING_MODE_CONTINUOUS -> SensorReportingMode.CONTINUOUS
+    Sensor.REPORTING_MODE_ON_CHANGE -> SensorReportingMode.ON_CHANGE
+    Sensor.REPORTING_MODE_ONE_SHOT -> SensorReportingMode.ONE_SHOT
+    Sensor.REPORTING_MODE_SPECIAL_TRIGGER -> SensorReportingMode.SPECIAL_TRIGGER
+    else -> SensorReportingMode.UNKNOWN
 }

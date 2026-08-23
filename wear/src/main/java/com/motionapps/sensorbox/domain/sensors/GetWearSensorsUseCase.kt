@@ -11,7 +11,7 @@ class GetWearSensorsUseCase @Inject constructor(@ApplicationContext context: Con
 
     operator fun invoke(): List<WearSensorDescriptor> = sensorManager
         .getSensorList(Sensor.TYPE_ALL)
-        .filter { it.type in SUPPORTED_SENSOR_TYPES }
+        .filter { it.type in WEAR_SENSOR_TYPES }
         .distinctBy(Sensor::getType)
         .map { sensor -> sensor.toDescriptor() }
         .sortedBy(WearSensorDescriptor::name)
@@ -20,25 +20,21 @@ class GetWearSensorsUseCase @Inject constructor(@ApplicationContext context: Con
         type = type,
         name = name,
         vendor = vendor,
-        isHeartRate = type == Sensor.TYPE_HEART_RATE,
     )
-
-    private companion object {
-        val SUPPORTED_SENSOR_TYPES = setOf(
-            Sensor.TYPE_ACCELEROMETER,
-            Sensor.TYPE_AMBIENT_TEMPERATURE,
-            Sensor.TYPE_GRAVITY,
-            Sensor.TYPE_GYROSCOPE,
-            Sensor.TYPE_HEART_RATE,
-            Sensor.TYPE_LIGHT,
-            Sensor.TYPE_LINEAR_ACCELERATION,
-            Sensor.TYPE_MAGNETIC_FIELD,
-            Sensor.TYPE_PRESSURE,
-            Sensor.TYPE_PROXIMITY,
-            Sensor.TYPE_RELATIVE_HUMIDITY,
-            Sensor.TYPE_ROTATION_VECTOR,
-            Sensor.TYPE_STEP_COUNTER,
-            Sensor.TYPE_STEP_DETECTOR,
-        )
-    }
 }
+
+internal val WEAR_SENSOR_TYPES = setOf(
+    Sensor.TYPE_ACCELEROMETER,
+    Sensor.TYPE_AMBIENT_TEMPERATURE,
+    Sensor.TYPE_GRAVITY,
+    Sensor.TYPE_GYROSCOPE,
+    Sensor.TYPE_LIGHT,
+    Sensor.TYPE_LINEAR_ACCELERATION,
+    Sensor.TYPE_MAGNETIC_FIELD,
+    Sensor.TYPE_PRESSURE,
+    Sensor.TYPE_PROXIMITY,
+    Sensor.TYPE_RELATIVE_HUMIDITY,
+    Sensor.TYPE_ROTATION_VECTOR,
+    Sensor.TYPE_STEP_COUNTER,
+    Sensor.TYPE_STEP_DETECTOR,
+)

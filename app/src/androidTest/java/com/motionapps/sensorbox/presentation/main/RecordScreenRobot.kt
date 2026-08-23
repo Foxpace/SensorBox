@@ -18,7 +18,7 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
             SensorBoxTheme {
                 RecordScreen(
                     state = RecordingState(
-                        sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture", false)),
+                        sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture")),
                         selectedSensorIds = if (selected) setOf(1) else emptySet(),
                         includesGps = gpsSelected,
                         storagePath = "Fixture/SensorBox",

@@ -29,6 +29,7 @@ import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.core.format.ValueFormats
 import com.motionapps.sensorbox.domain.sensors.WearSensorDescriptor
 import com.motionapps.sensorbox.presentation.menu.WearMenuScreen
 import com.motionapps.sensorbox.presentation.menu.WearMenuState
@@ -107,7 +108,7 @@ private fun WearLiveScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(selected.name)
-            Text(state.latestValue?.let { "%.2f".format(it) } ?: stringResource(R.string.waiting))
+            Text(state.latestValue?.let { ValueFormats.decimal(it) } ?: stringResource(R.string.waiting))
             CartesianChartHost(
                 chart = rememberCartesianChart(rememberLineCartesianLayer()),
                 modelProducer = chartModelProducer,

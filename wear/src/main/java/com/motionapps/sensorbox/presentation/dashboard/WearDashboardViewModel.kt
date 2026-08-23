@@ -86,10 +86,7 @@ class WearDashboardViewModel @Inject constructor(
             mutableState.value = state.copy(message = WearDashboardMessage.PickSource)
             return
         }
-        val includesHeartRate = state.sensors.any {
-            it.type in state.selectedSensorIds && it.isHeartRate
-        }
-        val missing = permissionUseCase(state.includesGps, includesHeartRate)
+        val missing = permissionUseCase(state.includesGps)
         if (missing.isEmpty()) startMeasurement() else requestPermissions(missing)
     }
 

@@ -9,15 +9,13 @@ import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
+import com.motionapps.sensorbox.core.time.ClockFormats
 import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.serviceController.MeasurementConfig
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /** Collects session metadata and writes it once when the recording is closed. */
 internal class ExtraInfoHandler(private val storage: MeasurementStorage, private val clock: EpochClock) {
@@ -54,7 +52,7 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
                 millis = startedAtMillis,
                 nanos = startedAtNanos,
                 type = active.measurementType,
-                date = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date(startedAtMillis)),
+                date = ClockFormats.metadataTimestamp(startedAtMillis),
                 folder = active.folderName,
                 notes = active.notes,
                 annotations = annotations.toList(),
@@ -95,7 +93,6 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
     }
 
     private companion object {
-        const val DATE_FORMAT = "dd. MM. yyyy HH:mm:ss"
         const val EXTRA_FILE = "extra.json"
         val JSON = Json {
             prettyPrint = true

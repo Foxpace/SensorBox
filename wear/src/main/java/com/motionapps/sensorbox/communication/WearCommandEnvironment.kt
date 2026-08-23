@@ -1,6 +1,5 @@
 package com.motionapps.sensorbox.communication
 
-import android.hardware.Sensor
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
@@ -29,8 +28,7 @@ class AndroidWearCommandEnvironment @Inject constructor(
         if (!availableSensorIds.containsAll(request.sensorIds)) {
             return AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear recording sensors"))
         }
-        val includesHeartRate = Sensor.TYPE_HEART_RATE in request.sensorIds
-        val missingPermissions = measurementPermissions(request.includesGps, includesHeartRate)
+        val missingPermissions = measurementPermissions(request.includesGps)
         if (missingPermissions.isNotEmpty()) {
             return AppResult.failure(AppError(AppErrorCode.PERMISSION, "Prepare Wear recording permissions"))
         }
@@ -38,6 +36,6 @@ class AndroidWearCommandEnvironment @Inject constructor(
     }
 
     override fun sensors(): List<WearSensorInfo> = getWearSensors().map { sensor ->
-        WearSensorInfo(sensor.type, sensor.name, sensor.vendor, sensor.isHeartRate)
+        WearSensorInfo(sensor.type, sensor.name, sensor.vendor)
     }
 }
