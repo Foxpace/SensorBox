@@ -16,7 +16,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.motionapps.sensorbox.R
-import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.presentation.dashboard.WearDashboardEffect
 import com.motionapps.sensorbox.presentation.dashboard.WearDashboardIntent
@@ -66,14 +66,14 @@ class MainActivity : ComponentActivity() {
     private fun handleEffect(effect: WearDashboardEffect) {
         when (effect) {
             is WearDashboardEffect.RequestPermissions -> appResult(
-                AppError.Kind.PERMISSION,
+                AppErrorCode.PERMISSION,
                 "Request Wear permissions",
             ) {
                 permissions.launch(effect.permissions.toTypedArray())
             }
 
             WearDashboardEffect.OpenPhone -> appResult(
-                AppError.Kind.EXTERNAL_ACTION,
+                AppErrorCode.EXTERNAL_ACTION,
                 "Open phone launcher",
             ) { startActivity(Intent(this, MoveToMain::class.java)) }
 
@@ -89,12 +89,12 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(Intent.ACTION_VIEW)
             .addCategory(Intent.CATEGORY_BROWSABLE)
             .setData(url.toUri())
-        appResult(AppError.Kind.EXTERNAL_ACTION, "Request phone browser") {
+        appResult(AppErrorCode.EXTERNAL_ACTION, "Request phone browser") {
             RemoteActivityHelper(this).startRemoteActivity(intent)
         }.onSuccess { request ->
             request.addListener(
                 {
-                    appResult(AppError.Kind.EXTERNAL_ACTION, "Open phone browser") { request.get() }
+                    appResult(AppErrorCode.EXTERNAL_ACTION, "Open phone browser") { request.get() }
                         .fold(
                             onSuccess = {
                                 Toast.makeText(this, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
