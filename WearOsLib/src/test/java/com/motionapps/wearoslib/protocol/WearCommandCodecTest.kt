@@ -13,7 +13,6 @@ class WearCommandCodecTest {
             sensorIds = listOf(1, 4, 21),
             includesGps = true,
             durationMillis = 45_000L,
-            measurementType = "TIMED",
         )
         val commands = listOf(
             WearCommand.LaunchPhone,

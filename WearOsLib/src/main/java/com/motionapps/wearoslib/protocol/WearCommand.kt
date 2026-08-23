@@ -33,7 +33,6 @@ data class WearRecordingRequest(
     val sensorIds: List<Int>,
     val includesGps: Boolean,
     val durationMillis: Long = 0L,
-    val measurementType: String = "ENDLESS",
 )
 
 enum class WearSessionCommand {

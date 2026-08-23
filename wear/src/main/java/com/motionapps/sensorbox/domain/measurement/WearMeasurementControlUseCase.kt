@@ -46,7 +46,6 @@ class WearMeasurementControlUseCase @Inject constructor(
         folderName = request.folderName,
         startAtEpochMillis = startAtEpochMillis,
         durationMillis = request.durationMillis,
-        measurementType = request.measurementType,
     )
 
     fun start(
@@ -57,7 +56,6 @@ class WearMeasurementControlUseCase @Inject constructor(
         folderName: String = intentFactory.newFolderName(),
         startAtEpochMillis: Long = clock.nowMillis(),
         durationMillis: Long = 0L,
-        measurementType: String = "ENDLESS",
     ): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Request Wear measurement start") {
         val request = MeasurementLaunchRequest(
             sessionId = sessionId,
@@ -70,7 +68,6 @@ class WearMeasurementControlUseCase @Inject constructor(
             useWakeLock = preferences.recording.useWakeLock,
             gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
             gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
-            measurementType = measurementType,
             startAtEpochMillis = startAtEpochMillis,
             durationMillis = durationMillis,
         )

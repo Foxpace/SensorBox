@@ -53,7 +53,7 @@ class AndroidPhoneRecordingController @Inject constructor(
                             sessionId = sessionId,
                             launchRequest = request.toLaunchRequest(
                                 sessionId,
-                                intentFactory.newFolderName(request.customName, request.measurementType),
+                                intentFactory.newFolderName(request.customName),
                             ),
                         ),
                     )

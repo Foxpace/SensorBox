@@ -84,7 +84,6 @@ object WearCommandCodec {
         writeByte(command.request.sensorIds.size)
         command.request.sensorIds.forEach(::writeInt)
         writeLong(command.request.durationMillis)
-        writeUTF(command.request.measurementType)
     }
 
     private fun DataOutputStream.writeAcknowledgement(command: WearCommand.Acknowledgement) {
@@ -134,7 +133,6 @@ object WearCommandCodec {
                 sensorIds = sensorIds,
                 includesGps = includesGps,
                 durationMillis = readLong(),
-                measurementType = readUTF(),
             ),
         )
     }
@@ -169,7 +167,6 @@ object WearCommandCodec {
 
 private const val MAX_SENSORS = 64
 private const val MAX_FOLDER_LENGTH = 100
-private const val MAX_TYPE_LENGTH = 32
 private const val MAX_SENSOR_TEXT_LENGTH = 100
 private const val MAX_SESSION_ID_LENGTH = 128
 
@@ -199,8 +196,7 @@ private fun WearCommand.PrepareRecording.isValid(): Boolean = validSessionId(ses
     request.folderName.isNotBlank() &&
     request.folderName.length <= MAX_FOLDER_LENGTH &&
     request.sensorIds.size <= MAX_SENSORS &&
-    request.durationMillis >= 0L &&
-    request.measurementType.length <= MAX_TYPE_LENGTH
+    request.durationMillis >= 0L
 
 private fun WearCommand.Acknowledgement.isValid(): Boolean = validSessionId(sessionId) &&
     failureCount >= 0 &&

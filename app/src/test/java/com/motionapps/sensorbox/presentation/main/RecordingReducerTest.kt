@@ -43,13 +43,21 @@ class RecordingReducerTest {
     }
 
     @Test
-    fun `Given endless mode When timed mode is selected Then timing configuration is retained`() {
-        val givenState = RecordingStateFixtures.state().copy(durationSeconds = 60)
+    fun `Given a negative start delay When changed Then it is clamped to zero`() {
+        val givenState = RecordingStateFixtures.state()
 
-        val actual = RecordingReducer.reduce(givenState, RecordingIntent.SetMeasurementType("TIMED"))
+        val actual = RecordingReducer.reduce(givenState, RecordingIntent.SetStartDelay(-1))
 
-        assertEquals("TIMED", actual.state.measurementType)
-        assertEquals(60, actual.state.durationSeconds)
+        assertEquals(0, actual.state.startDelaySeconds)
+    }
+
+    @Test
+    fun `Given a negative duration When changed Then it is clamped to zero`() {
+        val givenState = RecordingStateFixtures.state()
+
+        val actual = RecordingReducer.reduce(givenState, RecordingIntent.SetDuration(-1))
+
+        assertEquals(0, actual.state.durationSeconds)
     }
 
     @Test

@@ -23,7 +23,6 @@ data class RecordingState(
     val selectedWearSensorIds: Set<Int> = emptySet(),
     val wearIncludesGps: Boolean = false,
     val customMeasurementName: String = "",
-    val measurementType: String = "ENDLESS",
     val startDelaySeconds: Int = 0,
     val durationSeconds: Int = 0,
     val notes: String = "",
@@ -50,9 +49,8 @@ data class RecordingState(
         wearSensorIds = selectedWearSensorIds,
         wearIncludesGps = wearIncludesGps,
         customName = customMeasurementName,
-        measurementType = measurementType,
         delaySeconds = startDelaySeconds,
-        durationSeconds = if (measurementType == "TIMED") durationSeconds.coerceAtLeast(1) else 0,
+        durationSeconds = durationSeconds.coerceAtLeast(0),
         notes = notes.lines().map(String::trim).filter(String::isNotEmpty),
         alarmOffsetsSeconds = alarmOffsets.split(',', ';', ' ')
             .mapNotNull(String::toIntOrNull).filter { it >= 0 },
@@ -76,7 +74,6 @@ sealed interface RecordingIntent {
     data object StopMeasurement : RecordingIntent
     data object ClearMessage : RecordingIntent
     data class SetCustomMeasurementName(val value: String) : RecordingIntent
-    data class SetMeasurementType(val value: String) : RecordingIntent
     data class SetStartDelay(val seconds: Int) : RecordingIntent
     data class SetDuration(val seconds: Int) : RecordingIntent
     data class SetNotes(val value: String) : RecordingIntent
@@ -140,8 +137,6 @@ object RecordingReducer {
 
     private fun reduceConfiguration(state: RecordingState, intent: RecordingIntent): RecordingNext = when (intent) {
         is RecordingIntent.SetCustomMeasurementName -> RecordingNext(state.copy(customMeasurementName = intent.value))
-
-        is RecordingIntent.SetMeasurementType -> RecordingNext(state.copy(measurementType = intent.value))
 
         is RecordingIntent.SetStartDelay -> RecordingNext(
             state.copy(startDelaySeconds = intent.seconds.coerceAtLeast(0)),

@@ -12,8 +12,7 @@ class RecordingStateConversionTest {
             selectedSensorIds = setOf(1),
             includesGps = true,
             customMeasurementName = "walk",
-            measurementType = "TIMED",
-            durationSeconds = 0,
+            durationSeconds = -1,
             notes = " first \n\n second ",
             alarmOffsets = "10, bad; -2 30",
             preferences = AppPreferences(
@@ -28,7 +27,7 @@ class RecordingStateConversionTest {
         val request = state.toMeasurementRequest()
 
         assertEquals(setOf(1), request.sensorIds)
-        assertEquals(1, request.durationSeconds)
+        assertEquals(0, request.durationSeconds)
         assertEquals(listOf("first", "second"), request.notes)
         assertEquals(listOf(10, 30), request.alarmOffsetsSeconds)
         assertEquals(3, request.samplingPeriodIndex)

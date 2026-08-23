@@ -31,7 +31,7 @@ internal class ServiceController(
         sources = androidSources.sources,
         scope = scope,
         clock = RecordingClock(clock::nowMillis),
-        delay = RecordingDelay { durationMillis -> delay(durationMillis) },
+        delay = RecordingDelay { delayMillis -> delay(delayMillis) },
     )
 
     val events: SharedFlow<RecordingEvent> = engine.events

@@ -17,5 +17,5 @@ fun interface RecordingClock {
 }
 
 fun interface RecordingDelay {
-    suspend fun pause(durationMillis: Long)
+    suspend fun pause(delayMillis: Long)
 }

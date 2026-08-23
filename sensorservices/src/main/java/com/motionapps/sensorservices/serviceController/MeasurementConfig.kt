@@ -16,7 +16,6 @@ data class MeasurementConfig(
     val useWakeLock: Boolean,
     val gpsIntervalSeconds: Int,
     val gpsMinDistanceMeters: Int,
-    val measurementType: String,
     val startAtEpochMillis: Long,
     val durationMillis: Long,
     val notes: List<String>,
@@ -40,7 +39,6 @@ data class MeasurementConfig(
             useWakeLock = intent.getBooleanExtra(MeasurementService.USE_WAKE_LOCK, false),
             gpsIntervalSeconds = intent.getIntExtra(MeasurementService.GPS_INTERVAL_SECONDS, 10),
             gpsMinDistanceMeters = intent.getIntExtra(MeasurementService.GPS_DISTANCE_METERS, 20),
-            measurementType = intent.getStringExtra(MeasurementService.MEASUREMENT_TYPE) ?: "ENDLESS",
             startAtEpochMillis = intent.getLongExtra(
                 MeasurementService.START_AT_EPOCH_MILLIS,
                 clock.nowMillis(),

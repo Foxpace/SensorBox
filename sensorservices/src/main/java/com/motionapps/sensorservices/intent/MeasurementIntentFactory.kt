@@ -23,7 +23,6 @@ class MeasurementIntentFactory @Inject constructor(
         putExtra(MeasurementService.USE_WAKE_LOCK, request.useWakeLock)
         putExtra(MeasurementService.GPS_INTERVAL_SECONDS, request.gpsIntervalSeconds)
         putExtra(MeasurementService.GPS_DISTANCE_METERS, request.gpsMinDistanceMeters)
-        putExtra(MeasurementService.MEASUREMENT_TYPE, request.measurementType)
         putExtra(MeasurementService.START_AT_EPOCH_MILLIS, request.startAtEpochMillis)
         putExtra(MeasurementService.DURATION_MILLIS, request.durationMillis)
         putStringArrayListExtra(MeasurementService.NOTES, ArrayList(request.notes))
@@ -33,9 +32,9 @@ class MeasurementIntentFactory @Inject constructor(
         putExtra(MeasurementService.SIGNIFICANT_MOTION, request.significantMotion)
     }
 
-    fun newFolderName(customName: String = "", measurementType: String = "ENDLESS"): String {
+    fun newFolderName(customName: String = ""): String {
         val prefix = customName.trim().replace(INVALID_NAME_CHARS, "_").trim('_').take(MAX_PREFIX_LENGTH)
-            .ifBlank { if (measurementType == "TIMED") "timed" else "recording" }
+            .ifBlank { "recording" }
         val timestamp = ClockFormats.folderTimestamp(clock.nowMillis())
         return "${prefix}_$timestamp"
     }

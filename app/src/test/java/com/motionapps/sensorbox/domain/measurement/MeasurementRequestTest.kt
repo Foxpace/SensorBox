@@ -15,7 +15,6 @@ class MeasurementRequestTest {
             useWakeLock = true,
             gpsIntervalSeconds = 12,
             gpsMinDistanceMeters = 3,
-            measurementType = "TIMED",
             durationSeconds = 45,
             notes = listOf("note"),
             alarmOffsetsSeconds = listOf(5),

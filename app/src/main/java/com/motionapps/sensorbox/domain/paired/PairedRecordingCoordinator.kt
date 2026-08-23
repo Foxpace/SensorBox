@@ -206,7 +206,6 @@ class PairedRecordingCoordinator @Inject constructor(
         sensorIds = request.wearSensorIds.sorted(),
         includesGps = request.wearIncludesGps,
         durationMillis = launchRequest.durationMillis,
-        measurementType = launchRequest.measurementType,
     )
 
     private fun WearCommand.Acknowledgement.toResult(retryCount: Int): AppResult<Unit> =

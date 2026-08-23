@@ -51,7 +51,7 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
             MeasurementMetadata(
                 millis = startedAtMillis,
                 nanos = startedAtNanos,
-                type = active.measurementType,
+                type = RECORDING_TYPE,
                 date = ClockFormats.metadataTimestamp(startedAtMillis),
                 folder = active.folderName,
                 notes = active.notes,
@@ -94,6 +94,7 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
 
     private companion object {
         const val EXTRA_FILE = "extra.json"
+        const val RECORDING_TYPE = "RECORDING"
         val JSON = Json {
             prettyPrint = true
             prettyPrintIndent = "  "

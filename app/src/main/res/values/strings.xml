@@ -114,8 +114,6 @@
     <string name="start_measurement">Start measurement</string>
     <string name="custom_measurement_name">Measurement name</string>
     <string name="custom_measurement_name_description">Optional folder-name prefix</string>
-    <string name="timed_measurement">Timed measurement</string>
-    <string name="timed_measurement_description">Stop and save automatically after a duration</string>
     <string name="start_delay">Start delay</string>
     <string name="measurement_duration">Duration</string>
     <string name="measurement_notes">Notes</string>
