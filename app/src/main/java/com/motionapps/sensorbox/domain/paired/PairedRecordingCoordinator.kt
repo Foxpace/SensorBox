@@ -6,6 +6,7 @@ import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.toDiagnosticEvent
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.domain.measurement.MeasurementRequest
 import com.motionapps.sensorbox.domain.measurement.PhoneRecordingController
 import com.motionapps.sensorbox.domain.measurement.PreparedPhoneRecording
@@ -40,6 +41,7 @@ class PairedRecordingCoordinator @Inject constructor(
     private val acknowledgementInbox: WearAcknowledgementInbox,
     private val sessionIdFactory: RecordingSessionIdFactory,
     private val diagnosticLogger: DiagnosticLogger,
+    private val clock: EpochClock,
 ) {
     private val mutex = Mutex()
     private val mutableSession = MutableStateFlow<PairedRecordingSession?>(null)
@@ -93,7 +95,7 @@ class PairedRecordingCoordinator @Inject constructor(
 
     private suspend fun commitBoth(preparation: PairedPreparation, request: MeasurementRequest): AppResult<Unit> {
         val sessionId = preparation.prepared.sessionId
-        val startAtEpochMillis = System.currentTimeMillis() + request.delaySeconds.coerceAtLeast(0) * 1_000L +
+        val startAtEpochMillis = clock.nowMillis() + request.delaySeconds.coerceAtLeast(0) * 1_000L +
             if (preparation.controlsWear) PAIRED_START_LEAD_MILLIS else 0L
         val local = localController.commit(preparation.prepared, startAtEpochMillis)
         if (local is AppResult.Failure) {

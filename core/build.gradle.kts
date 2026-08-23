@@ -28,7 +28,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.documentfile)
     implementation(libs.coroutines.core)
+    implementation(libs.kotlinx.datetime)
 
     testFixturesImplementation(libs.coroutines.core)
+    testImplementation(libs.coroutines.test)
     testImplementation(libs.junit)
 }

@@ -4,10 +4,12 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import com.motionapps.sensorbox.core.error.CompositeDiagnosticLogger
 import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.DiagnosticMetadata
 import com.motionapps.sensorbox.core.error.DiagnosticsStore
 import com.motionapps.sensorbox.core.error.FileDiagnostics
+import com.motionapps.sensorbox.core.error.LogcatDiagnosticLogger
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,7 +42,8 @@ object DiagnosticsModule {
     )
 
     @Provides
-    fun provideDiagnosticLogger(diagnostics: FileDiagnostics): DiagnosticLogger = diagnostics
+    fun provideDiagnosticLogger(diagnostics: FileDiagnostics): DiagnosticLogger =
+        CompositeDiagnosticLogger(diagnostics, LogcatDiagnosticLogger())
 
     @Provides
     fun provideDiagnosticsStore(diagnostics: FileDiagnostics): DiagnosticsStore = diagnostics

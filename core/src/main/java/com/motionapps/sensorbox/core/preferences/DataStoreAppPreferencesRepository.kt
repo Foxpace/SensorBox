@@ -1,6 +1,7 @@
 package com.motionapps.sensorbox.core.preferences
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -9,7 +10,6 @@ import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.suspendAppResult
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -18,7 +18,6 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
     override val preferences: Flow<AppResult<AppPreferences>> = dataStore.data
         .map { values -> AppResult.success(values.toAppPreferences()) }
         .catch { error ->
-            if (error is CancellationException) throw error
             emit(AppResult.failure(AppError.from(AppErrorCode.PREFERENCES, "Read preferences", error)))
         }
 
@@ -33,27 +32,33 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
     }
 
     private fun Preferences.toAppPreferences(): AppPreferences = AppPreferences(
-        hasCompletedIntro = this[Keys.COMPLETED_INTRO] ?: false,
-        hasAcceptedPolicy = this[Keys.ACCEPTED_POLICY] ?: false,
-        gpsIntervalSeconds = this[Keys.GPS_INTERVAL] ?: 10,
-        gpsMinDistanceMeters = this[Keys.GPS_DISTANCE] ?: 20,
-        sensorSamplingPeriod = this[Keys.SAMPLING_PERIOD] ?: 0,
-        restrictMeasurementOnLowBattery = this[Keys.LOW_BATTERY] ?: true,
-        useWakeLock = this[Keys.WAKE_LOCK] ?: false,
-        keepPhoneDisplayOn = this[Keys.KEEP_PHONE_DISPLAY_ON] ?: false,
-        keepWearDisplayOn = this[Keys.KEEP_DISPLAY_ON] ?: false,
+        onboarding = OnboardingPreferences(
+            hasCompletedIntro = this[Keys.COMPLETED_INTRO] ?: false,
+            hasAcceptedPolicy = this[Keys.ACCEPTED_POLICY] ?: false,
+        ),
+        recording = RecordingPreferences(
+            gpsIntervalSeconds = this[Keys.GPS_INTERVAL] ?: 10,
+            gpsMinDistanceMeters = this[Keys.GPS_DISTANCE] ?: 20,
+            sensorSamplingPeriod = this[Keys.SAMPLING_PERIOD] ?: 0,
+            restrictMeasurementOnLowBattery = this[Keys.LOW_BATTERY] ?: true,
+            useWakeLock = this[Keys.WAKE_LOCK] ?: false,
+        ),
+        display = DisplayPreferences(
+            keepPhoneDisplayOn = this[Keys.KEEP_PHONE_DISPLAY_ON] ?: false,
+            keepWearDisplayOn = this[Keys.KEEP_DISPLAY_ON] ?: false,
+        ),
     )
 
-    private fun androidx.datastore.preferences.core.MutablePreferences.write(value: AppPreferences) {
-        this[Keys.COMPLETED_INTRO] = value.hasCompletedIntro
-        this[Keys.ACCEPTED_POLICY] = value.hasAcceptedPolicy
-        this[Keys.GPS_INTERVAL] = value.gpsIntervalSeconds
-        this[Keys.GPS_DISTANCE] = value.gpsMinDistanceMeters
-        this[Keys.SAMPLING_PERIOD] = value.sensorSamplingPeriod
-        this[Keys.LOW_BATTERY] = value.restrictMeasurementOnLowBattery
-        this[Keys.WAKE_LOCK] = value.useWakeLock
-        this[Keys.KEEP_PHONE_DISPLAY_ON] = value.keepPhoneDisplayOn
-        this[Keys.KEEP_DISPLAY_ON] = value.keepWearDisplayOn
+    private fun MutablePreferences.write(value: AppPreferences) {
+        this[Keys.COMPLETED_INTRO] = value.onboarding.hasCompletedIntro
+        this[Keys.ACCEPTED_POLICY] = value.onboarding.hasAcceptedPolicy
+        this[Keys.GPS_INTERVAL] = value.recording.gpsIntervalSeconds
+        this[Keys.GPS_DISTANCE] = value.recording.gpsMinDistanceMeters
+        this[Keys.SAMPLING_PERIOD] = value.recording.sensorSamplingPeriod
+        this[Keys.LOW_BATTERY] = value.recording.restrictMeasurementOnLowBattery
+        this[Keys.WAKE_LOCK] = value.recording.useWakeLock
+        this[Keys.KEEP_PHONE_DISPLAY_ON] = value.display.keepPhoneDisplayOn
+        this[Keys.KEEP_DISPLAY_ON] = value.display.keepWearDisplayOn
     }
 
     private object Keys {

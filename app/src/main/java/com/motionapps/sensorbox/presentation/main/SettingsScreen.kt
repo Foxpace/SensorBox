@@ -64,7 +64,7 @@ fun SettingsScreen(
             SensorBoxTopAppBar(stringResource(R.string.measurement_settings), onBack)
         }
         item {
-            SamplingSetting(state.preferences.sensorSamplingPeriod) { index ->
+            SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
                 onIntent(SettingsIntent.SetSamplingPeriod(index))
             }
         }
@@ -170,22 +170,22 @@ private fun GpsSettings(state: SettingsState, onIntent: (SettingsIntent) -> Unit
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NumberPickerSetting(
             stringResource(R.string.gps_interval),
-            state.preferences.gpsIntervalSeconds,
+            state.preferences.recording.gpsIntervalSeconds,
             pluralStringResource(
                 R.plurals.seconds_count,
-                state.preferences.gpsIntervalSeconds,
-                state.preferences.gpsIntervalSeconds,
+                state.preferences.recording.gpsIntervalSeconds,
+                state.preferences.recording.gpsIntervalSeconds,
             ),
             1,
             3_600,
         ) { onIntent(SettingsIntent.SetGpsInterval(it)) }
         NumberPickerSetting(
             stringResource(R.string.gps_minimum_distance),
-            state.preferences.gpsMinDistanceMeters,
+            state.preferences.recording.gpsMinDistanceMeters,
             pluralStringResource(
                 R.plurals.meters_count,
-                state.preferences.gpsMinDistanceMeters,
-                state.preferences.gpsMinDistanceMeters,
+                state.preferences.recording.gpsMinDistanceMeters,
+                state.preferences.recording.gpsMinDistanceMeters,
             ),
             0,
             10_000,
@@ -265,7 +265,7 @@ private fun BatteryGuardSetting(state: SettingsState, onIntent: (SettingsIntent)
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_settings_description),
-        checked = state.preferences.restrictMeasurementOnLowBattery,
+        checked = state.preferences.recording.restrictMeasurementOnLowBattery,
     ) { onIntent(SettingsIntent.SetLowBatteryRestriction(it)) }
 }
 
@@ -274,7 +274,7 @@ private fun CpuWakeLockSetting(state: SettingsState, onIntent: (SettingsIntent) 
     BooleanSetting(
         title = stringResource(R.string.keep_cpu_awake),
         description = stringResource(R.string.keep_cpu_awake_settings_description),
-        checked = state.preferences.useWakeLock,
+        checked = state.preferences.recording.useWakeLock,
     ) { onIntent(SettingsIntent.SetWakeLock(it)) }
 }
 
@@ -283,7 +283,7 @@ private fun ScreenAwakeSetting(state: SettingsState, onIntent: (SettingsIntent) 
     BooleanSetting(
         title = stringResource(R.string.keep_screen_awake),
         description = stringResource(R.string.keep_screen_awake_settings_description),
-        checked = state.preferences.keepPhoneDisplayOn,
+        checked = state.preferences.display.keepPhoneDisplayOn,
     ) { onIntent(SettingsIntent.SetKeepScreenAwake(it)) }
 }
 

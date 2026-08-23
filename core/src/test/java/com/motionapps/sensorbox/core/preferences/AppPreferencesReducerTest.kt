@@ -15,7 +15,7 @@ class AppPreferencesReducerTest {
             intent = AppPreferencesIntent.CompleteIntro,
         )
 
-        assertTrue(actual.hasCompletedIntro)
+        assertTrue(actual.onboarding.hasCompletedIntro)
     }
 
     @Test
@@ -27,30 +27,34 @@ class AppPreferencesReducerTest {
             intent = AppPreferencesIntent.SetGpsInterval(seconds = 0),
         )
 
-        assertEquals(1, actual.gpsIntervalSeconds)
+        assertEquals(1, actual.recording.gpsIntervalSeconds)
     }
 
     @Test
     fun `Given battery protection enabled When disabled Then the preference changes`() {
-        val givenPreferences = AppPreferencesFixtures.preferences().copy(restrictMeasurementOnLowBattery = true)
+        val original = AppPreferencesFixtures.preferences()
+        val givenPreferences = original.copy(
+            recording = original.recording.copy(restrictMeasurementOnLowBattery = true),
+        )
 
         val actual = AppPreferencesReducer.reduce(
             current = givenPreferences,
             intent = AppPreferencesIntent.SetLowBatteryRestriction(false),
         )
 
-        assertEquals(false, actual.restrictMeasurementOnLowBattery)
+        assertEquals(false, actual.recording.restrictMeasurementOnLowBattery)
     }
 
     @Test
     fun `Given screen awake disabled When enabled Then the preference changes`() {
-        val givenPreferences = AppPreferencesFixtures.preferences().copy(keepPhoneDisplayOn = false)
+        val original = AppPreferencesFixtures.preferences()
+        val givenPreferences = original.copy(display = original.display.copy(keepPhoneDisplayOn = false))
 
         val actual = AppPreferencesReducer.reduce(
             current = givenPreferences,
             intent = AppPreferencesIntent.SetKeepPhoneDisplayOn(true),
         )
 
-        assertTrue(actual.keepPhoneDisplayOn)
+        assertTrue(actual.display.keepPhoneDisplayOn)
     }
 }

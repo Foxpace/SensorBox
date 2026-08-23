@@ -9,7 +9,7 @@ import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
-import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
+import com.motionapps.sensorbox.core.storage.DocumentStorage
 import com.motionapps.sensorservices.intent.MeasurementIntentFactory
 import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
 import com.motionapps.sensorservices.services.MeasurementService
@@ -38,12 +38,13 @@ interface PhoneRecordingController {
 class AndroidPhoneRecordingController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intentFactory: MeasurementIntentFactory,
+    private val documentStorage: DocumentStorage,
 ) : PhoneRecordingController {
     private val committedSessions = mutableSetOf<String>()
 
     override suspend fun prepare(sessionId: String, request: MeasurementRequest): AppResult<PreparedPhoneRecording> =
-        NativeDocumentStorage
-            .hasAppDirectory(context, APP_DIRECTORY)
+        documentStorage
+            .hasConfiguredDirectory()
             .flatMap { storageReady ->
                 if (!storageReady) {
                     AppResult.failure(AppError(AppErrorCode.STORAGE, "Prepare phone recording storage"))
@@ -121,7 +122,6 @@ class AndroidPhoneRecordingController @Inject constructor(
     }
 
     private companion object {
-        const val APP_DIRECTORY = "SensorBox"
         val SENSOR_PERIODS = intArrayOf(
             SensorManager.SENSOR_DELAY_FASTEST,
             SensorManager.SENSOR_DELAY_GAME,

@@ -1,10 +1,8 @@
 package com.motionapps.sensorbox.domain.measurement
 
-import android.content.Context
 import android.content.Intent
 import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.motionapps.sensorbox.core.storage.DocumentStorage
 import javax.inject.Inject
 
 interface DocumentStorageGateway {
@@ -15,16 +13,10 @@ interface DocumentStorageGateway {
     fun persist(resultIntent: Intent): AppResult<Unit>
 }
 
-class DocumentStorageUseCase @Inject constructor(@ApplicationContext private val context: Context) :
-    DocumentStorageGateway {
-    override fun hasStorage(): AppResult<Boolean> = NativeDocumentStorage.hasAppDirectory(context, APP_DIRECTORY)
+class DocumentStorageUseCase @Inject constructor(private val storage: DocumentStorage) : DocumentStorageGateway {
+    override fun hasStorage(): AppResult<Boolean> = storage.hasConfiguredDirectory()
 
-    override fun displayPath(): AppResult<String?> = NativeDocumentStorage.displayPath(context, APP_DIRECTORY)
+    override fun displayPath(): AppResult<String?> = storage.displayPath()
 
-    override fun persist(resultIntent: Intent): AppResult<Unit> =
-        NativeDocumentStorage.persistRootAccess(context, resultIntent, APP_DIRECTORY)
-
-    private companion object {
-        const val APP_DIRECTORY = "SensorBox"
-    }
+    override fun persist(resultIntent: Intent): AppResult<Unit> = storage.persistRootAccess(resultIntent)
 }

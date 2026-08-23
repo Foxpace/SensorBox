@@ -52,7 +52,7 @@ private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingI
         item { TimingSetup(state, onIntent) }
         item { NotesAndAlarmsSetup(state, onIntent) }
         item {
-            SamplingSetting(state.preferences.sensorSamplingPeriod) { index ->
+            SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
                 onIntent(RecordingIntent.SetSamplingPeriod(index))
             }
         }
@@ -199,7 +199,7 @@ private fun BatterySetup(state: RecordingState, onIntent: (RecordingIntent) -> U
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_setup_description),
-        checked = state.preferences.restrictMeasurementOnLowBattery,
+        checked = state.preferences.recording.restrictMeasurementOnLowBattery,
     ) { onIntent(RecordingIntent.SetLowBatteryRestriction(it)) }
 }
 
@@ -208,7 +208,7 @@ private fun WakeLockSetup(state: RecordingState, onIntent: (RecordingIntent) -> 
     BooleanSetting(
         title = stringResource(R.string.keep_cpu_awake),
         description = stringResource(R.string.keep_cpu_awake_setup_description),
-        checked = state.preferences.useWakeLock,
+        checked = state.preferences.recording.useWakeLock,
     ) { onIntent(RecordingIntent.SetWakeLock(it)) }
 }
 
@@ -217,7 +217,7 @@ private fun KeepScreenAwakeSetup(state: RecordingState, onIntent: (RecordingInte
     BooleanSetting(
         title = stringResource(R.string.keep_screen_awake),
         description = stringResource(R.string.keep_screen_awake_setup_description),
-        checked = state.preferences.keepPhoneDisplayOn,
+        checked = state.preferences.display.keepPhoneDisplayOn,
     ) { onIntent(RecordingIntent.SetKeepScreenAwake(it)) }
 }
 
@@ -225,11 +225,11 @@ private fun KeepScreenAwakeSetup(state: RecordingState, onIntent: (RecordingInte
 private fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     StepSetting(
         stringResource(R.string.gps_interval),
-        state.preferences.gpsIntervalSeconds,
+        state.preferences.recording.gpsIntervalSeconds,
         pluralStringResource(
             R.plurals.seconds_count,
-            state.preferences.gpsIntervalSeconds,
-            state.preferences.gpsIntervalSeconds,
+            state.preferences.recording.gpsIntervalSeconds,
+            state.preferences.recording.gpsIntervalSeconds,
         ),
         1,
         3_600,
@@ -242,11 +242,11 @@ private fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingIntent) 
 private fun GpsDistanceSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     StepSetting(
         stringResource(R.string.gps_minimum_distance),
-        state.preferences.gpsMinDistanceMeters,
+        state.preferences.recording.gpsMinDistanceMeters,
         pluralStringResource(
             R.plurals.meters_count,
-            state.preferences.gpsMinDistanceMeters,
-            state.preferences.gpsMinDistanceMeters,
+            state.preferences.recording.gpsMinDistanceMeters,
+            state.preferences.recording.gpsMinDistanceMeters,
         ),
         0,
         10_000,

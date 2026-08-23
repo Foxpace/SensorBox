@@ -28,7 +28,7 @@ class WearDashboardReducerTest {
         val actual = WearDashboardReducer.reduce(givenState, WearDashboardIntent.ToggleSensor(21))
 
         assertTrue(21 in actual.selectedSensorIds)
-        assertEquals(30, actual.preferences.gpsIntervalSeconds)
+        assertEquals(30, actual.preferences.recording.gpsIntervalSeconds)
     }
 
     @Test

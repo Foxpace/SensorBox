@@ -12,11 +12,13 @@ import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorbox.core.time.EpochClock
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import java.io.OutputStream
 
 /** Handles Android's one-shot significant-motion trigger and re-arms it after every event. */
-class SignificantMotion : TriggerEventListener() {
+internal class SignificantMotion(private val storage: MeasurementStorage, private val clock: EpochClock) :
+    TriggerEventListener() {
     private var sensorManager: SensorManager? = null
     private var sensor: Sensor? = null
     private var output: OutputStream? = null
@@ -25,11 +27,12 @@ class SignificantMotion : TriggerEventListener() {
     fun prepare(context: Context, folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
         sensorManager = context.getSystemService(SensorManager::class.java)
         sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
-        val stream = if (useInternalStorage) {
-            StorageHandler.createFileInInternalFolder(context, folderName, FILE_NAME)
-        } else {
-            StorageHandler.createFileInFolder(context, folderName, "text/csv", FILE_NAME)
-        }
+        val stream = storage.openMeasurementFile(
+            folderName = folderName,
+            mimeType = "text/csv",
+            fileName = FILE_NAME,
+            useInternalStorage = useInternalStorage,
+        )
         return stream.flatMap { opened ->
             output = opened
             appResult(AppErrorCode.STORAGE, "Write significant motion header") {
@@ -70,7 +73,7 @@ class SignificantMotion : TriggerEventListener() {
     override fun onTrigger(event: TriggerEvent?) {
         event?.values?.firstOrNull()?.let { value ->
             appResult(AppErrorCode.STORAGE, "Write significant motion") {
-                output?.write("${System.currentTimeMillis()};$value\n".toByteArray())
+                output?.write("${clock.nowMillis()};$value\n".toByteArray())
             }.onFailure { writeFailure = it }
         }
         if (!arm()) AppError(AppErrorCode.MEASUREMENT, "Re-arm significant motion")

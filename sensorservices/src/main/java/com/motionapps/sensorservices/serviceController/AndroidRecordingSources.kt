@@ -6,28 +6,38 @@ import android.media.ToneGenerator
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.recording.RecordingSource
 import com.motionapps.sensorbox.recording.RecordingSourceSpec
 import com.motionapps.sensorbox.recording.RecordingSourceType
 import com.motionapps.sensorservices.handlers.GPSHandler
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.handlers.measurements.ActivityRecognitionMeasurement
+import com.motionapps.sensorservices.handlers.measurements.ActivityRecognitionPlatform
+import com.motionapps.sensorservices.handlers.measurements.AndroidActivityRecognitionPlatform
 import com.motionapps.sensorservices.handlers.measurements.ExtraInfoHandler
 import com.motionapps.sensorservices.handlers.measurements.GPSMeasurement
 import com.motionapps.sensorservices.handlers.measurements.SensorMeasurement
 import com.motionapps.sensorservices.handlers.measurements.SignificantMotion
 
-class AndroidRecordingSources(private val context: Context, private val config: MeasurementConfig) {
-    private val artifacts = SessionArtifacts(context, config)
+internal class AndroidRecordingSources(
+    private val context: Context,
+    private val config: MeasurementConfig,
+    storage: MeasurementStorage,
+    diagnosticLogger: DiagnosticLogger,
+    clock: EpochClock,
+) {
+    private val artifacts = SessionArtifacts(context, config, storage, clock)
 
     val sources: List<RecordingSource> = listOf(
         SessionSource(artifacts),
-        SensorSource(context, config),
-        GpsSource(context, config),
-        ActivitySource(context, config),
-        SignificantMotionSource(context, config),
+        SensorSource(context, config, storage, diagnosticLogger, clock),
+        GpsSource(context, config, storage, clock),
+        ActivitySource(config, storage, AndroidActivityRecognitionPlatform(context)),
+        SignificantMotionSource(context, config, storage, clock),
     )
 
     fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = artifacts.annotate(timestampMillis, text)
@@ -46,14 +56,19 @@ private class SessionSource(private val artifacts: SessionArtifacts) : Recording
     override suspend fun stop(): AppResult<Unit> = artifacts.stop()
 }
 
-private class SensorSource(private val context: Context, private val config: MeasurementConfig) : RecordingSource {
-    private val measurement = SensorMeasurement()
+private class SensorSource(
+    private val context: Context,
+    private val config: MeasurementConfig,
+    storage: MeasurementStorage,
+    diagnosticLogger: DiagnosticLogger,
+    clock: EpochClock,
+) : RecordingSource {
+    private val measurement = SensorMeasurement(storage, diagnosticLogger, clock)
     override val type = RecordingSourceType.SENSOR
 
     override suspend fun prepare(spec: RecordingSourceSpec): AppResult<Unit> =
         if (spec is RecordingSourceSpec.Sensors) {
             measurement.prepare(
-                context = context,
                 folderName = config.folderName,
                 useInternalStorage = config.useInternalStorage,
                 sensorTypes = spec.sensorTypes,
@@ -68,13 +83,17 @@ private class SensorSource(private val context: Context, private val config: Mea
     override suspend fun stop(): AppResult<Unit> = measurement.stop(context)
 }
 
-private class GpsSource(private val context: Context, private val config: MeasurementConfig) : RecordingSource {
-    private val measurement = GPSMeasurement(GPSHandler())
+private class GpsSource(
+    private val context: Context,
+    private val config: MeasurementConfig,
+    storage: MeasurementStorage,
+    clock: EpochClock,
+) : RecordingSource {
+    private val measurement = GPSMeasurement(GPSHandler(), storage, clock)
     override val type = RecordingSourceType.GPS
 
     override suspend fun prepare(spec: RecordingSourceSpec): AppResult<Unit> = if (spec is RecordingSourceSpec.Gps) {
         measurement.prepare(
-            context = context,
             folderName = config.folderName,
             useInternalStorage = config.useInternalStorage,
             intervalSeconds = spec.intervalSeconds,
@@ -89,14 +108,17 @@ private class GpsSource(private val context: Context, private val config: Measur
     override suspend fun stop(): AppResult<Unit> = measurement.stop()
 }
 
-private class ActivitySource(private val context: Context, private val config: MeasurementConfig) : RecordingSource {
+private class ActivitySource(
+    private val config: MeasurementConfig,
+    private val storage: MeasurementStorage,
+    private val platform: ActivityRecognitionPlatform,
+) : RecordingSource {
     private var measurement: ActivityRecognitionMeasurement? = null
     override val type = RecordingSourceType.ACTIVITY_RECOGNITION
 
     override suspend fun prepare(spec: RecordingSourceSpec): AppResult<Unit> =
         if (spec is RecordingSourceSpec.ActivityRecognition) {
-            ActivityRecognitionMeasurement(spec.periodSeconds).also { measurement = it }.prepare(
-                context,
+            ActivityRecognitionMeasurement(spec.periodSeconds, storage, platform).also { measurement = it }.prepare(
                 config.folderName,
                 config.useInternalStorage,
             )
@@ -104,19 +126,23 @@ private class ActivitySource(private val context: Context, private val config: M
             invalidSpec(type)
         }
 
-    override suspend fun start(): AppResult<Unit> = measurement?.start(context)
+    override suspend fun start(): AppResult<Unit> = measurement?.start()
         ?: invalidSpec(type)
 
     override suspend fun stop(): AppResult<Unit> {
-        val result = measurement?.stop(context) ?: AppResult.success(Unit)
+        val result = measurement?.stop() ?: AppResult.success(Unit)
         measurement = null
         return result
     }
 }
 
-private class SignificantMotionSource(private val context: Context, private val config: MeasurementConfig) :
-    RecordingSource {
-    private val measurement = SignificantMotion()
+private class SignificantMotionSource(
+    private val context: Context,
+    private val config: MeasurementConfig,
+    storage: MeasurementStorage,
+    clock: EpochClock,
+) : RecordingSource {
+    private val measurement = SignificantMotion(storage, clock)
     override val type = RecordingSourceType.SIGNIFICANT_MOTION
 
     override suspend fun prepare(spec: RecordingSourceSpec): AppResult<Unit> =
@@ -131,16 +157,17 @@ private class SignificantMotionSource(private val context: Context, private val 
     override suspend fun stop(): AppResult<Unit> = measurement.stop()
 }
 
-private class SessionArtifacts(private val context: Context, private val config: MeasurementConfig) {
-    private val extraInfo = ExtraInfoHandler()
+private class SessionArtifacts(
+    private val context: Context,
+    private val config: MeasurementConfig,
+    private val storage: MeasurementStorage,
+    clock: EpochClock,
+) {
+    private val extraInfo = ExtraInfoHandler(storage, clock)
     private var toneGenerator: ToneGenerator? = null
 
     fun prepare(): AppResult<Unit> {
-        val directory = if (config.useInternalStorage) {
-            StorageHandler.createInternalStorageMeasurementFolder(context, config.folderName)
-        } else {
-            StorageHandler.createFolderMeasurement(context, config.folderName)
-        }
+        val directory = storage.createMeasurementDirectory(config.folderName, config.useInternalStorage)
         return directory.onSuccess { extraInfo.start(config) }
     }
 

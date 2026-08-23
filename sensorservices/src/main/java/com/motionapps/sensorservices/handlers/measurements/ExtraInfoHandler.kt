@@ -9,23 +9,28 @@ import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorbox.core.time.EpochClock
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.serviceController.MeasurementConfig
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** Collects session metadata and writes it once when the recording is closed. */
-class ExtraInfoHandler {
+internal class ExtraInfoHandler(private val storage: MeasurementStorage, private val clock: EpochClock) {
     private var config: MeasurementConfig? = null
     private var startedAtMillis: Long = 0L
     private var startedAtNanos: Long = 0L
-    private val annotations = mutableListOf<Annotation>()
+    private val annotations = mutableListOf<MeasurementAnnotation>()
     private val triggeredAlarms = mutableListOf<Long>()
     private var written = false
 
     fun start(config: MeasurementConfig) {
         this.config = config
-        startedAtMillis = System.currentTimeMillis()
+        startedAtMillis = clock.nowMillis()
         startedAtNanos = SystemClock.elapsedRealtimeNanos()
         annotations.clear()
         triggeredAlarms.clear()
@@ -33,10 +38,10 @@ class ExtraInfoHandler {
     }
 
     fun annotate(timestampMillis: Long, text: String) {
-        text.trim().takeIf(String::isNotEmpty)?.let { annotations += Annotation(timestampMillis, it) }
+        text.trim().takeIf(String::isNotEmpty)?.let { annotations += MeasurementAnnotation(timestampMillis, it) }
     }
 
-    fun alarmTriggered(timestampMillis: Long = System.currentTimeMillis()) {
+    fun alarmTriggered(timestampMillis: Long = clock.nowMillis()) {
         triggeredAlarms += timestampMillis
     }
 
@@ -44,72 +49,81 @@ class ExtraInfoHandler {
         val active = config ?: return AppResult.success(Unit)
         if (written) return AppResult.success(Unit)
         written = true
-        val jsonResult = appResult(AppErrorCode.MEASUREMENT, "Build measurement metadata") {
-            JSONObject().apply {
-                put("millis", startedAtMillis)
-                put("nanos", startedAtNanos)
-                put("type", active.measurementType)
-                put("date", StorageHandler.getDate(startedAtMillis))
-                put("folder", active.folderName)
-                put("notes", JSONArray(active.notes))
-                put(
-                    "annotations",
-                    JSONArray().apply {
-                        annotations.forEach { annotation ->
-                            put(
-                                JSONObject()
-                                    .put("timestamp", annotation.timestampMillis)
-                                    .put("annotation", annotation.text),
-                            )
-                        }
-                    },
-                )
-                val rangeIds = if (active.significantMotion) {
-                    active.sensorIds + Sensor.TYPE_SIGNIFICANT_MOTION
-                } else {
-                    active.sensorIds
-                }
-                put("ranges", sensorRanges(context, rangeIds))
-                put("alarms", JSONArray(triggeredAlarms))
-                put("configuredAlarmOffsetsSeconds", JSONArray(active.alarmOffsetsSeconds))
-                put("durationMillis", active.durationMillis)
-                put("activityRecognition", active.activityRecognition)
-                put("significantMotion", active.significantMotion)
-            }
+        val metadataResult = appResult(AppErrorCode.MEASUREMENT, "Build measurement metadata") {
+            MeasurementMetadata(
+                millis = startedAtMillis,
+                nanos = startedAtNanos,
+                type = active.measurementType,
+                date = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date(startedAtMillis)),
+                folder = active.folderName,
+                notes = active.notes,
+                annotations = annotations.toList(),
+                ranges = sensorRanges(context, active),
+                alarms = triggeredAlarms.toList(),
+                configuredAlarmOffsetsSeconds = active.alarmOffsetsSeconds.toList(),
+                durationMillis = active.durationMillis,
+                activityRecognition = active.activityRecognition,
+                significantMotion = active.significantMotion,
+            )
         }
-        return jsonResult.flatMap { json ->
-            val stream = if (active.useInternalStorage) {
-                StorageHandler.createFileInInternalFolder(context, active.folderName, EXTRA_FILE)
-            } else {
-                StorageHandler.createFileInFolder(context, active.folderName, "application/json", EXTRA_FILE)
-            }
-            stream.flatMap { output ->
+        return metadataResult.flatMap { metadata ->
+            storage.openMeasurementFile(
+                folderName = active.folderName,
+                mimeType = "application/json",
+                fileName = EXTRA_FILE,
+                useInternalStorage = active.useInternalStorage,
+            ).flatMap { output ->
                 appResult(AppErrorCode.STORAGE, "Write measurement metadata file") {
-                    output.use { it.write(json.toString(2).toByteArray()) }
+                    output.use { it.write(JSON.encodeToString(metadata).toByteArray()) }
                 }
             }
         }.withAppError(AppErrorCode.MEASUREMENT, "Write measurement metadata")
     }
 
-    private fun sensorRanges(context: Context, sensorIds: IntArray): JSONArray {
+    private fun sensorRanges(context: Context, active: MeasurementConfig): List<SensorRange> {
         val manager = context.getSystemService(SensorManager::class.java)
-        return JSONArray().apply {
-            sensorIds.distinct().forEach { type ->
-                manager.getDefaultSensor(type)?.let { sensor ->
-                    put(
-                        JSONObject()
-                            .put("sensor", sensor.name)
-                            .put("type", type)
-                            .put("range", sensor.maximumRange),
-                    )
-                }
+        val rangeIds = if (active.significantMotion) {
+            active.sensorIds + Sensor.TYPE_SIGNIFICANT_MOTION
+        } else {
+            active.sensorIds
+        }
+        return rangeIds.distinct().mapNotNull { type ->
+            manager.getDefaultSensor(type)?.let { sensor ->
+                SensorRange(sensor = sensor.name, type = type, range = sensor.maximumRange)
             }
         }
     }
 
-    private data class Annotation(val timestampMillis: Long, val text: String)
-
     private companion object {
+        const val DATE_FORMAT = "dd. MM. yyyy HH:mm:ss"
         const val EXTRA_FILE = "extra.json"
+        val JSON = Json {
+            prettyPrint = true
+            prettyPrintIndent = "  "
+            encodeDefaults = true
+        }
     }
 }
+
+@Serializable
+internal data class MeasurementMetadata(
+    val millis: Long,
+    val nanos: Long,
+    val type: String,
+    val date: String,
+    val folder: String,
+    val notes: List<String>,
+    val annotations: List<MeasurementAnnotation>,
+    val ranges: List<SensorRange>,
+    val alarms: List<Long>,
+    val configuredAlarmOffsetsSeconds: List<Int>,
+    val durationMillis: Long,
+    val activityRecognition: Boolean,
+    val significantMotion: Boolean,
+)
+
+@Serializable
+internal data class MeasurementAnnotation(val timestamp: Long, val annotation: String)
+
+@Serializable
+internal data class SensorRange(val sensor: String, val type: Int, val range: Float)

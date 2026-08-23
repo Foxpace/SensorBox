@@ -11,6 +11,8 @@ detekt = "2.0.0-alpha.6"
 espresso = "3.7.0"
 hilt = "2.60.1"
 kotlin = "2.4.10"
+kotlinxDatetime = "0.8.0"
+kotlinxSerialization = "1.11.0"
 ksp = "2.3.10"
 lifecycle = "2.11.0"
 junit = "4.13.2"
@@ -57,6 +59,8 @@ google-material = { module = "com.google.android.material:material", version.ref
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico" }

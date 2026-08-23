@@ -42,7 +42,10 @@ class MainViewModel @Inject constructor(
                     onSuccess = { preferences ->
                         val route = if (hasChosenInitialRoute) {
                             state.value.route
-                        } else if (preferences.hasCompletedIntro && preferences.hasAcceptedPolicy) {
+                        } else if (
+                            preferences.onboarding.hasCompletedIntro &&
+                            preferences.onboarding.hasAcceptedPolicy
+                        ) {
                             MainRoute.RECORD
                         } else {
                             MainRoute.ONBOARDING
@@ -50,7 +53,7 @@ class MainViewModel @Inject constructor(
                         hasChosenInitialRoute = true
                         mutableState.value = state.value.copy(
                             route = route,
-                            keepScreenAwake = preferences.keepPhoneDisplayOn,
+                            keepScreenAwake = preferences.display.keepPhoneDisplayOn,
                             hasLoadedPreferences = true,
                         )
                     },

@@ -6,9 +6,12 @@ import android.hardware.SensorEventListener
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
 import com.motionapps.sensorbox.core.error.suspendAppResult
+import com.motionapps.sensorbox.core.error.toDiagnosticEvent
+import com.motionapps.sensorbox.core.time.EpochClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,45 +21,57 @@ import kotlinx.coroutines.channels.Channel
 import java.io.IOException
 import java.io.OutputStream
 
-class SensorHolder(val spec: SensorSpec, outputStream: OutputStream) : SensorEventListener {
+class SensorHolder(
+    val spec: SensorSpec,
+    outputStream: OutputStream,
+    private val diagnosticLogger: DiagnosticLogger,
+    private val clock: EpochClock,
+) : SensorEventListener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val samples = Channel<SensorSample>(capacity = Channel.BUFFERED)
     private val writer = outputStream.bufferedWriter()
     private val writerJob = scope.async {
         try {
             writer.append(spec.header)
-            for (sample in samples) writer.appendLine(sample.toCsv(spec.axisCount))
+            writer.flush()
+            for (sample in samples) {
+                writer.appendLine(sample.toCsv(spec.axisCount))
+                writer.flush()
+            }
         } catch (error: IOException) {
-            writerFailure = AppError.from(AppErrorCode.STORAGE, "Write ${spec.fileName}", error)
-            samples.close()
+            throw reportWriterFailure(error)
+        } catch (error: IllegalStateException) {
+            throw reportWriterFailure(error)
         }
     }
 
-    @Volatile
-    private var writerFailure: AppError? = null
-
     override fun onSensorChanged(event: SensorEvent) {
-        if (writerFailure != null) return
         val result = samples.trySend(
             SensorSample(
                 sensorTimestampNanos = event.timestamp,
-                unixTimestampMillis = System.currentTimeMillis(),
+                unixTimestampMillis = clock.nowMillis(),
                 values = event.values.copyOf(spec.axisCount),
                 accuracy = event.accuracy,
             ),
         )
-        if (result.isFailure && writerFailure == null) {
-            writerFailure = AppError(AppErrorCode.STORAGE, "Buffer ${spec.fileName}")
+        if (result.isFailure && result.exceptionOrNull() == null) {
+            samples.close(IllegalStateException("Sensor sample buffer is full"))
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
+    private fun <T : Throwable> reportWriterFailure(error: T): T {
+        val appError = AppError.from(AppErrorCode.STORAGE, "Write ${spec.fileName}", error)
+        diagnosticLogger.record(appError.toDiagnosticEvent())
+        samples.close(error)
+        return error
+    }
+
     suspend fun close(): AppResult<Unit> {
         samples.close()
         val results = mutableListOf<AppResult<*>>()
         results += suspendAppResult(AppErrorCode.STORAGE, "Finish ${spec.fileName} writer") { writerJob.await() }
-        writerFailure?.let { results += AppResult.failure(it) }
         results += appResult(AppErrorCode.STORAGE, "Flush ${spec.fileName}") { writer.flush() }
         results += appResult(AppErrorCode.STORAGE, "Close ${spec.fileName}") { writer.close() }
         scope.cancel()

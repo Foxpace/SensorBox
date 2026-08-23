@@ -8,10 +8,10 @@ import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.handlers.GPSHandler
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.OutputStream
@@ -21,7 +21,11 @@ import java.io.OutputStream
  *
  * @property gpsHandler - manages access to GPS
  */
-class GPSMeasurement constructor(private val gpsHandler: GPSHandler) : GPSHandler.OnLocationChangedCallback {
+internal class GPSMeasurement(
+    private val gpsHandler: GPSHandler,
+    private val storage: MeasurementStorage,
+    private val clock: EpochClock,
+) : GPSHandler.OnLocationChangedCallback {
 
     private var outputStream: OutputStream? = null
     private var writeFailure: AppError? = null
@@ -34,7 +38,6 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) : GPSHandle
      * @param params - from the service
      */
     fun prepare(
-        context: Context,
         folderName: String,
         useInternalStorage: Boolean,
         intervalSeconds: Int,
@@ -44,24 +47,20 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) : GPSHandle
             intervalSeconds = intervalSeconds,
             minDistanceMeters = minimumDistanceMeters,
         )
-        val stream = if (useInternalStorage) {
-            StorageHandler.createFileInInternalFolder(
-                context,
-                folderName,
-                "gps.csv",
-            )
-        } else {
-            StorageHandler.createFileInFolder(
-                context,
-                folderName,
-                "csv",
-                "gps.csv",
-            )
+        val streamResult = storage.openMeasurementFile(
+            folderName = folderName,
+            mimeType = "text/csv",
+            fileName = "gps.csv",
+            useInternalStorage = useInternalStorage,
+        )
+        val output = streamResult.getOrNull()
+            ?: return AppResult.failure(checkNotNull(streamResult.errorOrNull()))
+                .withAppError(AppErrorCode.MEASUREMENT, "Initialize GPS measurement")
+        outputStream = output
+        val headerResult = appResult(AppErrorCode.STORAGE, "Write GPS header") {
+            output.write(header.toByteArray())
         }
-        return stream.flatMap { output ->
-            outputStream = output
-            appResult(AppErrorCode.STORAGE, "Write GPS header") { output.write(header.toByteArray()) }
-        }.withAppError(AppErrorCode.MEASUREMENT, "Initialize GPS measurement")
+        return headerResult.withAppError(AppErrorCode.MEASUREMENT, "Initialize GPS measurement")
     }
 
     /**
@@ -70,7 +69,7 @@ class GPSMeasurement constructor(private val gpsHandler: GPSHandler) : GPSHandle
      * @param location - location from the GPS
      * @return - formatted line of the csv
      */
-    private fun createLocationStamp(location: Location): String = "${System.currentTimeMillis()};" +
+    private fun createLocationStamp(location: Location): String = "${clock.nowMillis()};" +
         "${location.latitude};" +
         "${location.longitude};" +
         "${location.altitude};" +

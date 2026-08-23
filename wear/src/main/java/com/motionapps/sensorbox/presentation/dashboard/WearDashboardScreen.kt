@@ -48,7 +48,7 @@ fun WearDashboardScreen(
         WearRoute.RECORD -> WearRecordScreen(state, accept)
         WearRoute.LIVE -> WearLiveScreen(state, chartModelProducer, accept)
         WearRoute.SETTINGS -> WearSettingsScreen(state, accept)
-        WearRoute.ACTIVE -> WearActiveScreen(state.preferences.keepWearDisplayOn, accept)
+        WearRoute.ACTIVE -> WearActiveScreen(state.preferences.display.keepWearDisplayOn, accept)
     }
 }
 
@@ -178,7 +178,11 @@ private fun TransformingLazyColumnScope.preferenceItems(
         R.string.sampling_normal,
     ).forEachIndexed { index, label ->
         item {
-            WearChoiceButton(stringResource(label), state.preferences.sensorSamplingPeriod == index, transformation) {
+            WearChoiceButton(
+                stringResource(label),
+                state.preferences.recording.sensorSamplingPeriod == index,
+                transformation,
+            ) {
                 accept(WearDashboardIntent.SetSamplingPeriod(index))
             }
         }
@@ -186,21 +190,21 @@ private fun TransformingLazyColumnScope.preferenceItems(
     item {
         WearChoiceButton(
             stringResource(R.string.stop_on_low_battery),
-            state.preferences.restrictMeasurementOnLowBattery,
+            state.preferences.recording.restrictMeasurementOnLowBattery,
             transformation,
         ) {
             accept(WearDashboardIntent.ToggleBatteryRestriction)
         }
     }
     item {
-        WearChoiceButton(stringResource(R.string.wake_lock), state.preferences.useWakeLock, transformation) {
+        WearChoiceButton(stringResource(R.string.wake_lock), state.preferences.recording.useWakeLock, transformation) {
             accept(WearDashboardIntent.ToggleWakeLock)
         }
     }
     item {
         WearChoiceButton(
             stringResource(R.string.keep_display_on),
-            state.preferences.keepWearDisplayOn,
+            state.preferences.display.keepWearDisplayOn,
             transformation,
         ) {
             accept(WearDashboardIntent.ToggleDisplay)

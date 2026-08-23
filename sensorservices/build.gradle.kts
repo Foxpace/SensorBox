@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -43,6 +44,8 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.coroutines.core)
     implementation(libs.hilt.android)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.junit)
