@@ -4,6 +4,7 @@ import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.DiagnosticLogger
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.domain.measurement.MeasurementRequest
 import com.motionapps.sensorbox.domain.measurement.PhoneRecordingController
 import com.motionapps.sensorbox.domain.measurement.PreparedPhoneRecording
@@ -139,6 +140,7 @@ class PairedRecordingCoordinatorTest {
             acknowledgementInbox = inbox,
             sessionIdFactory = RecordingSessionIdFactory(),
             diagnosticLogger = DiagnosticLogger { },
+            clock = EpochClock { 1_000L },
         )
 
         fun succeed(sessionId: String, command: WearSessionCommand) {

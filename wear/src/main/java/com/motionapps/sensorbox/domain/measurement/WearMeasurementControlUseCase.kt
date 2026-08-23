@@ -8,6 +8,7 @@ import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.preferences.AppPreferences
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.intent.MeasurementIntentFactory
 import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
 import com.motionapps.sensorservices.services.MeasurementService
@@ -30,6 +31,7 @@ interface WearRecordingController {
 class WearMeasurementControlUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intentFactory: MeasurementIntentFactory,
+    private val clock: EpochClock,
 ) : WearRecordingController {
     override fun start(
         sessionId: String,
@@ -53,7 +55,7 @@ class WearMeasurementControlUseCase @Inject constructor(
         preferences: AppPreferences,
         sessionId: String = java.util.UUID.randomUUID().toString(),
         folderName: String = intentFactory.newFolderName(),
-        startAtEpochMillis: Long = System.currentTimeMillis(),
+        startAtEpochMillis: Long = clock.nowMillis(),
         durationMillis: Long = 0L,
         measurementType: String = "ENDLESS",
     ): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Request Wear measurement start") {
@@ -62,12 +64,12 @@ class WearMeasurementControlUseCase @Inject constructor(
             folderName = folderName,
             useInternalStorage = true,
             sensorIds = sensorIds,
-            sensorSamplingPeriod = samplingPeriod(preferences.sensorSamplingPeriod),
+            sensorSamplingPeriod = samplingPeriod(preferences.recording.sensorSamplingPeriod),
             includesGps = includesGps,
-            stopOnLowBattery = preferences.restrictMeasurementOnLowBattery,
-            useWakeLock = preferences.useWakeLock,
-            gpsIntervalSeconds = preferences.gpsIntervalSeconds,
-            gpsMinDistanceMeters = preferences.gpsMinDistanceMeters,
+            stopOnLowBattery = preferences.recording.restrictMeasurementOnLowBattery,
+            useWakeLock = preferences.recording.useWakeLock,
+            gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
+            gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
             measurementType = measurementType,
             startAtEpochMillis = startAtEpochMillis,
             durationMillis = durationMillis,

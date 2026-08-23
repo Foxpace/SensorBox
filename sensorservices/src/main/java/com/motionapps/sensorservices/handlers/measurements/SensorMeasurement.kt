@@ -5,89 +5,86 @@ import android.hardware.SensorManager
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.error.flatMap
 import com.motionapps.sensorbox.core.error.withAppError
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorbox.core.time.EpochClock
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.types.SensorHolder
 import com.motionapps.sensorservices.types.SensorSpec
 
-class SensorMeasurement {
+internal class SensorMeasurement(
+    private val storage: MeasurementStorage,
+    private val diagnosticLogger: DiagnosticLogger,
+    private val clock: EpochClock,
+) {
     private val holders = mutableListOf<SensorHolder>()
     private var samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST
 
     fun prepare(
-        context: Context,
         folderName: String,
         useInternalStorage: Boolean,
         sensorTypes: Set<Int>,
         samplingPeriod: Int,
     ): AppResult<Unit> {
         this.samplingPeriod = samplingPeriod
-        return sensorTypes.sorted().fold(
-            AppResult.success(Unit),
-        ) { result, sensorType ->
-            result.flatMap {
-                createHolder(context, folderName, useInternalStorage, sensorType).map { holder ->
-                    holder?.let(holders::add)
-                    Unit
-                }
+        for (sensorType in sensorTypes.sorted()) {
+            val holderResult = createHolder(folderName, useInternalStorage, sensorType)
+            if (holderResult.isFailure) {
+                return AppResult.failure(checkNotNull(holderResult.errorOrNull()))
+                    .withAppError(AppErrorCode.MEASUREMENT, "Initialize sensors")
             }
+            holderResult.getOrNull()?.let(holders::add)
         }
-            .withAppError(AppErrorCode.MEASUREMENT, "Initialize sensors")
+        return AppResult.success(Unit)
     }
 
     private fun createHolder(
-        context: Context,
         folderName: String,
         useInternalStorage: Boolean,
         sensorType: Int,
     ): AppResult<SensorHolder?> {
         val spec = SensorSpec.fromType(sensorType) ?: return AppResult.success(null)
-        val stream = if (useInternalStorage) {
-            StorageHandler.createFileInInternalFolder(
-                context,
-                folderName,
-                spec.fileName,
-            )
-        } else {
-            StorageHandler.createFileInFolder(
-                context,
-                folderName,
-                "text/csv",
-                spec.fileName,
-            )
-        }
-        return stream.map { SensorHolder(spec, it) }
+        return storage.openMeasurementFile(
+            folderName = folderName,
+            mimeType = "text/csv",
+            fileName = spec.fileName,
+            useInternalStorage = useInternalStorage,
+        ).map { SensorHolder(spec, it, diagnosticLogger, clock) }
     }
 
-    fun start(context: Context): AppResult<Unit> = appResult(
-        AppErrorCode.MEASUREMENT,
-        "Access sensor manager",
-    ) {
-        context.getSystemService(SensorManager::class.java)
-    }.flatMap { sensorManager ->
-        holders.fold(AppResult.success(Unit)) { result, holder ->
-            result.flatMap {
-                val sensor = sensorManager.getDefaultSensor(holder.spec.type)
-                    ?: return@flatMap AppResult.failure(
-                        AppError(AppErrorCode.MEASUREMENT, "Find sensor ${holder.spec.type}"),
-                    )
-                appResult(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}") {
-                    sensorManager.registerListener(holder, sensor, samplingPeriod)
-                }.flatMap { registered ->
-                    if (registered) {
-                        AppResult.success(Unit)
-                    } else {
-                        AppResult.failure(
-                            AppError(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}"),
-                        )
-                    }
-                }
+    fun start(context: Context): AppResult<Unit> {
+        val managerResult = appResult(AppErrorCode.MEASUREMENT, "Access sensor manager") {
+            context.getSystemService(SensorManager::class.java)
+        }
+        val sensorManager = managerResult.getOrNull()
+            ?: return AppResult.failure(checkNotNull(managerResult.errorOrNull()))
+                .withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
+        for (holder in holders) {
+            val registration = registerHolder(sensorManager, holder)
+            if (registration.isFailure) {
+                return registration.withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
             }
         }
-    }.withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
+        return AppResult.success(Unit)
+    }
+
+    private fun registerHolder(sensorManager: SensorManager, holder: SensorHolder): AppResult<Unit> {
+        val sensor = sensorManager.getDefaultSensor(holder.spec.type)
+            ?: return AppResult.failure(AppError(AppErrorCode.MEASUREMENT, "Find sensor ${holder.spec.type}"))
+        val registration = appResult(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}") {
+            sensorManager.registerListener(holder, sensor, samplingPeriod)
+        }
+        return if (registration.getOrNull() == true) {
+            AppResult.success(Unit)
+        } else {
+            AppResult.failure(
+                registration.errorOrNull()
+                    ?: AppError(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}"),
+            )
+        }
+    }
 
     private fun pause(context: Context): AppResult<Unit> = appResult(
         AppErrorCode.MEASUREMENT,

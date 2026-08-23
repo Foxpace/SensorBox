@@ -1,5 +1,7 @@
 package com.motionapps.sensorservices.intent
 
+import com.motionapps.sensorbox.core.time.SystemEpochClock
+
 data class MeasurementLaunchRequest(
     val sessionId: String = java.util.UUID.randomUUID().toString(),
     val folderName: String,
@@ -12,7 +14,7 @@ data class MeasurementLaunchRequest(
     val gpsIntervalSeconds: Int,
     val gpsMinDistanceMeters: Int,
     val measurementType: String = "ENDLESS",
-    val startAtEpochMillis: Long = System.currentTimeMillis(),
+    val startAtEpochMillis: Long = SystemEpochClock.nowMillis(),
     val durationMillis: Long = 0L,
     val notes: List<String> = emptyList(),
     val alarmOffsetsSeconds: List<Int> = emptyList(),

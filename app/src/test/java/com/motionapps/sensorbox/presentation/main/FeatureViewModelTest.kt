@@ -71,7 +71,7 @@ class FeatureViewModelTest {
         viewModel.accept(SettingsIntent.SetSamplingPeriod(3))
         advanceUntilIdle()
 
-        assertEquals(3, viewModel.state.value.preferences.sensorSamplingPeriod)
+        assertEquals(3, viewModel.state.value.preferences.recording.sensorSamplingPeriod)
     }
 
     @Test

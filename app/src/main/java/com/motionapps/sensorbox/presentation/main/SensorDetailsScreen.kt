@@ -118,8 +118,8 @@ private fun GpsDetails(state: RecordingState) {
         permissionRevision += 1
     }
     val details = rememberGpsDetails(
-        intervalSeconds = state.preferences.gpsIntervalSeconds,
-        minimumDistanceMeters = state.preferences.gpsMinDistanceMeters,
+        intervalSeconds = state.preferences.recording.gpsIntervalSeconds,
+        minimumDistanceMeters = state.preferences.recording.gpsMinDistanceMeters,
         permissionRevision = permissionRevision,
     )
     val unavailableValue = stringResource(if (details.hasPermission) R.string.waiting else R.string.unavailable)
@@ -158,16 +158,16 @@ private fun GpsDetailRows(details: GpsDetailsState, state: RecordingState, unava
         stringResource(R.string.detail_update_interval),
         pluralStringResource(
             R.plurals.seconds_count,
-            state.preferences.gpsIntervalSeconds,
-            state.preferences.gpsIntervalSeconds,
+            state.preferences.recording.gpsIntervalSeconds,
+            state.preferences.recording.gpsIntervalSeconds,
         ),
     )
     DetailRow(
         stringResource(R.string.detail_minimum_distance),
         pluralStringResource(
             R.plurals.meters_count,
-            state.preferences.gpsMinDistanceMeters,
-            state.preferences.gpsMinDistanceMeters,
+            state.preferences.recording.gpsMinDistanceMeters,
+            state.preferences.recording.gpsMinDistanceMeters,
         ),
     )
 }

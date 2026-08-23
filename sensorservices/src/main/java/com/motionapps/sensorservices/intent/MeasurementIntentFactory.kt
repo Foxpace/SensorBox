@@ -2,12 +2,18 @@ package com.motionapps.sensorservices.intent
 
 import android.content.Context
 import android.content.Intent
-import com.motionapps.sensorservices.handlers.StorageHandler
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.services.MeasurementService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
-class MeasurementIntentFactory @Inject constructor(@ApplicationContext private val context: Context) {
+class MeasurementIntentFactory @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val clock: EpochClock,
+) {
     fun create(request: MeasurementLaunchRequest): Intent = Intent(context, MeasurementService::class.java).apply {
         putExtra(MeasurementService.SESSION_ID, request.sessionId)
         putExtra(MeasurementService.FOLDER_NAME, request.folderName)
@@ -32,7 +38,8 @@ class MeasurementIntentFactory @Inject constructor(@ApplicationContext private v
     fun newFolderName(customName: String = "", measurementType: String = "ENDLESS"): String {
         val prefix = customName.trim().replace(INVALID_NAME_CHARS, "_").trim('_').take(MAX_PREFIX_LENGTH)
             .ifBlank { if (measurementType == "TIMED") "timed" else "recording" }
-        return "${prefix}_${StorageHandler.getDate(System.currentTimeMillis(), DATE_FORMAT)}"
+        val timestamp = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date(clock.nowMillis()))
+        return "${prefix}_$timestamp"
     }
 
     private companion object {

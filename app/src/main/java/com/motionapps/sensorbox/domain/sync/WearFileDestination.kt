@@ -7,7 +7,7 @@ import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
-import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
+import com.motionapps.sensorbox.core.storage.DocumentStorage
 import com.motionapps.wearoslib.files.WearFileMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -16,7 +16,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class WearFileDestination @Inject constructor(@ApplicationContext private val context: Context) {
+class WearFileDestination @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val documentStorage: DocumentStorage,
+) {
     fun isReady(): AppResult<Boolean> = hasConfiguredDirectory().map { configured -> configured || isDebugBuild() }
 
     fun copy(metadata: WearFileMetadata, input: InputStream): AppResult<Unit> {
@@ -36,10 +39,8 @@ class WearFileDestination @Inject constructor(@ApplicationContext private val co
         measurementName: String,
         fileName: String,
         input: InputStream,
-    ): AppResult<Unit> = NativeDocumentStorage.copyToMeasurement(
-        context = context,
+    ): AppResult<Unit> = documentStorage.copyToMeasurement(
         input = input,
-        appDirectoryName = APP_DIRECTORY,
         measurementName = measurementName,
         fileName = fileName,
         mimeType = mimeType(fileName),
@@ -62,10 +63,7 @@ class WearFileDestination @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    private fun hasConfiguredDirectory(): AppResult<Boolean> = NativeDocumentStorage.hasAppDirectory(
-        context,
-        APP_DIRECTORY,
-    )
+    private fun hasConfiguredDirectory(): AppResult<Boolean> = documentStorage.hasConfiguredDirectory()
 
     private fun isDebugBuild(): Boolean = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 

@@ -2,6 +2,8 @@ package com.motionapps.sensorservices.serviceController
 
 import android.content.Context
 import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.recording.RecordingClock
 import com.motionapps.sensorbox.recording.RecordingDelay
 import com.motionapps.sensorbox.recording.RecordingEngine
@@ -10,17 +12,25 @@ import com.motionapps.sensorbox.recording.RecordingPlan
 import com.motionapps.sensorbox.recording.RecordingSessionId
 import com.motionapps.sensorbox.recording.RecordingSourceSpec
 import com.motionapps.sensorbox.recording.RecordingStopReason
+import com.motionapps.sensorservices.handlers.MeasurementStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 
-class ServiceController(context: Context, private val config: MeasurementConfig, scope: CoroutineScope) {
-    private val androidSources = AndroidRecordingSources(context, config)
+internal class ServiceController(
+    context: Context,
+    private val config: MeasurementConfig,
+    scope: CoroutineScope,
+    storage: MeasurementStorage,
+    diagnosticLogger: DiagnosticLogger,
+    clock: EpochClock,
+) {
+    private val androidSources = AndroidRecordingSources(context, config, storage, diagnosticLogger, clock)
     private val sessionId = RecordingSessionId(config.sessionId)
     private val engine = RecordingEngine(
         sources = androidSources.sources,
         scope = scope,
-        clock = RecordingClock(System::currentTimeMillis),
+        clock = RecordingClock(clock::nowMillis),
         delay = RecordingDelay { durationMillis -> delay(durationMillis) },
     )
 

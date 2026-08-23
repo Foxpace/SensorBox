@@ -2,6 +2,7 @@ package com.motionapps.sensorservices.serviceController
 
 import android.content.Intent
 import android.hardware.SensorManager
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.services.MeasurementService
 
 data class MeasurementConfig(
@@ -25,7 +26,7 @@ data class MeasurementConfig(
     val significantMotion: Boolean,
 ) {
     companion object {
-        fun from(intent: Intent): MeasurementConfig = MeasurementConfig(
+        fun from(intent: Intent, clock: EpochClock): MeasurementConfig = MeasurementConfig(
             sessionId = intent.getStringExtra(MeasurementService.SESSION_ID).orEmpty(),
             folderName = intent.getStringExtra(MeasurementService.FOLDER_NAME).orEmpty(),
             useInternalStorage = intent.getBooleanExtra(MeasurementService.INTERNAL_STORAGE, false),
@@ -42,7 +43,7 @@ data class MeasurementConfig(
             measurementType = intent.getStringExtra(MeasurementService.MEASUREMENT_TYPE) ?: "ENDLESS",
             startAtEpochMillis = intent.getLongExtra(
                 MeasurementService.START_AT_EPOCH_MILLIS,
-                System.currentTimeMillis(),
+                clock.nowMillis(),
             ),
             durationMillis = intent.getLongExtra(MeasurementService.DURATION_MILLIS, 0L).coerceAtLeast(0L),
             notes = intent.getStringArrayListExtra(MeasurementService.NOTES).orEmpty(),

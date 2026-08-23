@@ -1,27 +1,35 @@
 package com.motionapps.sensorbox.core.error
 
+import com.motionapps.sensorbox.core.time.EpochClock
+import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 class FileDiagnosticsTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
     @Test
-    fun `Given many events When logs rotate Then only two one megabyte files remain`() {
+    fun `Given eight calendar days When events are recorded Then only seven dated files remain`() {
         val directory = temporaryFolder.newFolder("diagnostics")
-        val diagnostics = diagnostics(directory)
+        var currentMillis = Instant.parse("2026-08-01T12:00:00Z").toEpochMilliseconds()
+        val diagnostics = diagnostics(directory, EpochClock { currentMillis })
 
-        repeat(2_500) { index -> diagnostics.record(event(message = "$index ${"x".repeat(1_000)}")) }
+        repeat(8) { day ->
+            diagnostics.record(event(message = "day $day"))
+            currentMillis += 24 * 60 * 60 * 1_000L
+        }
 
         val retainedLogs = directory.listFiles().orEmpty().filter { "export" !in it.name }
-        assertEquals(2, retainedLogs.size)
-        assertTrue(retainedLogs.all { it.length() <= 1_000_000L })
-        assertTrue(diagnostics.readText().getOrNull().orEmpty().contains("2499 "))
+        assertEquals(7, retainedLogs.size)
+        assertFalse(retainedLogs.any { it.name.contains("2026-08-01") })
+        assertTrue(diagnostics.readText().getOrNull().orEmpty().contains("day 7"))
     }
 
     @Test
@@ -74,7 +82,43 @@ class FileDiagnosticsTest {
         assertEquals("No diagnostics have been recorded.\n", diagnostics.readText().getOrNull())
     }
 
-    private fun diagnostics(directory: java.io.File) = FileDiagnostics(
+    @Test
+    fun `Given retained logs When exported Then ordered text is copied to the export file`() {
+        val diagnostics = diagnostics(temporaryFolder.newFolder("diagnostics"))
+        diagnostics.record(event(message = "First"))
+        diagnostics.record(event(message = "Second"))
+
+        val exported = diagnostics.exportFile().getOrNull()
+
+        assertEquals(diagnostics.readText().getOrNull(), exported?.readText())
+        assertTrue(exported?.name?.contains("export") == true)
+    }
+
+    @Test
+    fun `Given concurrent installation When an exception is dispatched Then the handler is installed once`() {
+        val diagnostics = diagnostics(temporaryFolder.newFolder("diagnostics"))
+        val original = Thread.getDefaultUncaughtExceptionHandler()
+        val delegated = AtomicInteger()
+        Thread.setDefaultUncaughtExceptionHandler { _, _ -> delegated.incrementAndGet() }
+        try {
+            List(20) { thread(start = true) { diagnostics.installUncaughtExceptionHandler() } }
+                .forEach(Thread::join)
+
+            Thread.getDefaultUncaughtExceptionHandler()
+                ?.uncaughtException(Thread.currentThread(), IllegalStateException("fixture"))
+
+            val text = diagnostics.readText().getOrNull().orEmpty()
+            assertEquals(1, text.split("Uncaught IllegalStateException").size - 1)
+            assertEquals(1, delegated.get())
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(original)
+        }
+    }
+
+    private fun diagnostics(
+        directory: java.io.File,
+        clock: EpochClock = EpochClock { Instant.parse("2026-08-23T12:00:00Z").toEpochMilliseconds() },
+    ) = FileDiagnostics(
         diagnosticsDirectory = directory,
         metadata = DiagnosticMetadata(
             appVersion = "1.0",
@@ -83,6 +127,7 @@ class FileDiagnosticsTest {
             androidVersion = "test android",
             processName = "test process",
         ),
+        clock = clock,
     )
 
     private fun event(message: String, context: Map<String, String> = emptyMap()) = DiagnosticEvent(

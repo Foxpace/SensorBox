@@ -50,8 +50,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
             LaunchedEffect(viewModel) { viewModel.effects.collect(::handleEffect) }
-            LaunchedEffect(state.preferences.keepWearDisplayOn) {
-                updateDisplayPolicy(state.preferences.keepWearDisplayOn)
+            LaunchedEffect(state.preferences.display.keepWearDisplayOn) {
+                updateDisplayPolicy(state.preferences.display.keepWearDisplayOn)
             }
             WearSensorBoxTheme {
                 WearDashboardScreen(

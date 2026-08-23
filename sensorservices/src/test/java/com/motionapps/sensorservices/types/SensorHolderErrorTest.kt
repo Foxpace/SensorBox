@@ -3,6 +3,9 @@ package com.motionapps.sensorservices.types
 import android.hardware.Sensor
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.DiagnosticEvent
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
+import com.motionapps.sensorbox.core.time.EpochClock
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -14,16 +17,26 @@ class SensorHolderErrorTest {
     @Test
     fun `Given a failed output stream When holder closes Then storage AppError is returned`() = runBlocking {
         val spec = checkNotNull(SensorSpec.fromType(Sensor.TYPE_ACCELEROMETER))
-        val holder = SensorHolder(spec, FailingOutputStream())
+        val logger = RecordingDiagnosticLogger()
+        val holder = SensorHolder(spec, FailingOutputStream(), logger, EpochClock { 123L })
 
         val result = holder.close()
 
         val error = result.errorOrNull()
         assertTrue(error is AppError)
         assertEquals(AppErrorCode.STORAGE, (error as AppError).code)
+        assertEquals("Write ${spec.fileName}", logger.events.single().operation)
     }
 
     private class FailingOutputStream : OutputStream() {
         override fun write(value: Int): Unit = throw IOException("disk full")
+    }
+
+    private class RecordingDiagnosticLogger : DiagnosticLogger {
+        val events = mutableListOf<DiagnosticEvent>()
+
+        override fun record(event: DiagnosticEvent) {
+            events += event
+        }
     }
 }

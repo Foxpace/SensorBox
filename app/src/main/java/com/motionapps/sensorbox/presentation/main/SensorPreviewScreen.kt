@@ -318,8 +318,8 @@ private fun GpsPreview(state: RecordingState) {
         permissionRevision += 1
     }
     val details = rememberGpsDetails(
-        intervalSeconds = state.preferences.gpsIntervalSeconds,
-        minimumDistanceMeters = state.preferences.gpsMinDistanceMeters,
+        intervalSeconds = state.preferences.recording.gpsIntervalSeconds,
+        minimumDistanceMeters = state.preferences.recording.gpsMinDistanceMeters,
         permissionRevision = permissionRevision,
     )
     val unavailableValue = stringResource(if (details.hasPermission) R.string.waiting else R.string.unavailable)

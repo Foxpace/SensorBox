@@ -13,10 +13,13 @@ import android.os.PowerManager
 import android.os.SystemClock
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
+import com.motionapps.sensorbox.core.error.DiagnosticLogger
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.combineAppResults
+import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorbox.recording.RecordingEvent
 import com.motionapps.sensorbox.recording.RecordingStopReason
+import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.serviceController.MeasurementConfig
 import com.motionapps.sensorservices.serviceController.ServiceController
 import com.motionapps.sensorservices.session.MeasurementSessionState
@@ -37,6 +40,15 @@ import javax.inject.Inject
 class MeasurementService : Service() {
     @Inject
     lateinit var sessionStore: MeasurementSessionStore
+
+    @Inject
+    internal lateinit var storageHandler: StorageHandler
+
+    @Inject
+    lateinit var diagnosticLogger: DiagnosticLogger
+
+    @Inject
+    lateinit var epochClock: EpochClock
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var controller: ServiceController? = null
@@ -60,7 +72,7 @@ class MeasurementService : Service() {
             ACTION_STOP -> requestStop(RecordingStopReason.USER_REQUEST)
 
             ACTION_ANNOTATE -> controller?.annotate(
-                intent.getLongExtra(ANNOTATION_TIME, System.currentTimeMillis()),
+                intent.getLongExtra(ANNOTATION_TIME, epochClock.nowMillis()),
                 intent.getStringExtra(ANNOTATION_TEXT).orEmpty(),
             )
 
@@ -71,13 +83,20 @@ class MeasurementService : Service() {
 
     private fun startRecordingHost(intent: Intent) {
         appResult(AppErrorCode.MEASUREMENT, "Start recording foreground host") {
-            val config = MeasurementConfig.from(intent)
+            val config = MeasurementConfig.from(intent, epochClock)
             require(config.sessionId.isNotBlank()) { "Recording session ID is missing" }
             activeConfig = config
             isFinishing = false
             promoteToForeground(config)
             configureRuntimeResources(config)
-            val serviceController = ServiceController(this, config, serviceScope)
+            val serviceController = ServiceController(
+                context = this,
+                config = config,
+                scope = serviceScope,
+                storage = storageHandler,
+                diagnosticLogger = diagnosticLogger,
+                clock = epochClock,
+            )
             controller = serviceController
             observeEngine(serviceController)
             serviceScope.launch {

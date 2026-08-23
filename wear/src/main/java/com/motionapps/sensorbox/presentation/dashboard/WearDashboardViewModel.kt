@@ -163,16 +163,16 @@ class WearDashboardViewModel @Inject constructor(
 
     private fun toggleBatteryRestriction() = updatePreference(
         AppPreferencesIntent.SetLowBatteryRestriction(
-            !mutableState.value.preferences.restrictMeasurementOnLowBattery,
+            !mutableState.value.preferences.recording.restrictMeasurementOnLowBattery,
         ),
     )
 
     private fun toggleWakeLock() = updatePreference(
-        AppPreferencesIntent.SetWakeLock(!mutableState.value.preferences.useWakeLock),
+        AppPreferencesIntent.SetWakeLock(!mutableState.value.preferences.recording.useWakeLock),
     )
 
     private fun toggleDisplay() = updatePreference(
-        AppPreferencesIntent.SetKeepWearDisplayOn(!mutableState.value.preferences.keepWearDisplayOn),
+        AppPreferencesIntent.SetKeepWearDisplayOn(!mutableState.value.preferences.display.keepWearDisplayOn),
     )
 
     private fun startSync() {
