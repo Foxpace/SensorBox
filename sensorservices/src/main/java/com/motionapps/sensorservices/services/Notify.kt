@@ -1,117 +1,46 @@
 package com.motionapps.sensorservices.services
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import com.motionapps.sensorservices.R
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
 
-@ExperimentalCoroutinesApi
-@InternalCoroutinesApi
 object Notify {
-    private const val CHANNEL_ID = "SensorBoxId"
-    private const val CHANNEL_NAME = "SensorBoxChannel"
-
-    /**
-     * basic notification for foreground of MeasurementService
-     *
-     * @param context
-     * @param title - title of the notification
-     * @param content - subtext of notification
-     * @return built notification
-     */
-    @SuppressLint("UnspecifiedImmutableFlag")
-    fun createNotification(context: Context, title: String?, content: String?): Notification {
-
+    fun createRecordingNotification(context: Context): Notification {
         createChannel(context)
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-        builder.setContentTitle(title)
-        builder.setAutoCancel(false)
-        builder.setStyle(NotificationCompat.BigTextStyle().bigText(content))
-
-        builder.setSmallIcon(R.drawable.ic_graph)
-        builder.color = ContextCompat.getColor(context, R.color.colorBlack)
-
-        builder.priority = NotificationManager.IMPORTANCE_DEFAULT
-        builder.setCategory(Notification.CATEGORY_SERVICE)
-
-        val stopIntent = Intent(MeasurementService.STOP_SERVICE)
-        val stopPendingIntent = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-            PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        }else{
-            PendingIntent.getBroadcast(context, 20, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-        }
-
-        builder.addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopPendingIntent)
-
-        return builder.build()
+        val stopIntent = Intent(context, MeasurementService::class.java)
+            .setAction(MeasurementService.ACTION_STOP)
+        val stopAction = PendingIntent.getService(
+            context,
+            STOP_REQUEST_CODE,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle(context.getString(R.string.notification_title))
+            .setContentText(context.getString(R.string.notification_content))
+            .setSmallIcon(R.drawable.ic_graph)
+            .setOngoing(true)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopAction)
+            .build()
     }
-
-    /**
-     * notification at the end of the measurement
-     *
-     * @param context
-     * @param title - title of the notification
-     * @param content - subtext of notification
-     * @return built notification
-     */
-    fun endingNotification(context: Context, title: String?, content: String?): Notification {
-
-        createChannel(context)
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-        builder.setContentTitle(title)
-        builder.setAutoCancel(false)
-        builder.setStyle(NotificationCompat.BigTextStyle().bigText(content))
-        builder.setSound(Uri.parse("android.resource://" + context.packageName + "/" + R.raw.end))
-
-        builder.setSmallIcon(R.drawable.ic_graph)
-        builder.color = ContextCompat.getColor(context, R.color.colorBlack)
-
-        builder.priority = NotificationManager.IMPORTANCE_DEFAULT
-        builder.setCategory(Notification.CATEGORY_SERVICE)
-
-        return builder.build()
-    }
-
-
-    /**
-     * replaces notification
-     *
-     * @param context
-     * @param id - id of the notification
-     * @param notification - notification to to be placed
-     */
-    fun updateNotification(context: Context, id: Int, notification: Notification) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(id, notification)
-    }
-
-    /**
-     * cancels notification by id
-     *
-     * @param context
-     * @param id - of notification to cancel
-     */
-    fun cancelNotification(context: Context, id: Int) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(id)
-    }
-
 
     private fun createChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
-            val notificationManager = context.getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(notificationChannel)
-        }
+        if (Build.VERSION.SDK_INT < 26) return
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            context.getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        )
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
+
+    private const val CHANNEL_ID = "measurement"
+    private const val STOP_REQUEST_CODE = 20
 }
