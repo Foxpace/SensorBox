@@ -228,5 +228,12 @@
     <string name="diagnostics_share">Share diagnostics</string>
     <string name="diagnostics_share_text">Send as text</string>
     <string name="diagnostics_share_file">Send as file</string>
+    <string name="diagnostics_view">View logs</string>
+    <string name="diagnostics_copy">Copy logs</string>
+    <string name="diagnostics_clear">Clear logs</string>
+    <string name="diagnostics_clear_confirmation">Delete both retained diagnostic log files? This cannot be undone.</string>
+    <string name="diagnostics_copied">Diagnostics copied.</string>
+    <string name="diagnostics_cleared">Diagnostics cleared.</string>
+    <string name="diagnostics_action_failed">The diagnostics action failed.</string>
     <string name="diagnostics_share_failed">Diagnostics could not be shared. The error was saved for a later attempt.</string>
 </resources>

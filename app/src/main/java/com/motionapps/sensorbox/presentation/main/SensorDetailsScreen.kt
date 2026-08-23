@@ -36,7 +36,12 @@ import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
 import com.motionapps.sensorservices.handlers.GPSHandler
 
 @Composable
-fun SensorDetailsScreen(state: MainState, onBack: () -> Unit, onPreview: () -> Unit, modifier: Modifier = Modifier) {
+fun SensorDetailsScreen(
+    state: RecordingState,
+    onBack: () -> Unit,
+    onPreview: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val sensor = state.detailsSensorType?.let { type -> state.sensors.firstOrNull { it.type == type } }
     val canPreview = state.detailsSensorType == null || sensor?.type != Sensor.TYPE_STEP_DETECTOR
     val title = when {
@@ -105,7 +110,7 @@ private fun HardwareSensorDetails(sensor: SensorDescriptor) {
 }
 
 @Composable
-private fun GpsDetails(state: MainState) {
+private fun GpsDetails(state: RecordingState) {
     var permissionRevision by remember { mutableStateOf(0) }
     val permissionRequest = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -134,7 +139,7 @@ private fun GpsDetails(state: MainState) {
 }
 
 @Composable
-private fun GpsDetailRows(details: GpsDetailsState, state: MainState, unavailableValue: String) {
+private fun GpsDetailRows(details: GpsDetailsState, state: RecordingState, unavailableValue: String) {
     DetailRow(
         stringResource(R.string.detail_latitude),
         details.location?.latitude?.toString() ?: unavailableValue,

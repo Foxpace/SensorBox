@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -45,10 +49,10 @@ import com.motionapps.sensorbox.R
 
 @Composable
 fun SettingsScreen(
-    state: MainState,
-    onIntent: (MainIntent) -> Unit,
+    state: SettingsState,
+    onIntent: (SettingsIntent) -> Unit,
     modifier: Modifier = Modifier,
-    onBack: () -> Unit = { onIntent(MainIntent.Navigate(MainRoute.RECORD)) },
+    onBack: () -> Unit = { onIntent(SettingsIntent.Navigate(MainRoute.RECORD)) },
 ) {
     val isBatteryOptimizationExempt = rememberBatteryOptimizationExemption()
     LazyColumn(
@@ -59,19 +63,24 @@ fun SettingsScreen(
         item {
             SensorBoxTopAppBar(stringResource(R.string.measurement_settings), onBack)
         }
-        item { SamplingSetting(state.preferences.sensorSamplingPeriod, onIntent) }
+        item {
+            SamplingSetting(state.preferences.sensorSamplingPeriod) { index ->
+                onIntent(SettingsIntent.SetSamplingPeriod(index))
+            }
+        }
         item { BatteryGuardSetting(state, onIntent) }
         item { BatteryOptimizationSetting(isBatteryOptimizationExempt, onIntent) }
         item { CpuWakeLockSetting(state, onIntent) }
         item { ScreenAwakeSetting(state, onIntent) }
         item { GpsSettings(state, onIntent) }
-        item { DiagnosticsSetting(onIntent) }
+        item { DiagnosticsSetting(state, onIntent) }
         item { AboutSetting(onIntent) }
     }
 }
 
 @Composable
-private fun DiagnosticsSetting(onIntent: (MainIntent) -> Unit) {
+private fun DiagnosticsSetting(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+    var confirmClear by rememberSaveable { mutableStateOf(false) }
     SensorBoxPanel {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.diagnostics_title), style = MaterialTheme.typography.titleMedium)
@@ -80,21 +89,84 @@ private fun DiagnosticsSetting(onIntent: (MainIntent) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             SensorBoxSecondaryButton(
+                label = stringResource(R.string.diagnostics_view),
+                onClick = { onIntent(SettingsIntent.ViewDiagnostics) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SensorBoxSecondaryButton(
+                label = stringResource(R.string.diagnostics_copy),
+                onClick = { onIntent(SettingsIntent.CopyDiagnostics) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SensorBoxSecondaryButton(
                 label = stringResource(R.string.diagnostics_share_text),
-                onClick = { onIntent(MainIntent.ShareDiagnosticsText) },
+                onClick = { onIntent(SettingsIntent.ShareDiagnosticsText) },
                 modifier = Modifier.fillMaxWidth(),
             )
             SensorBoxSecondaryButton(
                 label = stringResource(R.string.diagnostics_share_file),
-                onClick = { onIntent(MainIntent.ShareDiagnosticsFile) },
+                onClick = { onIntent(SettingsIntent.ShareDiagnosticsFile) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SensorBoxSecondaryButton(
+                label = stringResource(R.string.diagnostics_clear),
+                onClick = { confirmClear = true },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
+
+    state.diagnosticsText?.let { diagnostics ->
+        AlertDialog(
+            onDismissRequest = { onIntent(SettingsIntent.DismissDiagnostics) },
+            title = { Text(stringResource(R.string.diagnostics_title)) },
+            text = {
+                SelectionContainer {
+                    Text(
+                        text = diagnostics,
+                        modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.CopyDiagnostics) }) {
+                    Text(stringResource(R.string.diagnostics_copy))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.DismissDiagnostics) }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text(stringResource(R.string.diagnostics_clear)) },
+            text = { Text(stringResource(R.string.diagnostics_clear_confirmation)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmClear = false
+                        onIntent(SettingsIntent.ClearDiagnostics)
+                    },
+                ) {
+                    Text(stringResource(R.string.diagnostics_clear))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
-private fun GpsSettings(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun GpsSettings(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NumberPickerSetting(
             stringResource(R.string.gps_interval),
@@ -106,7 +178,7 @@ private fun GpsSettings(state: MainState, onIntent: (MainIntent) -> Unit) {
             ),
             1,
             3_600,
-        ) { onIntent(MainIntent.SetGpsInterval(it)) }
+        ) { onIntent(SettingsIntent.SetGpsInterval(it)) }
         NumberPickerSetting(
             stringResource(R.string.gps_minimum_distance),
             state.preferences.gpsMinDistanceMeters,
@@ -117,7 +189,7 @@ private fun GpsSettings(state: MainState, onIntent: (MainIntent) -> Unit) {
             ),
             0,
             10_000,
-        ) { onIntent(MainIntent.SetGpsDistance(it)) }
+        ) { onIntent(SettingsIntent.SetGpsDistance(it)) }
     }
 }
 
@@ -189,34 +261,34 @@ private fun NumberPickerSetting(
 }
 
 @Composable
-private fun BatteryGuardSetting(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun BatteryGuardSetting(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_settings_description),
         checked = state.preferences.restrictMeasurementOnLowBattery,
-    ) { onIntent(MainIntent.SetLowBatteryRestriction(it)) }
+    ) { onIntent(SettingsIntent.SetLowBatteryRestriction(it)) }
 }
 
 @Composable
-private fun CpuWakeLockSetting(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun CpuWakeLockSetting(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_cpu_awake),
         description = stringResource(R.string.keep_cpu_awake_settings_description),
         checked = state.preferences.useWakeLock,
-    ) { onIntent(MainIntent.SetWakeLock(it)) }
+    ) { onIntent(SettingsIntent.SetWakeLock(it)) }
 }
 
 @Composable
-private fun ScreenAwakeSetting(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun ScreenAwakeSetting(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_screen_awake),
         description = stringResource(R.string.keep_screen_awake_settings_description),
         checked = state.preferences.keepPhoneDisplayOn,
-    ) { onIntent(MainIntent.SetKeepScreenAwake(it)) }
+    ) { onIntent(SettingsIntent.SetKeepScreenAwake(it)) }
 }
 
 @Composable
-private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (MainIntent) -> Unit) {
+private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (SettingsIntent) -> Unit) {
     SensorBoxPanel {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.battery_optimization), style = MaterialTheme.typography.titleMedium)
@@ -229,7 +301,7 @@ private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (MainIntent)
             if (!isExempt) {
                 SensorBoxSecondaryButton(
                     label = stringResource(R.string.exclude_from_battery_saving),
-                    onClick = { onIntent(MainIntent.RequestBatteryOptimizationExemption) },
+                    onClick = { onIntent(SettingsIntent.RequestBatteryOptimizationExemption) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -238,7 +310,7 @@ private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (MainIntent)
 }
 
 @Composable
-private fun AboutSetting(onIntent: (MainIntent) -> Unit) {
+private fun AboutSetting(onIntent: (SettingsIntent) -> Unit) {
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
 
     SensorBoxPanel {
@@ -261,11 +333,11 @@ private fun AboutSetting(onIntent: (MainIntent) -> Unit) {
             onDismiss = { showAboutDialog = false },
             onPrivacy = {
                 showAboutDialog = false
-                onIntent(MainIntent.Navigate(MainRoute.PRIVACY))
+                onIntent(SettingsIntent.Navigate(MainRoute.PRIVACY))
             },
             onLicenses = {
                 showAboutDialog = false
-                onIntent(MainIntent.Navigate(MainRoute.LICENSES))
+                onIntent(SettingsIntent.Navigate(MainRoute.LICENSES))
             },
         )
     }
@@ -291,7 +363,7 @@ private fun Context.isBatteryOptimizationExempt(): Boolean =
     getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
 
 @Composable
-fun SamplingSetting(selected: Int, onIntent: (MainIntent) -> Unit) {
+fun SamplingSetting(selected: Int, onSamplingPeriod: (Int) -> Unit) {
     SensorBoxPanel {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.sensor_sampling), style = MaterialTheme.typography.titleMedium)
@@ -307,7 +379,7 @@ fun SamplingSetting(selected: Int, onIntent: (MainIntent) -> Unit) {
                     R.string.sampling_normal,
                 ).forEachIndexed { index, label ->
                     SamplingChip(stringResource(label), selected == index) {
-                        onIntent(MainIntent.SetSamplingPeriod(index))
+                        onSamplingPeriod(index)
                     }
                 }
             }

@@ -29,10 +29,10 @@ import com.motionapps.sensorbox.R
 
 @Composable
 fun MeasurementSetupScreen(
-    state: MainState,
-    onIntent: (MainIntent) -> Unit,
+    state: RecordingState,
+    onIntent: (RecordingIntent) -> Unit,
     modifier: Modifier = Modifier,
-    onBack: () -> Unit = { onIntent(MainIntent.ReturnToSensorSelection) },
+    onBack: () -> Unit = { onIntent(RecordingIntent.ReturnToSensorSelection) },
 ) {
     Box(modifier.fillMaxSize()) {
         MeasurementSetupContent(state, onIntent, onBack)
@@ -41,17 +41,21 @@ fun MeasurementSetupScreen(
 }
 
 @Composable
-private fun MeasurementSetupContent(state: MainState, onIntent: (MainIntent) -> Unit, onBack: () -> Unit) {
+private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit, onBack: () -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 132.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { SensorBoxTopAppBar(stringResource(R.string.measurement_setup), onBack) }
-        item { StorageSetupPanel(state.storagePath) { onIntent(MainIntent.ChooseStorage) } }
+        item { StorageSetupPanel(state.storagePath) { onIntent(RecordingIntent.ChooseStorage) } }
         item { MeasurementNameSetup(state, onIntent) }
         item { TimingSetup(state, onIntent) }
         item { NotesAndAlarmsSetup(state, onIntent) }
-        item { SamplingSetting(state.preferences.sensorSamplingPeriod, onIntent) }
+        item {
+            SamplingSetting(state.preferences.sensorSamplingPeriod) { index ->
+                onIntent(RecordingIntent.SetSamplingPeriod(index))
+            }
+        }
         item { SpecializedSourcesSetup(state, onIntent) }
         item { BatterySetup(state, onIntent) }
         item { WakeLockSetup(state, onIntent) }
@@ -60,16 +64,16 @@ private fun MeasurementSetupContent(state: MainState, onIntent: (MainIntent) -> 
             item { GpsIntervalSetup(state, onIntent) }
             item { GpsDistanceSetup(state, onIntent) }
         }
-        item { MainMessageText(state.message) }
+        item { RecordingMessageText(state.message) }
     }
 }
 
 @Composable
-private fun MeasurementNameSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     SensorBoxPanel {
         OutlinedTextField(
             value = state.customMeasurementName,
-            onValueChange = { onIntent(MainIntent.SetCustomMeasurementName(it)) },
+            onValueChange = { onIntent(RecordingIntent.SetCustomMeasurementName(it)) },
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             label = { Text(stringResource(R.string.custom_measurement_name)) },
             supportingText = { Text(stringResource(R.string.custom_measurement_name_description)) },
@@ -79,20 +83,20 @@ private fun MeasurementNameSetup(state: MainState, onIntent: (MainIntent) -> Uni
 }
 
 @Composable
-private fun TimingSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun TimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         BooleanSetting(
             title = stringResource(R.string.timed_measurement),
             description = stringResource(R.string.timed_measurement_description),
             checked = state.measurementType == "TIMED",
-        ) { onIntent(MainIntent.SetMeasurementType(if (it) "TIMED" else "ENDLESS")) }
+        ) { onIntent(RecordingIntent.SetMeasurementType(if (it) "TIMED" else "ENDLESS")) }
         StepSetting(
             stringResource(R.string.start_delay),
             state.startDelaySeconds,
             pluralStringResource(R.plurals.seconds_count, state.startDelaySeconds, state.startDelaySeconds),
             0,
             86_400,
-        ) { onIntent(MainIntent.SetStartDelay(it)) }
+        ) { onIntent(RecordingIntent.SetStartDelay(it)) }
         if (state.measurementType == "TIMED") {
             StepSetting(
                 stringResource(R.string.measurement_duration),
@@ -104,18 +108,18 @@ private fun TimingSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
                 ),
                 1,
                 86_400,
-            ) { onIntent(MainIntent.SetDuration(it)) }
+            ) { onIntent(RecordingIntent.SetDuration(it)) }
         }
     }
 }
 
 @Composable
-private fun NotesAndAlarmsSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun NotesAndAlarmsSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     SensorBoxPanel {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(
                 value = state.notes,
-                onValueChange = { onIntent(MainIntent.SetNotes(it)) },
+                onValueChange = { onIntent(RecordingIntent.SetNotes(it)) },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.measurement_notes)) },
                 supportingText = { Text(stringResource(R.string.measurement_notes_description)) },
@@ -123,7 +127,7 @@ private fun NotesAndAlarmsSetup(state: MainState, onIntent: (MainIntent) -> Unit
             )
             OutlinedTextField(
                 value = state.alarmOffsets,
-                onValueChange = { onIntent(MainIntent.SetAlarmOffsets(it)) },
+                onValueChange = { onIntent(RecordingIntent.SetAlarmOffsets(it)) },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.audible_alarm_offsets)) },
                 supportingText = { Text(stringResource(R.string.audible_alarm_offsets_description)) },
@@ -134,13 +138,13 @@ private fun NotesAndAlarmsSetup(state: MainState, onIntent: (MainIntent) -> Unit
 }
 
 @Composable
-private fun SpecializedSourcesSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun SpecializedSourcesSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         BooleanSetting(
             title = stringResource(R.string.activity_recognition),
             description = stringResource(R.string.activity_recognition_description),
             checked = state.activityRecognition,
-        ) { onIntent(MainIntent.SetActivityRecognition(it)) }
+        ) { onIntent(RecordingIntent.SetActivityRecognition(it)) }
         if (state.activityRecognition) {
             StepSetting(
                 stringResource(R.string.activity_recognition_period),
@@ -152,13 +156,13 @@ private fun SpecializedSourcesSetup(state: MainState, onIntent: (MainIntent) -> 
                 ),
                 1,
                 3_600,
-            ) { onIntent(MainIntent.SetActivityRecognitionPeriod(it)) }
+            ) { onIntent(RecordingIntent.SetActivityRecognitionPeriod(it)) }
         }
         BooleanSetting(
             title = stringResource(R.string.significant_motion),
             description = stringResource(R.string.significant_motion_description),
             checked = state.significantMotion,
-        ) { onIntent(MainIntent.SetSignificantMotion(it)) }
+        ) { onIntent(RecordingIntent.SetSignificantMotion(it)) }
     }
 }
 
@@ -191,34 +195,34 @@ private fun StorageSetupPanel(path: String?, onChoose: () -> Unit) {
 }
 
 @Composable
-private fun BatterySetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun BatterySetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_setup_description),
         checked = state.preferences.restrictMeasurementOnLowBattery,
-    ) { onIntent(MainIntent.SetLowBatteryRestriction(it)) }
+    ) { onIntent(RecordingIntent.SetLowBatteryRestriction(it)) }
 }
 
 @Composable
-private fun WakeLockSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun WakeLockSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_cpu_awake),
         description = stringResource(R.string.keep_cpu_awake_setup_description),
         checked = state.preferences.useWakeLock,
-    ) { onIntent(MainIntent.SetWakeLock(it)) }
+    ) { onIntent(RecordingIntent.SetWakeLock(it)) }
 }
 
 @Composable
-private fun KeepScreenAwakeSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun KeepScreenAwakeSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_screen_awake),
         description = stringResource(R.string.keep_screen_awake_setup_description),
         checked = state.preferences.keepPhoneDisplayOn,
-    ) { onIntent(MainIntent.SetKeepScreenAwake(it)) }
+    ) { onIntent(RecordingIntent.SetKeepScreenAwake(it)) }
 }
 
 @Composable
-private fun GpsIntervalSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     StepSetting(
         stringResource(R.string.gps_interval),
         state.preferences.gpsIntervalSeconds,
@@ -230,12 +234,12 @@ private fun GpsIntervalSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
         1,
         3_600,
     ) {
-        onIntent(MainIntent.SetGpsInterval(it))
+        onIntent(RecordingIntent.SetGpsInterval(it))
     }
 }
 
 @Composable
-private fun GpsDistanceSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun GpsDistanceSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     StepSetting(
         stringResource(R.string.gps_minimum_distance),
         state.preferences.gpsMinDistanceMeters,
@@ -247,12 +251,16 @@ private fun GpsDistanceSetup(state: MainState, onIntent: (MainIntent) -> Unit) {
         0,
         10_000,
     ) {
-        onIntent(MainIntent.SetGpsDistance(it))
+        onIntent(RecordingIntent.SetGpsDistance(it))
     }
 }
 
 @Composable
-private fun MeasurementSetupActionBar(state: MainState, onIntent: (MainIntent) -> Unit, modifier: Modifier = Modifier) {
+private fun MeasurementSetupActionBar(
+    state: RecordingState,
+    onIntent: (RecordingIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val sourceCount = setupSourceCount(state)
     SensorBoxBottomAction(
         title = pluralStringResource(R.plurals.source_count, sourceCount, sourceCount),
@@ -261,11 +269,12 @@ private fun MeasurementSetupActionBar(state: MainState, onIntent: (MainIntent) -
         ),
         buttonLabel = stringResource(R.string.start_measurement),
         enabled = state.storagePath != null && sourceCount > 0,
-        onClick = { onIntent(MainIntent.StartMeasurement) },
+        onClick = { onIntent(RecordingIntent.StartMeasurement) },
         modifier = modifier,
     )
 }
 
-private fun setupSourceCount(state: MainState): Int = state.selectedSensorIds.size + state.selectedWearSensorIds.size +
-    (if (state.includesGps) 1 else 0) + (if (state.wearIncludesGps) 1 else 0) +
-    (if (state.activityRecognition) 1 else 0) + (if (state.significantMotion) 1 else 0)
+private fun setupSourceCount(state: RecordingState): Int =
+    state.selectedSensorIds.size + state.selectedWearSensorIds.size +
+        (if (state.includesGps) 1 else 0) + (if (state.wearIncludesGps) 1 else 0) +
+        (if (state.activityRecognition) 1 else 0) + (if (state.significantMotion) 1 else 0)
