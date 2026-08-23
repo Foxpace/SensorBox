@@ -1,5 +1,7 @@
 package com.motionapps.sensorbox.core.testing
 
+import com.motionapps.sensorbox.core.error.AppResult
+
 import com.motionapps.sensorbox.core.preferences.AppPreferences
 import com.motionapps.sensorbox.core.preferences.AppPreferencesIntent
 import com.motionapps.sensorbox.core.preferences.AppPreferencesReducer
@@ -12,10 +14,10 @@ class FakeAppPreferencesRepository(
 ) : AppPreferencesRepository {
     private val mutablePreferences = MutableStateFlow(initial)
 
-    override val preferences = mutablePreferences.map(Result.Companion::success)
+    override val preferences = mutablePreferences.map(AppResult.Companion::success)
 
-    override suspend fun dispatch(intent: AppPreferencesIntent): Result<Unit> {
+    override suspend fun dispatch(intent: AppPreferencesIntent): AppResult<Unit> {
         mutablePreferences.value = AppPreferencesReducer.reduce(mutablePreferences.value, intent)
-        return Result.success(Unit)
+        return AppResult.success(Unit)
     }
 }

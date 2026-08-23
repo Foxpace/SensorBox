@@ -6,6 +6,8 @@ import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.suspendAppResult
 import com.motionapps.sensorbox.core.error.suspendFlatMap
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,7 +33,7 @@ class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext
         trySend(loadConnection(capability))
         awaitClose { capabilityClient.removeListener(listener) }
     }.catch { error ->
-        AppError.from(AppError.Kind.CONNECTIVITY, "Observe Wear connection", error)
+        AppError.from(AppErrorCode.CONNECTIVITY, "Observe Wear connection", error)
         emit(WearConnection.Disconnected)
     }
 
@@ -42,13 +44,13 @@ class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext
         return WearNodeSelector.select(info.nodes.map { it.toWearNode() })
     }
 
-    override suspend fun sendMessage(capability: String, path: String, payload: ByteArray): Result<Unit> =
-        suspendAppResult(AppError.Kind.CONNECTIVITY, "Find Wear node") { findNode(capability) }
+    override suspend fun sendMessage(capability: String, path: String, payload: ByteArray): AppResult<Unit> =
+        suspendAppResult(AppErrorCode.CONNECTIVITY, "Find Wear node") { findNode(capability) }
             .suspendFlatMap { node ->
                 if (node == null) {
-                    Result.failure(AppError(AppError.Kind.CONNECTIVITY, "Find reachable Wear node for $capability"))
+                    AppResult.failure(AppError(AppErrorCode.CONNECTIVITY, "Find reachable Wear node for $capability"))
                 } else {
-                    suspendAppResult(AppError.Kind.CONNECTIVITY, "Send Wear message") {
+                    suspendAppResult(AppErrorCode.CONNECTIVITY, "Send Wear message") {
                         messageClient.sendMessage(node.id, path, payload).await()
                         Unit
                     }

@@ -4,18 +4,32 @@ import android.content.Context
 import android.content.Intent
 import androidx.documentfile.provider.DocumentFile
 import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.appResult
 import com.motionapps.sensorbox.core.error.flatMap
 import java.io.InputStream
 import java.io.OutputStream
 
 object NativeDocumentStorage {
-    fun persistRootAccess(context: Context, intent: Intent, appDirectoryName: String): Result<Unit> {
+    fun persistRootAccess(context: Context, intent: Intent, appDirectoryName: String): AppResult<Unit> {
         val uri = intent.data ?: return storageFailure("Storage directory was not selected")
         val grantFlags = intent.flags and READ_WRITE_FLAGS
         if (grantFlags == 0) return storageFailure("Storage permission was not granted")
-        return appResult(AppError.Kind.STORAGE, "Persist storage permission") {
-            context.contentResolver.takePersistableUriPermission(uri, grantFlags)
+        return appResult(AppErrorCode.STORAGE, "Persist storage permission") {
+            when (grantFlags) {
+                Intent.FLAG_GRANT_READ_URI_PERMISSION -> context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION -> context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+
+                else -> context.contentResolver.takePersistableUriPermission(uri, READ_WRITE_FLAGS)
+            }
             DocumentFile.fromTreeUri(context, uri)
         }.flatMap { selectedDirectory ->
             if (selectedDirectory?.isDirectory != true) {
@@ -25,38 +39,41 @@ object NativeDocumentStorage {
             if (appDirectory(context, appDirectoryName, create = true) == null) {
                 storageFailure("Storage directory is unavailable")
             } else {
-                Result.success(Unit)
+                AppResult.success(Unit)
             }
         }
     }
 
-    fun hasAppDirectory(context: Context, appDirectoryName: String): Result<Boolean> = appResult(
-        AppError.Kind.STORAGE,
+    fun hasAppDirectory(context: Context, appDirectoryName: String): AppResult<Boolean> = appResult(
+        AppErrorCode.STORAGE,
         "Check storage directory",
     ) {
         appDirectory(context, appDirectoryName, create = false)?.exists() == true
     }
 
-    fun displayPath(context: Context, appDirectoryName: String): Result<String?> = appResult(
-        AppError.Kind.STORAGE,
+    fun displayPath(context: Context, appDirectoryName: String): AppResult<String?> = appResult(
+        AppErrorCode.STORAGE,
         "Read storage path",
     ) {
         val selectedDirectory = appDirectory(context, appDirectoryName, create = false) ?: return@appResult null
         selectedDirectory.name ?: selectedDirectory.uri.lastPathSegment
     }
 
-    fun createMeasurementDirectory(context: Context, appDirectoryName: String, measurementName: String): Result<Unit> =
-        appResult(AppError.Kind.STORAGE, "Access measurement root") {
-            appDirectory(context, appDirectoryName, create = false)
-        }.flatMap { appDirectory ->
-            if (appDirectory == null) return@flatMap storageFailure("Storage directory is not configured")
-            appResult(AppError.Kind.STORAGE, "Create measurement directory") {
-                findDirectory(appDirectory, measurementName) != null ||
-                    appDirectory.createDirectory(measurementName) != null
-            }.flatMap { created ->
-                if (created) Result.success(Unit) else storageFailure("Unable to create measurement directory")
-            }
+    fun createMeasurementDirectory(
+        context: Context,
+        appDirectoryName: String,
+        measurementName: String,
+    ): AppResult<Unit> = appResult(AppErrorCode.STORAGE, "Access measurement root") {
+        appDirectory(context, appDirectoryName, create = false)
+    }.flatMap { appDirectory ->
+        if (appDirectory == null) return@flatMap storageFailure("Storage directory is not configured")
+        appResult(AppErrorCode.STORAGE, "Create measurement directory") {
+            findDirectory(appDirectory, measurementName) != null ||
+                appDirectory.createDirectory(measurementName) != null
+        }.flatMap { created ->
+            if (created) AppResult.success(Unit) else storageFailure("Unable to create measurement directory")
         }
+    }
 
     fun openMeasurementFile(
         context: Context,
@@ -65,29 +82,29 @@ object NativeDocumentStorage {
         mimeType: String,
         fileName: String,
         replaceExisting: Boolean = false,
-    ): Result<OutputStream> = appResult(AppError.Kind.STORAGE, "Access measurement directory") {
+    ): AppResult<OutputStream> = appResult(AppErrorCode.STORAGE, "Access measurement directory") {
         measurementDirectory(context, appDirectoryName, measurementName)
     }.flatMap { directory ->
         if (directory == null) return@flatMap storageFailure("Measurement directory is unavailable")
         createOrReplaceFile(directory, mimeType, fileName, replaceExisting).flatMap { createdFile ->
             if (createdFile == null) return@flatMap storageFailure("Unable to create measurement file")
-            appResult(AppError.Kind.STORAGE, "Open measurement file") {
+            appResult(AppErrorCode.STORAGE, "Open measurement file") {
                 context.contentResolver.openOutputStream(createdFile.uri, "wt")
             }.flatMap { output ->
-                output?.let(Result.Companion::success) ?: storageFailure("Unable to open measurement file")
+                output?.let(AppResult.Companion::success) ?: storageFailure("Unable to open measurement file")
             }
         }
     }
 
-    fun deleteMeasurement(context: Context, appDirectoryName: String, measurementName: String): Result<Unit> =
-        appResult(AppError.Kind.STORAGE, "Access measurement directory") {
+    fun deleteMeasurement(context: Context, appDirectoryName: String, measurementName: String): AppResult<Unit> =
+        appResult(AppErrorCode.STORAGE, "Access measurement directory") {
             appDirectory(context, appDirectoryName, create = false)
         }.flatMap { appDirectory ->
             if (appDirectory == null) return@flatMap storageFailure("Storage directory is not configured")
             val directory = findDirectory(appDirectory, measurementName)
                 ?: return@flatMap storageFailure("Measurement does not exist")
-            appResult(AppError.Kind.STORAGE, "Delete measurement") { directory.delete() }.flatMap { deleted ->
-                if (deleted) Result.success(Unit) else storageFailure("Unable to delete measurement")
+            appResult(AppErrorCode.STORAGE, "Delete measurement") { directory.delete() }.flatMap { deleted ->
+                if (deleted) AppResult.success(Unit) else storageFailure("Unable to delete measurement")
             }
         }
 
@@ -98,7 +115,7 @@ object NativeDocumentStorage {
         measurementName: String,
         fileName: String,
         mimeType: String,
-    ): Result<Unit> = openMeasurementFile(
+    ): AppResult<Unit> = openMeasurementFile(
         context = context,
         appDirectoryName = appDirectoryName,
         measurementName = measurementName,
@@ -106,7 +123,7 @@ object NativeDocumentStorage {
         fileName = fileName,
         replaceExisting = true,
     ).flatMap { output ->
-        appResult(AppError.Kind.STORAGE, "Copy measurement file") {
+        appResult(AppErrorCode.STORAGE, "Copy measurement file") {
             input.use { source -> output.use(source::copyTo) }
             Unit
         }
@@ -148,7 +165,7 @@ private fun createOrReplaceFile(
     mimeType: String,
     fileName: String,
     replaceExisting: Boolean,
-): Result<DocumentFile?> = appResult(AppError.Kind.STORAGE, "Create measurement file") {
+): AppResult<DocumentFile?> = appResult(AppErrorCode.STORAGE, "Create measurement file") {
     val existing = directory.findFile(fileName)
     if (replaceExisting && existing != null) {
         if (existing.delete()) directory.createFile(normalizeMimeType(mimeType), fileName) else null
@@ -157,8 +174,8 @@ private fun createOrReplaceFile(
     }
 }
 
-private fun <T> storageFailure(operation: String): Result<T> =
-    Result.failure(AppError(AppError.Kind.STORAGE, operation))
+private fun <T> storageFailure(operation: String): AppResult<T> =
+    AppResult.failure(AppError(AppErrorCode.STORAGE, operation))
 
 private fun releaseOtherRootPermissions(context: Context, selectedUri: android.net.Uri) {
     val resolver = context.contentResolver
@@ -169,7 +186,7 @@ private fun releaseOtherRootPermissions(context: Context, selectedUri: android.n
                 (if (permission.isReadPermission) Intent.FLAG_GRANT_READ_URI_PERMISSION else 0) or
                     (if (permission.isWritePermission) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
             if (flags != 0) {
-                appResult(AppError.Kind.STORAGE, "Release old storage permission") {
+                appResult(AppErrorCode.STORAGE, "Release old storage permission") {
                     resolver.releasePersistableUriPermission(permission.uri, flags)
                 }
             }

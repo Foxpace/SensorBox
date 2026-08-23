@@ -12,11 +12,11 @@ class AppErrorTest {
     fun `Given an operation failure When captured Then AppError is returned`() {
         val cause = IllegalStateException("disk unavailable")
 
-        val result = appResult(AppError.Kind.STORAGE, "Write file") { throw cause }
+        val result = appResult(AppErrorCode.STORAGE, "Write file") { throw cause }
 
-        val error = result.exceptionOrNull()
+        val error = result.errorOrNull()
         assertTrue(error is AppError)
-        assertEquals(AppError.Kind.STORAGE, (error as AppError).kind)
+        assertEquals(AppErrorCode.STORAGE, (error as AppError).code)
         assertEquals("Write file", error.operation)
         assertSame(cause, error.cause)
     }
@@ -24,7 +24,7 @@ class AppErrorTest {
     @Test(expected = CancellationException::class)
     fun `Given coroutine cancellation When captured Then cancellation is rethrown`() {
         runBlocking {
-            suspendAppResult<Unit>(AppError.Kind.CONNECTIVITY, "Send message") {
+            suspendAppResult<Unit>(AppErrorCode.CONNECTIVITY, "Send message") {
                 throw CancellationException("cancelled")
             }
         }
