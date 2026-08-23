@@ -9,11 +9,11 @@ import android.os.Bundle
  */
 interface MeasurementInterface {
 
-    fun initMeasurement(context: Context, params: Bundle)
-    fun startMeasurement(context: Context)
-    fun pauseMeasurement(context: Context)
-    suspend fun saveMeasurement(context: Context)
-    suspend fun onDestroyMeasurement(context: Context)
+    fun initMeasurement(context: Context, params: Bundle): Result<Unit>
+    fun startMeasurement(context: Context): Result<Unit>
+    fun pauseMeasurement(context: Context): Result<Unit>
+    suspend fun saveMeasurement(context: Context): Result<Unit>
+    suspend fun onDestroyMeasurement(context: Context): Result<Unit>
 
     companion object {
         // keys for the bundle in service to handlers
@@ -23,4 +23,3 @@ interface MeasurementInterface {
         const val INTERNAL_STORAGE = "INTERNAL_STORAGE"
     }
 }
-

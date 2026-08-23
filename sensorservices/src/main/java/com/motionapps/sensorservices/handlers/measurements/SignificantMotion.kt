@@ -6,99 +6,81 @@ import android.hardware.SensorManager
 import android.hardware.TriggerEvent
 import android.hardware.TriggerEventListener
 import android.os.Bundle
+import com.motionapps.sensorbox.core.error.AppError
+import com.motionapps.sensorbox.core.error.appResult
+import com.motionapps.sensorbox.core.error.combineAppResults
+import com.motionapps.sensorbox.core.error.flatMap
+import com.motionapps.sensorbox.core.error.withAppError
 import com.motionapps.sensorservices.handlers.StorageHandler
 import java.io.OutputStream
 
-/**
- * significant motion detector needs to be registered every time after it is triggered
- * that is why, it saves reference to sensorManager
- */
-class SignificantMotion : MeasurementInterface, TriggerEventListener() {
-
-    private var outputStream: OutputStream? = null
+/** Handles Android's one-shot significant-motion trigger and re-arms it after every event. */
+class SignificantMotion :
+    TriggerEventListener(),
+    MeasurementInterface {
     private var sensorManager: SensorManager? = null
+    private var sensor: Sensor? = null
+    private var output: OutputStream? = null
+    private var writeFailure: AppError? = null
 
-    /**
-     * creates outputStream to save events
-     *
-     * @param context
-     * @param params - requirements from the service like external / internal storage
-     */
-    override fun initMeasurement(context: Context, params: Bundle) {
-        sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-
-        outputStream = if(params.getBoolean(MeasurementInterface.INTERNAL_STORAGE)){
-            StorageHandler.createFileInInternalFolder(context,
-                params.getString(MeasurementInterface.FOLDER_NAME)!!, "significant_motion.csv")
-        }else{
-            StorageHandler.createFileInFolder(context,
-                params.getString(MeasurementInterface.FOLDER_NAME)!!,
-                "csv", "significant_motion.csv")
+    override fun initMeasurement(context: Context, params: Bundle): Result<Unit> {
+        sensorManager = context.getSystemService(SensorManager::class.java)
+        sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
+        val folder = params.getString(MeasurementInterface.FOLDER_NAME).orEmpty()
+        val stream = if (params.getBoolean(MeasurementInterface.INTERNAL_STORAGE)) {
+            StorageHandler.createFileInInternalFolder(context, folder, FILE_NAME)
+        } else {
+            StorageHandler.createFileInFolder(context, folder, "text/csv", FILE_NAME)
         }
-
-        outputStream?.write("t;event\n".toByteArray())
+        return stream.flatMap { opened ->
+            output = opened
+            appResult(AppError.Kind.STORAGE, "Write significant motion header") {
+                opened.write("t_unix;event\n".toByteArray())
+            }
+        }.withAppError(AppError.Kind.MEASUREMENT, "Initialize significant motion")
     }
 
-    /**
-     * registers detector
-     *
-     * @param context
-     */
-    override fun startMeasurement(context: Context) {
-        registerSensor()
+    override fun startMeasurement(context: Context): Result<Unit> = if (arm()) {
+        Result.success(Unit)
+    } else {
+        Result.failure(AppError(AppError.Kind.MEASUREMENT, "Start significant motion"))
     }
 
-    /**
-     * cancels registration
-     *
-     * @param context
-     */
-    override fun pauseMeasurement(context: Context) {
-        sensorManager?.cancelTriggerSensor(this, sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION))
+    override fun pauseMeasurement(context: Context): Result<Unit> = appResult(
+        AppError.Kind.MEASUREMENT,
+        "Pause significant motion",
+    ) {
+        sensor?.let { sensorManager?.cancelTriggerSensor(this, it) }
     }
 
-    /**
-     * saves data to csv file
-     *
-     * @param context
-     */
-    override suspend fun saveMeasurement(context: Context) {
-        kotlin.runCatching {
-            outputStream?.flush()
-            outputStream?.close()
-        }
+    override suspend fun saveMeasurement(context: Context): Result<Unit> {
+        val results = mutableListOf<Result<*>>()
+        results += appResult(AppError.Kind.STORAGE, "Close significant motion") { output?.close() }
+        writeFailure?.let { results += Result.failure<Unit>(it) }
+        output = null
+        writeFailure = null
+        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Save significant motion")
     }
 
-    /**
-     * saves csv and cancels registration
-     *
-     * @param context
-     */
-    override suspend fun onDestroyMeasurement(context: Context) {
-        pauseMeasurement(context)
-        saveMeasurement(context)
+    override suspend fun onDestroyMeasurement(context: Context): Result<Unit> {
+        val results = listOf(pauseMeasurement(context), saveMeasurement(context))
+        sensor = null
         sensorManager = null
+        return results.combineAppResults(AppError.Kind.MEASUREMENT, "Stop significant motion")
     }
 
-    /**
-     * called upon the detection
-     *
-     * @param triggerEvent - has only value of 1
-     */
-    override fun onTrigger(triggerEvent: TriggerEvent?) {
-        triggerEvent?.let {
-            outputStream?.write("${System.currentTimeMillis()};${triggerEvent.values[0]}\n".toByteArray())
+    override fun onTrigger(event: TriggerEvent?) {
+        event?.values?.firstOrNull()?.let { value ->
+            appResult(AppError.Kind.STORAGE, "Write significant motion") {
+                output?.write("${System.currentTimeMillis()};$value\n".toByteArray())
+            }.onFailure { writeFailure = it as AppError }
         }
-        registerSensor()
+        if (!arm()) AppError(AppError.Kind.MEASUREMENT, "Re-arm significant motion")
     }
 
-    /**
-     * to register significant motion sensor
-     *
-     */
-    private fun registerSensor(){
-        sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)?.let{
-            sensorManager!!.requestTriggerSensor(this, it)
-        }
+    private fun arm(): Boolean = sensor?.let { sensorManager?.requestTriggerSensor(this, it) } == true
+
+    private companion object {
+        const val FILE_NAME = "significant_motion.csv"
     }
 }
