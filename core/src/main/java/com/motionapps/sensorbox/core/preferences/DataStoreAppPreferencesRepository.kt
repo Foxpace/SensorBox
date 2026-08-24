@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
@@ -46,8 +47,15 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
         display = DisplayPreferences(
             keepPhoneDisplayOn = this[Keys.KEEP_PHONE_DISPLAY_ON] ?: false,
             keepWearDisplayOn = this[Keys.KEEP_DISPLAY_ON] ?: false,
+            themeMode = themeMode(),
+            dynamicColors = this[Keys.DYNAMIC_COLORS] ?: true,
         ),
     )
+
+    private fun Preferences.themeMode(): AppThemeMode {
+        val stored = this[Keys.THEME_MODE]
+        return AppThemeMode.entries.firstOrNull { it.name == stored } ?: AppThemeMode.AUTOMATIC
+    }
 
     private fun MutablePreferences.write(value: AppPreferences) {
         this[Keys.COMPLETED_INTRO] = value.onboarding.hasCompletedIntro
@@ -59,6 +67,8 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
         this[Keys.WAKE_LOCK] = value.recording.useWakeLock
         this[Keys.KEEP_PHONE_DISPLAY_ON] = value.display.keepPhoneDisplayOn
         this[Keys.KEEP_DISPLAY_ON] = value.display.keepWearDisplayOn
+        this[Keys.THEME_MODE] = value.display.themeMode.name
+        this[Keys.DYNAMIC_COLORS] = value.display.dynamicColors
     }
 
     private object Keys {
@@ -71,5 +81,7 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
         val WAKE_LOCK = booleanPreferencesKey("use_wake_lock")
         val KEEP_PHONE_DISPLAY_ON = booleanPreferencesKey("keep_phone_display_on")
         val KEEP_DISPLAY_ON = booleanPreferencesKey("keep_wear_display_on")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val DYNAMIC_COLORS = booleanPreferencesKey("dynamic_colors")
     }
 }

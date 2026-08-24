@@ -13,6 +13,7 @@ enum class MainRoute : NavKey {
     SENSOR_PREVIEW,
     SETUP,
     SETTINGS,
+    DIAGNOSTICS,
     LICENSES,
     PRIVACY,
 }

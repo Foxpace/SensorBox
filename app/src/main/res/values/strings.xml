@@ -44,7 +44,6 @@
     <string name="intro_storage_selected">Selected folder: %1$s</string>
     <string name="intro_back">Back</string>
     <string name="intro_finish">Start SensorBox</string>
-    <string name="intro_page_progress">%1$d of %2$d</string>
     <string name="dialog_privacy_policy">SensorBox does not collect or upload your sensor or GPS recordings. Your measurements stay in the folder you select. Recording begins only after your action and remains visible through a foreground-service notification.</string>
     <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
     <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
@@ -150,6 +149,22 @@
     <string name="exclude_from_battery_saving">Exclude from battery saving</string>
     <string name="sensor_sampling">Sensor sampling</string>
     <string name="sensor_sampling_description">Choose how often sensor values are captured</string>
+    <string name="settings_recording_category">Recording</string>
+    <string name="settings_location_category">Location</string>
+    <string name="settings_app_category">App</string>
+    <string name="settings_appearance_category">Appearance</string>
+    <string name="setup_storage_category">Storage</string>
+    <string name="setup_details_category">Details</string>
+    <string name="setup_timing_category">Timing</string>
+    <string name="setup_sources_category">Sources</string>
+    <string name="measurement_markers_category">Markers</string>
+    <string name="theme_mode">Theme</string>
+    <string name="theme_mode_description">Choose how the app follows the light and dark theme</string>
+    <string name="theme_automatic">Automatic</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_colors">Dynamic colors</string>
+    <string name="dynamic_colors_description">Use colors from your Android wallpaper when available</string>
     <string name="sampling_fastest">Fastest</string>
     <string name="sampling_game">Game</string>
     <string name="sampling_ui">UI</string>
@@ -224,6 +239,12 @@
     <string name="diagnostics_share_text">Send as text</string>
     <string name="diagnostics_share_file">Send as file</string>
     <string name="diagnostics_view">View logs</string>
+    <string name="diagnostics_view_summary">Open the complete diagnostic history</string>
+    <string name="diagnostics_share_summary">Share the diagnostic log file</string>
+    <string name="diagnostics_clear_summary">Delete the retained diagnostic history</string>
+    <string name="diagnostics_logs_title">Diagnostic logs</string>
+    <string name="diagnostics_loading">Loading logs…</string>
+    <string name="diagnostics_empty">No diagnostic logs recorded</string>
     <string name="diagnostics_copy">Copy logs</string>
     <string name="diagnostics_clear">Clear logs</string>
     <string name="diagnostics_clear_confirmation">Delete both retained diagnostic log files? This cannot be undone.</string>

@@ -234,7 +234,14 @@ class RecordingViewModel @Inject constructor(
     }
 
     private fun stopMeasurement() {
-        viewModelScope.launch { workflow.stop().showFailure() }
+        viewModelScope.launch {
+            val result = workflow.stop()
+            if (result.isSuccess) {
+                mutableEffects.send(RecordingEffect.Navigate(MainRoute.RECORD))
+            } else {
+                result.showFailure()
+            }
+        }
     }
 
     private fun updatePreference(intent: AppPreferencesIntent) {

@@ -136,6 +136,7 @@ private fun MainRoute.isRootDestination() = when (this) {
     MainRoute.SENSOR_PREVIEW,
     MainRoute.SETUP,
     MainRoute.SETTINGS,
+    MainRoute.DIAGNOSTICS,
     MainRoute.LICENSES,
     MainRoute.PRIVACY,
     -> false
@@ -195,6 +196,15 @@ private fun RouteContent(
                 onIntent = onSettingsIntent,
                 modifier = modifier,
                 onBack = onBack,
+            )
+        }
+
+        MainRoute.DIAGNOSTICS -> FullScreen { modifier ->
+            DiagnosticsLogScreen(
+                state = settingsState,
+                onBack = onBack,
+                onRefresh = { onSettingsIntent(SettingsIntent.ViewDiagnostics) },
+                modifier = modifier,
             )
         }
 

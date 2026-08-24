@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
@@ -47,6 +48,8 @@ class DataStoreAppPreferencesRepositoryTest {
                 booleanPreferencesKey("use_wake_lock") to true,
                 booleanPreferencesKey("keep_phone_display_on") to true,
                 booleanPreferencesKey("keep_wear_display_on") to true,
+                stringPreferencesKey("theme_mode") to AppThemeMode.DARK.name,
+                booleanPreferencesKey("dynamic_colors") to false,
             ),
         )
         val repository = DataStoreAppPreferencesRepository(dataStore)
@@ -60,7 +63,10 @@ class DataStoreAppPreferencesRepositoryTest {
         assertEquals(7, before?.recording?.gpsMinDistanceMeters)
         assertFalse(before?.recording?.restrictMeasurementOnLowBattery ?: true)
         assertTrue(before?.display?.keepPhoneDisplayOn == true)
+        assertEquals(AppThemeMode.DARK, before?.display?.themeMode)
+        assertFalse(before?.display?.dynamicColors ?: true)
         assertEquals(44, after?.recording?.gpsIntervalSeconds)
+        assertEquals(AppThemeMode.DARK, after?.display?.themeMode)
         assertEquals(44, dataStore.current[intPreferencesKey("gps_interval_seconds")])
     }
 

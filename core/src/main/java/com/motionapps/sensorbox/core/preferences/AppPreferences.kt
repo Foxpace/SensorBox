@@ -16,4 +16,15 @@ data class RecordingPreferences(
     val useWakeLock: Boolean = false,
 )
 
-data class DisplayPreferences(val keepPhoneDisplayOn: Boolean = false, val keepWearDisplayOn: Boolean = false)
+data class DisplayPreferences(
+    val keepPhoneDisplayOn: Boolean = false,
+    val keepWearDisplayOn: Boolean = false,
+    val themeMode: AppThemeMode = AppThemeMode.AUTOMATIC,
+    val dynamicColors: Boolean = true,
+)
+
+enum class AppThemeMode {
+    AUTOMATIC,
+    LIGHT,
+    DARK,
+}

@@ -71,7 +71,10 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(settingsViewModel) {
                 settingsViewModel.effects.collect(::handleSettingsEffect)
             }
-            SensorBoxTheme {
+            SensorBoxTheme(
+                themeMode = settingsState.preferences.display.themeMode,
+                dynamicColor = settingsState.preferences.display.dynamicColors,
+            ) {
                 SensorBoxApp(
                     mainState = mainState,
                     onboardingState = onboardingState,

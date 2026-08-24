@@ -3,6 +3,7 @@ package com.motionapps.sensorbox.presentation.main
 import android.content.Context
 import android.os.PowerManager
 import android.widget.NumberPicker
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,17 +11,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -29,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +35,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -46,6 +46,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.core.preferences.AppThemeMode
 
 @Composable
 fun SettingsScreen(
@@ -55,14 +56,23 @@ fun SettingsScreen(
     onBack: () -> Unit = { onIntent(SettingsIntent.Navigate(MainRoute.RECORD)) },
 ) {
     val isBatteryOptimizationExempt = rememberBatteryOptimizationExemption()
-    LazyColumn(
+    LaunchedEffect(Unit) { onIntent(SettingsIntent.ViewDiagnostics) }
+    SensorBoxBackScreen(
+        title = stringResource(R.string.measurement_settings),
+        onBack = onBack,
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        itemSpacing = 0.dp,
     ) {
+        item { SensorBoxSettingsSection(stringResource(R.string.settings_appearance_category)) }
+        item { ThemeModeSetting(state.preferences.display.themeMode, onIntent) }
         item {
-            SensorBoxTopAppBar(stringResource(R.string.measurement_settings), onBack)
+            BooleanSetting(
+                title = stringResource(R.string.dynamic_colors),
+                description = stringResource(R.string.dynamic_colors_description),
+                checked = state.preferences.display.dynamicColors,
+            ) { onIntent(SettingsIntent.SetDynamicColors(it)) }
         }
+        item { SensorBoxSettingsSection(stringResource(R.string.settings_recording_category)) }
         item {
             SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
                 onIntent(SettingsIntent.SetSamplingPeriod(index))
@@ -72,73 +82,58 @@ fun SettingsScreen(
         item { BatteryOptimizationSetting(isBatteryOptimizationExempt, onIntent) }
         item { CpuWakeLockSetting(state, onIntent) }
         item { ScreenAwakeSetting(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.settings_location_category)) }
         item { GpsSettings(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.diagnostics_title)) }
         item { DiagnosticsSetting(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.settings_app_category)) }
         item { AboutSetting(onIntent) }
     }
 }
 
 @Composable
+private fun ThemeModeSetting(selected: AppThemeMode, onIntent: (SettingsIntent) -> Unit) {
+    SettingsChoiceSetting(
+        title = stringResource(R.string.theme_mode),
+        description = stringResource(R.string.theme_mode_description),
+        options = listOf(
+            AppThemeMode.AUTOMATIC to stringResource(R.string.theme_automatic),
+            AppThemeMode.LIGHT to stringResource(R.string.theme_light),
+            AppThemeMode.DARK to stringResource(R.string.theme_dark),
+        ),
+        selected = selected,
+    ) { onIntent(SettingsIntent.SetThemeMode(it)) }
+}
+
+@Composable
 private fun DiagnosticsSetting(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
-    SensorBoxPanel {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.diagnostics_title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.diagnostics_summary),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.diagnostics_view),
-                onClick = { onIntent(SettingsIntent.ViewDiagnostics) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.diagnostics_copy),
-                onClick = { onIntent(SettingsIntent.CopyDiagnostics) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.diagnostics_share_text),
-                onClick = { onIntent(SettingsIntent.ShareDiagnosticsText) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.diagnostics_share_file),
-                onClick = { onIntent(SettingsIntent.ShareDiagnosticsFile) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.diagnostics_clear),
-                onClick = { confirmClear = true },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-
-    state.diagnosticsText?.let { diagnostics ->
-        AlertDialog(
-            onDismissRequest = { onIntent(SettingsIntent.DismissDiagnostics) },
-            title = { Text(stringResource(R.string.diagnostics_title)) },
-            text = {
-                SelectionContainer {
-                    Text(
-                        text = diagnostics,
-                        modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { onIntent(SettingsIntent.CopyDiagnostics) }) {
-                    Text(stringResource(R.string.diagnostics_copy))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { onIntent(SettingsIntent.DismissDiagnostics) }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
+    if (!state.diagnosticsLoaded) {
+        Text(
+            stringResource(R.string.diagnostics_loading),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    } else if (state.diagnosticsText.isNullOrBlank()) {
+        Text(
+            stringResource(R.string.diagnostics_empty),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        SettingsActionRow(
+            title = stringResource(R.string.diagnostics_view),
+            description = stringResource(R.string.diagnostics_view_summary),
+        ) { onIntent(SettingsIntent.Navigate(MainRoute.DIAGNOSTICS)) }
+        SettingsActionRow(
+            title = stringResource(R.string.diagnostics_share),
+            description = stringResource(R.string.diagnostics_share_summary),
+        ) { onIntent(SettingsIntent.ShareDiagnosticsFile) }
+        SettingsActionRow(
+            title = stringResource(R.string.diagnostics_clear),
+            description = stringResource(R.string.diagnostics_clear_summary),
+            showDivider = false,
+        ) { confirmClear = true }
     }
 
     if (confirmClear) {
@@ -167,7 +162,7 @@ private fun DiagnosticsSetting(state: SettingsState, onIntent: (SettingsIntent) 
 
 @Composable
 private fun GpsSettings(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column {
         NumberPickerSetting(
             stringResource(R.string.gps_interval),
             state.preferences.recording.gpsIntervalSeconds,
@@ -204,17 +199,16 @@ private fun NumberPickerSetting(
 ) {
     var showPicker by rememberSaveable { mutableStateOf(false) }
 
-    SensorBoxPanel {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(valueLabel, color = MaterialTheme.colorScheme.primary)
-            }
-            OutlinedButton(onClick = { showPicker = true }) {
-                Text(value.toString())
-            }
+    Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(valueLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        OutlinedButton(onClick = { showPicker = true }) {
+            Text(value.toString())
         }
     }
+    SensorBoxSettingsDivider()
 
     if (showPicker) {
         var selectedValue by remember(value, minimum, maximum) {
@@ -289,44 +283,35 @@ private fun ScreenAwakeSetting(state: SettingsState, onIntent: (SettingsIntent) 
 
 @Composable
 private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (SettingsIntent) -> Unit) {
-    SensorBoxPanel {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.battery_optimization), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(
-                    if (isExempt) R.string.battery_optimization_exempt else R.string.battery_optimization_restricted,
-                ),
-                color = if (isExempt) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(stringResource(R.string.battery_optimization), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(
+                if (isExempt) R.string.battery_optimization_exempt else R.string.battery_optimization_restricted,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (!isExempt) {
+            SensorBoxSecondaryButton(
+                label = stringResource(R.string.exclude_from_battery_saving),
+                onClick = { onIntent(SettingsIntent.RequestBatteryOptimizationExemption) },
+                modifier = Modifier.fillMaxWidth(),
             )
-            if (!isExempt) {
-                SensorBoxSecondaryButton(
-                    label = stringResource(R.string.exclude_from_battery_saving),
-                    onClick = { onIntent(SettingsIntent.RequestBatteryOptimizationExemption) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
         }
     }
+    SensorBoxSettingsDivider()
 }
 
 @Composable
 private fun AboutSetting(onIntent: (SettingsIntent) -> Unit) {
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
 
-    SensorBoxPanel {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.about_title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.about_summary),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SensorBoxSecondaryButton(
-                label = stringResource(R.string.menu_about),
-                onClick = { showAboutDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    SettingsActionRow(
+        title = stringResource(R.string.menu_about),
+        description = stringResource(R.string.about_summary),
+        showDivider = false,
+        showChevron = true,
+    ) { showAboutDialog = true }
 
     if (showAboutDialog) {
         AboutDialog(
@@ -364,31 +349,98 @@ private fun Context.isBatteryOptimizationExempt(): Boolean =
 
 @Composable
 fun SamplingSetting(selected: Int, onSamplingPeriod: (Int) -> Unit) {
-    SensorBoxPanel {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.sensor_sampling), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.sensor_sampling_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                listOf(
-                    R.string.sampling_fastest,
-                    R.string.sampling_game,
-                    R.string.sampling_ui,
-                    R.string.sampling_normal,
-                ).forEachIndexed { index, label ->
-                    SamplingChip(stringResource(label), selected == index) {
-                        onSamplingPeriod(index)
-                    }
+    SettingsChoiceSetting(
+        title = stringResource(R.string.sensor_sampling),
+        description = stringResource(R.string.sensor_sampling_description),
+        options = listOf(
+            0 to stringResource(R.string.sampling_fastest),
+            1 to stringResource(R.string.sampling_game),
+            2 to stringResource(R.string.sampling_ui),
+            3 to stringResource(R.string.sampling_normal),
+        ),
+        selected = selected,
+        onSelected = onSamplingPeriod,
+    )
+}
+
+@Composable
+private fun <T> SettingsChoiceSetting(
+    title: String,
+    description: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelected: (T) -> Unit,
+) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            options.forEach { (value, label) ->
+                SettingsChoiceChip(label, selected == value) {
+                    onSelected(value)
                 }
             }
         }
     }
+    SensorBoxSettingsDivider()
 }
 
 @Composable
-private fun SamplingChip(label: String, selected: Boolean, onClick: () -> Unit) {
+fun BooleanSetting(title: String, description: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(14.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onChecked,
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
+        )
+    }
+    SensorBoxSettingsDivider()
+}
+
+@Composable
+private fun SettingsActionRow(
+    title: String,
+    description: String,
+    showDivider: Boolean = true,
+    showChevron: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (showChevron) {
+            Spacer(Modifier.width(14.dp))
+            Icon(
+                painter = painterResource(R.drawable.ic_expand_more_24),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp).rotate(-90f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (showDivider) SensorBoxSettingsDivider()
+}
+
+@Composable
+private fun SettingsChoiceChip(label: String, selected: Boolean, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,
@@ -401,31 +453,17 @@ private fun SamplingChip(label: String, selected: Boolean, onClick: () -> Unit) 
 }
 
 @Composable
-fun BooleanSetting(title: String, description: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    SensorBoxPanel {
-        SettingSummary(title, description) {
-            Switch(
-                checked = checked,
-                onCheckedChange = onChecked,
-                colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-            )
-        }
-    }
-}
-
-@Composable
 fun StepSetting(title: String, value: Int, valueLabel: String, minimum: Int, maximum: Int, onValue: (Int) -> Unit) {
-    SensorBoxPanel {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(valueLabel, color = MaterialTheme.colorScheme.primary)
-            }
-            StepButton(stringResource(R.string.decrement)) { onValue((value - 1).coerceAtLeast(minimum)) }
-            Spacer(Modifier.width(8.dp))
-            StepButton(stringResource(R.string.increment)) { onValue((value + 1).coerceAtMost(maximum)) }
+    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(valueLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        StepButton(stringResource(R.string.decrement)) { onValue((value - 1).coerceAtLeast(minimum)) }
+        Spacer(Modifier.width(8.dp))
+        StepButton(stringResource(R.string.increment)) { onValue((value + 1).coerceAtMost(maximum)) }
     }
+    SensorBoxSettingsDivider()
 }
 
 @Composable

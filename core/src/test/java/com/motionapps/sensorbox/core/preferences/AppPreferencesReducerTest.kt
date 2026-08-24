@@ -57,4 +57,28 @@ class AppPreferencesReducerTest {
 
         assertTrue(actual.display.keepPhoneDisplayOn)
     }
+
+    @Test
+    fun `Given automatic theme When dark theme is selected Then the preference changes`() {
+        val givenPreferences = AppPreferencesFixtures.preferences()
+
+        val actual = AppPreferencesReducer.reduce(
+            current = givenPreferences,
+            intent = AppPreferencesIntent.SetThemeMode(AppThemeMode.DARK),
+        )
+
+        assertEquals(AppThemeMode.DARK, actual.display.themeMode)
+    }
+
+    @Test
+    fun `Given dynamic colors enabled When disabled Then the preference changes`() {
+        val givenPreferences = AppPreferencesFixtures.preferences()
+
+        val actual = AppPreferencesReducer.reduce(
+            current = givenPreferences,
+            intent = AppPreferencesIntent.SetDynamicColors(false),
+        )
+
+        assertEquals(false, actual.display.dynamicColors)
+    }
 }
