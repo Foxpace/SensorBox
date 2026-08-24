@@ -40,7 +40,7 @@ fun AboutDialog(onDismiss: () -> Unit, onPrivacy: () -> Unit, onLicenses: () -> 
         onDismissRequest = onDismiss,
         icon = {
             Image(
-                painter = painterResource(R.drawable.ic_launcher_historic_round),
+                painter = painterResource(R.drawable.ic_sensorbox_logo),
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
             )

@@ -18,6 +18,8 @@
     <string name="open_phone_browser">Check your phone browser</string>
 
     <string name="gps" translatable="false">GPS</string>
+    <string name="sources">Sources</string>
+    <string name="live_values">Live values</string>
     <string name="start_recording">Start recording</string>
     <string name="back">Back</string>
     <string name="waiting">Waiting…</string>
@@ -30,6 +32,9 @@
     <string name="stop_on_low_battery">Stop on low battery</string>
     <string name="wake_lock">Wake lock</string>
     <string name="keep_display_on">Keep display on</string>
+    <string name="sensor_sampling">Sensor sampling</string>
+    <string name="recording_options">Recording</string>
+    <string name="transfer">Transfer</string>
     <string name="recording">Recording</string>
     <string name="display_stays_on">Display stays on</string>
     <string name="display_may_sleep">Display may sleep</string>
@@ -43,6 +48,14 @@
     <plurals name="message_files_sent">
         <item quantity="one">%1$d file sent to phone</item>
         <item quantity="other">%1$d files sent to phone</item>
+    </plurals>
+    <plurals name="source_count">
+        <item quantity="one">%1$d source</item>
+        <item quantity="other">%1$d sources</item>
+    </plurals>
+    <plurals name="start_source_count">
+        <item quantity="one">Start with %1$d source</item>
+        <item quantity="other">Start with %1$d sources</item>
     </plurals>
 
     <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>

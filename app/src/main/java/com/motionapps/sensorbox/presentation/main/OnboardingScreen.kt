@@ -371,7 +371,7 @@ private val ONBOARDING_PAGES = listOf(
     OnboardingPage(
         R.string.intro_welcome_title,
         R.string.intro_welcome_body,
-        R.drawable.ic_launcher_historic_round,
+        R.drawable.ic_sensorbox_logo,
         tintIllustration = false,
     ),
     OnboardingPage(

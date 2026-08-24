@@ -23,9 +23,9 @@
 
     <application
         android:name=".SensorBoxApp"
-        android:icon="@mipmap/ic_icon_square"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_launcher_white_round"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Compose"
         android:fullBackupContent="@xml/backup_descriptor"

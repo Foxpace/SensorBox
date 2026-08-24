@@ -15,6 +15,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Text
 import com.android.tools.screenshot.PreviewTest
+import com.motionapps.sensorbox.core.preferences.AppPreferences
+import com.motionapps.sensorbox.core.preferences.DisplayPreferences
+import com.motionapps.sensorbox.core.preferences.RecordingPreferences
 import com.motionapps.sensorbox.domain.sensors.WearSensorDescriptor
 import com.motionapps.sensorbox.ui.theme.WearSensorBoxTheme
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
@@ -29,6 +32,42 @@ fun readmeWearDashboard() = WearReadmeFrame(WearDashboardState(route = WearRoute
 @Composable
 fun readmeWearLivePicker() = WearReadmeFrame(
     WearDashboardState(route = WearRoute.LIVE, sensors = readmeWearSensors()),
+)
+
+@PreviewTest
+@ReadmeWearPreview
+@Composable
+fun wearRecordSelection() = WearReadmeFrame(
+    WearDashboardState(
+        route = WearRoute.RECORD,
+        sensors = readmeWearSensors(),
+        selectedSensorIds = setOf(1),
+        includesGps = true,
+    ),
+)
+
+@PreviewTest
+@ReadmeWearPreview
+@Composable
+fun wearSettings() = WearReadmeFrame(
+    WearDashboardState(
+        route = WearRoute.SETTINGS,
+        preferences = AppPreferences(
+            recording = RecordingPreferences(sensorSamplingPeriod = 1),
+            display = DisplayPreferences(keepWearDisplayOn = true),
+        ),
+    ),
+)
+
+@PreviewTest
+@ReadmeWearPreview
+@Composable
+fun wearActiveRecording() = WearReadmeFrame(
+    WearDashboardState(
+        route = WearRoute.ACTIVE,
+        selectedSensorIds = setOf(1, 4),
+        includesGps = true,
+    ),
 )
 
 @Composable

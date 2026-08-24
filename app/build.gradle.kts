@@ -13,6 +13,7 @@ android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     namespace = "com.motionapps.sensorbox"
     compileSdk = 37
+    sourceSets["main"].res.directories.add(rootProject.file("shared-resources/branding").path)
 
     defaultConfig {
         applicationId = "motionapps.sensorbox"

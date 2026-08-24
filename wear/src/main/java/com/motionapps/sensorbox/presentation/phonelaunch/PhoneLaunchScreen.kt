@@ -1,38 +1,25 @@
 package com.motionapps.sensorbox.presentation.phonelaunch
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.AppScaffold
-import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.ScreenScaffold
-import androidx.wear.compose.material3.Text
 import com.motionapps.sensorbox.R
+import com.motionapps.sensorbox.presentation.WearListScreen
+import com.motionapps.sensorbox.presentation.WearPageTitle
+import com.motionapps.sensorbox.presentation.WearPrimaryAction
+import com.motionapps.sensorbox.presentation.WearSectionTitle
 
 @Composable
 fun PhoneLaunchScreen(state: PhoneLaunchState, onLaunchPhone: () -> Unit) {
-    AppScaffold {
-        ScreenScaffold {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(stringResource(statusText(state.status)))
-                Button(
-                    label = { Text(stringResource(R.string.open_phone)) },
-                    onClick = onLaunchPhone,
-                    enabled = state.isPhoneConnected && state.status != PhoneLaunchStatus.LAUNCHING,
-                )
-            }
+    WearListScreen { transformation ->
+        item { WearPageTitle(stringResource(R.string.activity_info_phone), transformation) }
+        item { WearSectionTitle(stringResource(statusText(state.status)), transformation) }
+        item {
+            WearPrimaryAction(
+                label = stringResource(R.string.open_phone),
+                transformation = transformation,
+                onClick = onLaunchPhone,
+                enabled = state.isPhoneConnected && state.status != PhoneLaunchStatus.LAUNCHING,
+            )
         }
     }
 }
