@@ -21,6 +21,7 @@ navigation3 = "1.1.5"
 ossLicensesPlugin = "0.13.0"
 playServicesLocation = "21.4.0"
 playServicesWearable = "20.0.1"
+screenshot = "0.0.1-alpha15"
 vico = "3.2.3"
 wearable = "2.9.0"
 wearCompose = "1.6.2"
@@ -63,6 +64,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+screenshot-validation-api = { module = "com.android.tools.screenshot:screenshot-validation-api", version.ref = "screenshot" }
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico" }
 wearable = { module = "com.google.android.wearable:wearable", version.ref = "wearable" }
 
@@ -76,3 +78,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 oss-licenses = { id = "com.google.android.gms.oss-licenses-plugin", version.ref = "ossLicensesPlugin" }
+screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
