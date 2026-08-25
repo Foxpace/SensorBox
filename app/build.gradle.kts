@@ -11,12 +11,12 @@ plugins {
 
 android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
-    namespace = "com.motionapps.sensorbox"
+    namespace = "com.tomasrepcik.sensorbox"
     compileSdk = 37
     sourceSets["main"].res.directories.add(rootProject.file("shared-resources/branding").path)
 
     defaultConfig {
-        applicationId = "motionapps.sensorbox"
+        applicationId = "com.tomasrepcik.sensorbox"
         minSdk = 24
         targetSdk = 37
         versionCode = 87

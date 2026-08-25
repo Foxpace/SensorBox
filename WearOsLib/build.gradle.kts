@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.motionapps.wearoslib"
+    namespace = "com.tomasrepcik.sensorbox.wearoslib"
     compileSdk = 37
 
     defaultConfig {

@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.motionapps.sensorservices"
+    namespace = "com.tomasrepcik.sensorbox.sensorservices"
     compileSdk = 37
 
     defaultConfig {

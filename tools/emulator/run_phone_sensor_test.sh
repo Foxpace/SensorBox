@@ -4,8 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 phone_serial="${PHONE_SERIAL:-emulator-5554}"
 adb_bin="${ANDROID_HOME:?ANDROID_HOME must point to the Android SDK}/platform-tools/adb"
-test_class="com.motionapps.sensorbox.emulator.PhoneSensorRecordingEmulatorTest"
-runner="motionapps.sensorbox.test/androidx.test.runner.AndroidJUnitRunner"
+test_class="com.tomasrepcik.sensorbox.emulator.PhoneSensorRecordingEmulatorTest"
+runner="com.tomasrepcik.sensorbox.test/androidx.test.runner.AndroidJUnitRunner"
 result_file="$(mktemp -t sensorbox-phone-test.XXXXXX)"
 
 cleanup() {
@@ -17,7 +17,7 @@ cd "$repo_root"
 ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
 "$adb_bin" -s "$phone_serial" install -r app/build/outputs/apk/debug/app-debug.apk
 "$adb_bin" -s "$phone_serial" install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-"$adb_bin" -s "$phone_serial" shell pm grant motionapps.sensorbox android.permission.POST_NOTIFICATIONS || true
+"$adb_bin" -s "$phone_serial" shell pm grant com.tomasrepcik.sensorbox android.permission.POST_NOTIFICATIONS || true
 "$adb_bin" -s "$phone_serial" logcat -c
 
 "$adb_bin" -s "$phone_serial" shell am instrument -w -r -e class "$test_class" "$runner" >"$result_file" &
