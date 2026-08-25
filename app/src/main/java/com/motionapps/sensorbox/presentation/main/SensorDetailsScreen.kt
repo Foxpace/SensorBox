@@ -7,15 +7,16 @@ import android.hardware.Sensor
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -51,63 +52,65 @@ fun SensorDetailsScreen(
         sensor != null -> sensor.name
         else -> stringResource(R.string.sensor_unavailable)
     }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    val showPreview = (state.detailsSensorType == null || sensor != null) && canPreview
+    Box(modifier.fillMaxSize()) {
+        SensorDetailsList(state, sensor, title, showPreview, onBack)
+        if (showPreview) {
+            PreviewAction(onPreview, Modifier.align(Alignment.BottomCenter))
+        }
+    }
+}
+
+@Composable
+private fun SensorDetailsList(
+    state: RecordingState,
+    sensor: SensorDescriptor?,
+    title: String,
+    showPreview: Boolean,
+    onBack: () -> Unit,
+) {
+    SensorBoxBackScreen(
+        title = title,
+        onBack = onBack,
+        bottomPadding = if (showPreview) 104.dp else 24.dp,
     ) {
-        item { SensorBoxTopAppBar(title, onBack) }
         if (state.detailsSensorType == null) {
             item { GpsDetails(state) }
         } else if (sensor != null) {
             item { HardwareSensorDetails(sensor) }
-        }
-        if ((state.detailsSensorType == null || sensor != null) && canPreview) {
-            item {
-                SensorBoxPrimaryButton(
-                    label = stringResource(R.string.preview),
-                    onClick = onPreview,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
         }
     }
 }
 
 @Composable
 private fun HardwareSensorDetails(sensor: SensorDescriptor) {
-    SensorBoxPanel {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val unit = sensorUnit(sensor.type)
-            val type = if (sensor.stringType.isBlank()) {
-                stringResource(R.string.detail_sensor_type_value, sensor.type)
-            } else {
-                sensor.stringType
-            }
-            DetailRow(stringResource(R.string.detail_name), sensor.name)
-            DetailRow(stringResource(R.string.detail_version), sensor.version.toString())
-            DetailRow(stringResource(R.string.detail_vendor), sensor.vendor)
-            DetailRow(stringResource(R.string.detail_resolution, unit), sensor.resolution.toString())
-            DetailRow(stringResource(R.string.detail_power), formatDecimal(sensor.power))
-            DetailRow(stringResource(R.string.detail_maximum_range, unit), formatDecimal(sensor.maximumRange))
-            DetailRow(
-                stringResource(R.string.detail_minimum_delay),
-                stringResource(R.string.detail_delay_value, sensor.minimumDelayMicros),
-            )
-            DetailRow(
-                stringResource(R.string.detail_maximum_delay),
-                stringResource(R.string.detail_delay_value, sensor.maximumDelayMicros),
-            )
-            DetailRow(
-                stringResource(R.string.detail_android_sensor_type),
-                type,
-            )
-            DetailRow(stringResource(R.string.detail_reporting_mode), reportingModeLabel(sensor.reportingMode))
-            DetailRow(
-                stringResource(R.string.detail_wakeup_sensor),
-                stringResource(if (sensor.isWakeUpSensor) R.string.yes else R.string.no),
-            )
+    Column(Modifier.fillMaxWidth()) {
+        val unit = sensorUnit(sensor.type)
+        val type = if (sensor.stringType.isBlank()) {
+            stringResource(R.string.detail_sensor_type_value, sensor.type)
+        } else {
+            sensor.stringType
         }
+        ParameterRow(stringResource(R.string.detail_version), sensor.version.toString())
+        ParameterRow(stringResource(R.string.detail_vendor), sensor.vendor)
+        ParameterRow(stringResource(R.string.detail_resolution, unit), sensor.resolution.toString())
+        ParameterRow(stringResource(R.string.detail_power), formatDecimal(sensor.power))
+        ParameterRow(stringResource(R.string.detail_maximum_range, unit), formatDecimal(sensor.maximumRange))
+        ParameterRow(
+            stringResource(R.string.detail_minimum_delay),
+            stringResource(R.string.detail_delay_value, sensor.minimumDelayMicros),
+        )
+        ParameterRow(
+            stringResource(R.string.detail_maximum_delay),
+            stringResource(R.string.detail_delay_value, sensor.maximumDelayMicros),
+        )
+        ParameterRow(stringResource(R.string.detail_android_sensor_type), type)
+        ParameterRow(stringResource(R.string.detail_reporting_mode), reportingModeLabel(sensor.reportingMode))
+        ParameterRow(
+            stringResource(R.string.detail_wakeup_sensor),
+            stringResource(if (sensor.isWakeUpSensor) R.string.yes else R.string.no),
+            showDivider = false,
+        )
     }
 }
 
@@ -125,9 +128,11 @@ private fun GpsDetails(state: RecordingState) {
         permissionRevision = permissionRevision,
     )
     val unavailableValue = stringResource(if (details.hasPermission) R.string.waiting else R.string.unavailable)
-    SensorBoxPanel {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            GpsPermission(details.hasPermission) {
+    Column(Modifier.fillMaxWidth()) {
+        GpsPermissionStatus(details.hasPermission)
+        GpsDetailRows(details, state, unavailableValue)
+        if (!details.hasPermission) {
+            GpsPermissionAction {
                 permissionRequest.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -135,28 +140,27 @@ private fun GpsDetails(state: RecordingState) {
                     ),
                 )
             }
-            GpsDetailRows(details, state, unavailableValue)
         }
     }
 }
 
 @Composable
 private fun GpsDetailRows(details: GpsDetailsState, state: RecordingState, unavailableValue: String) {
-    DetailRow(
+    ParameterRow(
         stringResource(R.string.detail_latitude),
         details.location?.latitude?.toString() ?: unavailableValue,
     )
-    DetailRow(
+    ParameterRow(
         stringResource(R.string.detail_longitude),
         details.location?.longitude?.toString() ?: unavailableValue,
     )
-    DetailRow(stringResource(R.string.detail_altitude), localizedValue(details.location?.altitude, unavailableValue))
-    DetailRow(stringResource(R.string.detail_accuracy), localizedValue(details.location?.accuracy, unavailableValue))
-    DetailRow(stringResource(R.string.detail_speed), localizedValue(details.location?.speed, unavailableValue))
-    DetailRow(stringResource(R.string.detail_bearing), localizedValue(details.location?.bearing, unavailableValue))
-    DetailRow(stringResource(R.string.detail_provider), details.location?.provider ?: unavailableValue)
-    DetailRow(stringResource(R.string.detail_available), locationAvailabilityLabel(details.isAvailable))
-    DetailRow(
+    ParameterRow(stringResource(R.string.detail_altitude), localizedValue(details.location?.altitude, unavailableValue))
+    ParameterRow(stringResource(R.string.detail_accuracy), localizedValue(details.location?.accuracy, unavailableValue))
+    ParameterRow(stringResource(R.string.detail_speed), localizedValue(details.location?.speed, unavailableValue))
+    ParameterRow(stringResource(R.string.detail_bearing), localizedValue(details.location?.bearing, unavailableValue))
+    ParameterRow(stringResource(R.string.detail_provider), details.location?.provider ?: unavailableValue)
+    ParameterRow(stringResource(R.string.detail_available), locationAvailabilityLabel(details.isAvailable))
+    ParameterRow(
         stringResource(R.string.detail_update_interval),
         pluralStringResource(
             R.plurals.seconds_count,
@@ -164,13 +168,14 @@ private fun GpsDetailRows(details: GpsDetailsState, state: RecordingState, unava
             state.preferences.recording.gpsIntervalSeconds,
         ),
     )
-    DetailRow(
+    ParameterRow(
         stringResource(R.string.detail_minimum_distance),
         pluralStringResource(
             R.plurals.meters_count,
             state.preferences.recording.gpsMinDistanceMeters,
             state.preferences.recording.gpsMinDistanceMeters,
         ),
+        showDivider = false,
     )
 }
 
@@ -179,20 +184,54 @@ private fun localizedValue(value: Number?, unavailableValue: String): String =
 
 @Composable
 internal fun GpsPermission(hasPermission: Boolean, onRequest: () -> Unit) {
-    DetailRow(
+    GpsPermissionStatus(hasPermission)
+    if (!hasPermission) GpsPermissionAction(onRequest)
+}
+
+@Composable
+private fun GpsPermissionStatus(hasPermission: Boolean) {
+    ParameterRow(
         stringResource(R.string.location_permission),
         stringResource(if (hasPermission) R.string.granted else R.string.required),
     )
-    if (hasPermission) return
+}
+
+@Composable
+private fun GpsPermissionAction(onRequest: () -> Unit) {
     Text(
         stringResource(R.string.location_permission_explanation),
         color = MaterialTheme.colorScheme.error,
+        modifier = Modifier.padding(top = 24.dp, bottom = 12.dp),
     )
     SensorBoxSecondaryButton(
         label = stringResource(R.string.grant_location_permission),
         onClick = onRequest,
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+@Composable
+private fun ParameterRow(label: String, value: String, showDivider: Boolean = true) {
+    DetailRow(label, value, Modifier.padding(vertical = 15.dp))
+    if (showDivider) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
+    }
+}
+
+@Composable
+private fun PreviewAction(onPreview: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            SensorBoxPrimaryButton(
+                label = stringResource(R.string.preview),
+                onClick = onPreview,
+                modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -228,8 +267,8 @@ internal fun rememberGpsDetails(
 }
 
 @Composable
-internal fun DetailRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+internal fun DetailRow(label: String, value: String, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
     }

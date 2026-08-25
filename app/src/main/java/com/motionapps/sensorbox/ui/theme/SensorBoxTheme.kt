@@ -1,61 +1,72 @@
 package com.motionapps.sensorbox.ui.theme
 
+import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import com.motionapps.sensorbox.core.preferences.AppThemeMode
 
 val SensorBoxRecording = Color(0xFFFF6B72)
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF9AAEFF),
-    onPrimary = Color(0xFF11172A),
-    primaryContainer = Color(0xFF222C4A),
-    onPrimaryContainer = Color(0xFFDDE4FF),
-    secondary = Color(0xFFBAC4D8),
-    onSecondary = Color(0xFF202A38),
-    secondaryContainer = Color(0xFF28313D),
-    onSecondaryContainer = Color(0xFFDEE6F2),
-    tertiary = Color(0xFFAEB9CA),
-    background = Color(0xFF0B0D10),
-    onBackground = Color(0xFFF1F3F6),
-    surface = Color(0xFF111419),
-    onSurface = Color(0xFFF1F3F6),
-    surfaceVariant = Color(0xFF181C22),
-    onSurfaceVariant = Color(0xFFAAB2BF),
-    outline = Color(0xFF4A5360),
-    outlineVariant = Color(0xFF292F38),
+    primary = Color.White,
+    onPrimary = Color.Black,
+    primaryContainer = Color.Black,
+    onPrimaryContainer = Color.White,
+    secondary = Color(0xFFD0D0D0),
+    onSecondary = Color.Black,
+    secondaryContainer = Color(0xFF292929),
+    onSecondaryContainer = Color.White,
+    tertiary = Color(0xFFBDBDBD),
+    background = Color.Black,
+    onBackground = Color.White,
+    surface = Color(0xFF101010),
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF1C1C1C),
+    onSurfaceVariant = Color(0xFFC7C7C7),
+    outline = Color(0xFF8A8A8A),
+    outlineVariant = Color(0xFF363636),
     error = SensorBoxRecording,
     errorContainer = Color(0xFF4D2025),
     onErrorContainer = Color(0xFFFFDADC),
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF445DA8),
+    primary = Color.Black,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDDE4FF),
-    onPrimaryContainer = Color(0xFF17234A),
-    secondary = Color(0xFF566174),
-    secondaryContainer = Color(0xFFDCE4F2),
-    onSecondaryContainer = Color(0xFF182331),
-    tertiary = Color(0xFF596475),
-    background = Color(0xFFF7F8FA),
-    onBackground = Color(0xFF1A1D22),
+    primaryContainer = Color.Black,
+    onPrimaryContainer = Color.White,
+    secondary = Color(0xFF303030),
+    secondaryContainer = Color(0xFFE8E8E8),
+    onSecondaryContainer = Color.Black,
+    tertiary = Color(0xFF4A4A4A),
+    background = Color.White,
+    onBackground = Color.Black,
     surface = Color.White,
-    onSurface = Color(0xFF1A1D22),
-    surfaceVariant = Color(0xFFEEF1F5),
-    onSurfaceVariant = Color(0xFF59616D),
-    outline = Color(0xFF747D8A),
-    outlineVariant = Color(0xFFD9DEE6),
+    onSurface = Color.Black,
+    surfaceVariant = Color(0xFFF1F1F1),
+    onSurfaceVariant = Color(0xFF555555),
+    outline = Color(0xFF707070),
+    outlineVariant = Color(0xFFD8D8D8),
     error = Color(0xFFBA1A1A),
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
@@ -79,9 +90,41 @@ private val SensorBoxShapes = Shapes(
 )
 
 @Composable
-fun SensorBoxTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun SensorBoxTheme(
+    themeMode: AppThemeMode = AppThemeMode.AUTOMATIC,
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val context = LocalContext.current
+    val systemDarkTheme = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        AppThemeMode.AUTOMATIC -> systemDarkTheme
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
+    val colors = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+
+        darkTheme -> DarkColors
+
+        else -> LightColors
+    }
+    val view = LocalView.current
+    val useDarkSystemBarIcons = colors.background.luminance() > 0.5f
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            window.decorView.setBackgroundColor(colors.background.toArgb())
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = useDarkSystemBarIcons
+                isAppearanceLightNavigationBars = useDarkSystemBarIcons
+            }
+        }
+    }
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = colors,
         typography = SensorBoxTypography,
         shapes = SensorBoxShapes,
         content = content,

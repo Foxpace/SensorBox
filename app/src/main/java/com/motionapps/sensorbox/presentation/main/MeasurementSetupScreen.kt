@@ -3,17 +3,13 @@ package com.motionapps.sensorbox.presentation.main
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -21,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -42,25 +37,32 @@ fun MeasurementSetupScreen(
 
 @Composable
 private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit, onBack: () -> Unit) {
-    LazyColumn(
-        contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 132.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    SensorBoxBackScreen(
+        title = stringResource(R.string.measurement_setup),
+        onBack = onBack,
+        bottomPadding = 104.dp,
+        itemSpacing = 0.dp,
     ) {
-        item { SensorBoxTopAppBar(stringResource(R.string.measurement_setup), onBack) }
+        item { SensorBoxSettingsSection(stringResource(R.string.setup_storage_category)) }
         item { StorageSetupPanel(state.storagePath) { onIntent(RecordingIntent.ChooseStorage) } }
+        item { SensorBoxSettingsSection(stringResource(R.string.setup_details_category)) }
         item { MeasurementNameSetup(state, onIntent) }
-        item { RecordingTimingSetup(state, onIntent) }
         item { NotesAndAlarmsSetup(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.setup_timing_category)) }
+        item { RecordingTimingSetup(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.setup_sources_category)) }
         item {
             SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
                 onIntent(RecordingIntent.SetSamplingPeriod(index))
             }
         }
         item { SpecializedSourcesSetup(state, onIntent) }
+        item { SensorBoxSettingsSection(stringResource(R.string.settings_recording_category)) }
         item { BatterySetup(state, onIntent) }
         item { WakeLockSetup(state, onIntent) }
         item { KeepScreenAwakeSetup(state, onIntent) }
         if (state.includesGps) {
+            item { SensorBoxSettingsSection(stringResource(R.string.settings_location_category)) }
             item { GpsIntervalSetup(state, onIntent) }
             item { GpsDistanceSetup(state, onIntent) }
         }
@@ -70,21 +72,20 @@ private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingI
 
 @Composable
 private fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
-    SensorBoxPanel {
-        OutlinedTextField(
-            value = state.customMeasurementName,
-            onValueChange = { onIntent(RecordingIntent.SetCustomMeasurementName(it)) },
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            label = { Text(stringResource(R.string.custom_measurement_name)) },
-            supportingText = { Text(stringResource(R.string.custom_measurement_name_description)) },
-            singleLine = true,
-        )
-    }
+    OutlinedTextField(
+        value = state.customMeasurementName,
+        onValueChange = { onIntent(RecordingIntent.SetCustomMeasurementName(it)) },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        label = { Text(stringResource(R.string.custom_measurement_name)) },
+        supportingText = { Text(stringResource(R.string.custom_measurement_name_description)) },
+        singleLine = true,
+    )
+    SensorBoxSettingsDivider()
 }
 
 @Composable
 private fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column {
         StepSetting(
             stringResource(R.string.start_delay),
             state.startDelaySeconds,
@@ -104,31 +105,29 @@ private fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingInte
 
 @Composable
 private fun NotesAndAlarmsSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
-    SensorBoxPanel {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = state.notes,
-                onValueChange = { onIntent(RecordingIntent.SetNotes(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.measurement_notes)) },
-                supportingText = { Text(stringResource(R.string.measurement_notes_description)) },
-                minLines = 2,
-            )
-            OutlinedTextField(
-                value = state.alarmOffsets,
-                onValueChange = { onIntent(RecordingIntent.SetAlarmOffsets(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.audible_alarm_offsets)) },
-                supportingText = { Text(stringResource(R.string.audible_alarm_offsets_description)) },
-                singleLine = true,
-            )
-        }
-    }
+    OutlinedTextField(
+        value = state.notes,
+        onValueChange = { onIntent(RecordingIntent.SetNotes(it)) },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        label = { Text(stringResource(R.string.measurement_notes)) },
+        supportingText = { Text(stringResource(R.string.measurement_notes_description)) },
+        minLines = 2,
+    )
+    SensorBoxSettingsDivider()
+    OutlinedTextField(
+        value = state.alarmOffsets,
+        onValueChange = { onIntent(RecordingIntent.SetAlarmOffsets(it)) },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        label = { Text(stringResource(R.string.audible_alarm_offsets)) },
+        supportingText = { Text(stringResource(R.string.audible_alarm_offsets_description)) },
+        singleLine = true,
+    )
+    SensorBoxSettingsDivider()
 }
 
 @Composable
 private fun SpecializedSourcesSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column {
         BooleanSetting(
             title = stringResource(R.string.activity_recognition),
             description = stringResource(R.string.activity_recognition_description),
@@ -157,30 +156,24 @@ private fun SpecializedSourcesSetup(state: RecordingState, onIntent: (RecordingI
 
 @Composable
 private fun StorageSetupPanel(path: String?, onChoose: () -> Unit) {
-    SensorBoxPanel {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-                Icon(
-                    painterResource(R.drawable.ic_baseline_folder),
-                    null,
-                    Modifier.padding(12.dp).size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(stringResource(R.string.recording_folder), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    path ?: stringResource(R.string.choose_recording_folder),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            SensorBoxSecondaryButton(
-                stringResource(if (path == null) R.string.choose else R.string.change),
-                onChoose,
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(stringResource(R.string.recording_folder), style = MaterialTheme.typography.titleMedium)
+            Text(
+                path ?: stringResource(R.string.choose_recording_folder),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        Spacer(Modifier.width(14.dp))
+        SensorBoxSecondaryButton(
+            stringResource(if (path == null) R.string.choose else R.string.change),
+            onChoose,
+        )
     }
+    SensorBoxSettingsDivider()
 }
 
 @Composable
@@ -251,16 +244,19 @@ private fun MeasurementSetupActionBar(
     modifier: Modifier = Modifier,
 ) {
     val sourceCount = setupSourceCount(state)
-    SensorBoxBottomAction(
-        title = pluralStringResource(R.plurals.source_count, sourceCount, sourceCount),
-        description = stringResource(
-            if (state.storagePath == null) R.string.folder_required else R.string.ready_to_record,
-        ),
-        buttonLabel = stringResource(R.string.start_measurement),
-        enabled = state.storagePath != null && sourceCount > 0,
-        onClick = { onIntent(RecordingIntent.StartMeasurement) },
-        modifier = modifier,
-    )
+    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            SensorBoxPrimaryButton(
+                label = stringResource(R.string.start_measurement),
+                onClick = { onIntent(RecordingIntent.StartMeasurement) },
+                modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
+                enabled = state.storagePath != null && sourceCount > 0,
+            )
+        }
+    }
 }
 
 private fun setupSourceCount(state: RecordingState): Int =

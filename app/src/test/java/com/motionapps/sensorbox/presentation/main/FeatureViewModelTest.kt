@@ -5,6 +5,7 @@ import com.motionapps.sensorbox.core.error.AppError
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.error.AppResult
 import com.motionapps.sensorbox.core.error.DiagnosticsStore
+import com.motionapps.sensorbox.core.preferences.AppThemeMode
 import com.motionapps.sensorbox.core.testing.FakeAppPreferencesRepository
 import com.motionapps.sensorbox.domain.measurement.DocumentStorageGateway
 import com.motionapps.sensorbox.domain.measurement.MeasurementRequest
@@ -75,6 +76,21 @@ class FeatureViewModelTest {
     }
 
     @Test
+    fun `Given settings action When theme changes Then settings owns updated appearance state`() = runTest {
+        val viewModel = SettingsViewModel(
+            preferencesRepository = FakeAppPreferencesRepository(),
+            diagnosticsStore = FakeDiagnosticsStore(),
+            ioDispatcher = mainDispatcherRule.dispatcher,
+        )
+        advanceUntilIdle()
+
+        viewModel.accept(SettingsIntent.SetThemeMode(AppThemeMode.DARK))
+        advanceUntilIdle()
+
+        assertEquals(AppThemeMode.DARK, viewModel.state.value.preferences.display.themeMode)
+    }
+
+    @Test
     fun `Given diagnostics read failure When viewed Then settings emits the stable error code`() = runTest {
         val diagnostics = FakeDiagnosticsStore(
             readResult = AppResult.failure(AppError(AppErrorCode.STORAGE, "Read fixture diagnostics")),
@@ -112,6 +128,17 @@ class FeatureViewModelTest {
         viewModel.accept(RecordingIntent.ChooseStorage)
 
         assertEquals(RecordingEffect.PickStorageDirectory, effect.await())
+    }
+
+    @Test
+    fun `Given an active measurement When stopped Then recording navigates to the main screen`() = runTest {
+        val viewModel = recordingViewModel(FakeRecordingWorkflow())
+        val effect = async { viewModel.effects.first() }
+
+        viewModel.accept(RecordingIntent.StopMeasurement)
+        advanceUntilIdle()
+
+        assertEquals(RecordingEffect.Navigate(MainRoute.RECORD), effect.await())
     }
 
     private fun recordingViewModel(workflow: RecordingWorkflowGateway): RecordingViewModel {

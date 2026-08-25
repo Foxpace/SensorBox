@@ -18,4 +18,8 @@ sealed interface AppPreferencesIntent {
     data class SetKeepPhoneDisplayOn(val enabled: Boolean) : AppPreferencesIntent
 
     data class SetKeepWearDisplayOn(val enabled: Boolean) : AppPreferencesIntent
+
+    data class SetThemeMode(val mode: AppThemeMode) : AppPreferencesIntent
+
+    data class SetDynamicColors(val enabled: Boolean) : AppPreferencesIntent
 }

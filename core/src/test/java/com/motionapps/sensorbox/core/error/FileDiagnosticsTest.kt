@@ -73,13 +73,13 @@ class FileDiagnosticsTest {
     }
 
     @Test
-    fun `Given retained logs When cleared Then reading returns the empty message`() {
+    fun `Given retained logs When cleared Then reading returns empty text`() {
         val diagnostics = diagnostics(temporaryFolder.newFolder("diagnostics"))
         diagnostics.record(event(message = "Before clear"))
 
         assertTrue(diagnostics.clear().isSuccess)
 
-        assertEquals("No diagnostics have been recorded.\n", diagnostics.readText().getOrNull())
+        assertEquals("", diagnostics.readText().getOrNull())
     }
 
     @Test

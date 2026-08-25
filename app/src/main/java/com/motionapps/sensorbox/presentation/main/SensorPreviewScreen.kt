@@ -13,15 +13,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,16 +52,11 @@ import kotlin.math.max
 fun SensorPreviewScreen(state: RecordingState, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val sensor = state.detailsSensorType?.let { type -> state.sensors.firstOrNull { it.type == type } }
     val title = when {
-        state.detailsSensorType == null -> stringResource(R.string.gps_preview)
-        sensor != null -> stringResource(R.string.sensor_preview_title, sensor.name)
+        state.detailsSensorType == null -> stringResource(R.string.gps)
+        sensor != null -> sensor.name
         else -> stringResource(R.string.sensor_unavailable)
     }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { SensorBoxTopAppBar(title, onBack) }
+    SensorBoxBackScreen(title = title, onBack = onBack, modifier = modifier) {
         if (state.detailsSensorType == null) {
             item { GpsPreview(state) }
         } else if (sensor != null) {
@@ -77,22 +70,17 @@ private fun HardwareSensorPreview(sensor: SensorDescriptor) {
     val preview = rememberHardwareSensorPreview(sensor.type)
     val latestValues = preview.samples.lastOrNull()?.values
     val unit = sensorUnit(sensor.type)
-    SensorBoxPanel {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            if (!preview.isAvailable) {
-                Text(stringResource(R.string.sensor_activation_failed), color = MaterialTheme.colorScheme.error)
-                return@Column
-            }
-            if (sensor.type == Sensor.TYPE_STEP_COUNTER) {
-                StepCounterPreview(latestValues?.firstOrNull())
-            } else {
-                SensorValues(latestValues, unit)
-                Text(stringResource(R.string.live_chart), style = MaterialTheme.typography.titleMedium)
-                LiveSensorChart(preview.samples, unit)
-            }
+    Column(Modifier.fillMaxWidth()) {
+        if (!preview.isAvailable) {
+            Text(stringResource(R.string.sensor_activation_failed), color = MaterialTheme.colorScheme.error)
+            return@Column
+        }
+        if (sensor.type == Sensor.TYPE_STEP_COUNTER) {
+            StepCounterPreview(latestValues?.firstOrNull())
+        } else {
+            SensorValues(latestValues, unit)
+            PreviewSectionTitle(stringResource(R.string.live_chart))
+            LiveSensorChart(preview.samples, unit)
         }
     }
 }
@@ -120,11 +108,30 @@ private fun SensorValues(values: FloatArray?, unit: String) {
         return
     }
     values.forEachIndexed { index, value ->
-        DetailRow(
+        PreviewValueRow(
             label = stringResource(R.string.sensor_value_with_unit, axisLabel(index, values.size), unit),
             value = formatDecimal(value),
+            showDivider = index != values.lastIndex,
         )
     }
+}
+
+@Composable
+private fun PreviewValueRow(label: String, value: String, showDivider: Boolean = true) {
+    DetailRow(label, value, Modifier.padding(vertical = 14.dp))
+    if (showDivider) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
+    }
+}
+
+@Composable
+private fun PreviewSectionTitle(title: String) {
+    Text(
+        title,
+        modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 12.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+    )
 }
 
 @Composable
@@ -336,24 +343,38 @@ private fun GpsPreview(state: RecordingState) {
 
 @Composable
 private fun GpsPreviewPanel(details: GpsDetailsState, unavailableValue: String, onRequestPermission: () -> Unit) {
-    SensorBoxPanel {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            GpsPermission(details.hasPermission, onRequestPermission)
-            DetailRow(
-                stringResource(R.string.detail_latitude),
-                details.location?.latitude?.toString() ?: unavailableValue,
+    Column(Modifier.fillMaxWidth()) {
+        PreviewValueRow(
+            stringResource(R.string.location_permission),
+            stringResource(if (details.hasPermission) R.string.granted else R.string.required),
+        )
+        PreviewValueRow(
+            stringResource(R.string.detail_latitude),
+            details.location?.latitude?.toString() ?: unavailableValue,
+        )
+        PreviewValueRow(
+            stringResource(R.string.detail_longitude),
+            details.location?.longitude?.toString() ?: unavailableValue,
+        )
+        PreviewValueRow(
+            stringResource(R.string.detail_altitude),
+            details.location?.altitude?.let(::formatDecimal) ?: unavailableValue,
+        )
+        PreviewValueRow(
+            stringResource(R.string.detail_bearing),
+            details.location?.bearing?.let(::formatDecimal) ?: unavailableValue,
+            showDivider = false,
+        )
+        if (!details.hasPermission) {
+            Text(
+                stringResource(R.string.location_permission_explanation),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 24.dp, bottom = 12.dp),
             )
-            DetailRow(
-                stringResource(R.string.detail_longitude),
-                details.location?.longitude?.toString() ?: unavailableValue,
-            )
-            DetailRow(
-                stringResource(R.string.detail_altitude),
-                details.location?.altitude?.let(::formatDecimal) ?: unavailableValue,
-            )
-            DetailRow(
-                stringResource(R.string.detail_bearing),
-                details.location?.bearing?.let(::formatDecimal) ?: unavailableValue,
+            SensorBoxSecondaryButton(
+                label = stringResource(R.string.grant_location_permission),
+                onClick = onRequestPermission,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -410,7 +431,7 @@ private data class ChartPlot(val left: Float, val top: Float, val right: Float, 
     val height: Float = bottom - top
 }
 
-private val CHART_HEIGHT = 220.dp
+private val CHART_HEIGHT = 260.dp
 private val CHART_LEFT_MARGIN = 56.dp
 private val CHART_RIGHT_MARGIN = 10.dp
 private val CHART_TOP_MARGIN = 10.dp

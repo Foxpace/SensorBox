@@ -1,10 +1,9 @@
 package com.motionapps.sensorbox.presentation.main
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,13 +11,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,11 +29,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.motionapps.sensorbox.R
 import com.motionapps.sensorbox.domain.sensors.SensorDescriptor
@@ -44,14 +44,19 @@ fun RecordScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, mod
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     LazyColumn(
-        contentPadding = PaddingValues(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 132.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 112.dp),
     ) {
-        item { RecordHeader(state) { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) } }
-        item { DeviceSectionHeader(stringResource(R.string.phone_sensors)) }
-        item { SensorSectionHeader(phoneSourceCount(state), state.sensors.size + 1) }
+        stickyHeader {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Column {
+                    RecordHeader { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) }
+                    Spacer(Modifier.height(18.dp))
+                }
+            }
+        }
         item {
             GpsRow(
                 selected = state.includesGps,
@@ -59,17 +64,20 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
                 onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
             )
         }
+        item { SourceDivider() }
         items(state.sensors, key = SensorDescriptor::type) { sensor ->
-            SensorRow(
-                sensor = sensor,
-                selected = sensor.type in state.selectedSensorIds,
-                onToggle = { onIntent(RecordingIntent.ToggleSensor(sensor.type)) },
-                onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
-            )
+            Column {
+                SensorRow(
+                    sensor = sensor,
+                    selected = sensor.type in state.selectedSensorIds,
+                    onToggle = { onIntent(RecordingIntent.ToggleSensor(sensor.type)) },
+                    onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
+                )
+                SourceDivider()
+            }
         }
         if (state.isWearConnected) {
-            item { DeviceSectionHeader(stringResource(R.string.wear_sensors)) }
-            item { SensorSectionHeader(wearSourceCount(state), state.wearSensors.size + 1) }
+            item { WearSectionHeader() }
             item {
                 GpsRow(
                     selected = state.wearIncludesGps,
@@ -77,13 +85,17 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
                     onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
                 )
             }
+            item { SourceDivider() }
             items(state.wearSensors, key = { "wear_${it.type}" }) { sensor ->
-                SensorRow(
-                    sensor = sensor,
-                    selected = sensor.type in state.selectedWearSensorIds,
-                    onToggle = { onIntent(RecordingIntent.ToggleWearSensor(sensor.type)) },
-                    onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
-                )
+                Column {
+                    SensorRow(
+                        sensor = sensor,
+                        selected = sensor.type in state.selectedWearSensorIds,
+                        onToggle = { onIntent(RecordingIntent.ToggleWearSensor(sensor.type)) },
+                        onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
+                    )
+                    SourceDivider()
+                }
             }
         }
         item { RecordingMessageText(state.message) }
@@ -91,123 +103,94 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
 }
 
 @Composable
-private fun DeviceSectionHeader(label: String) {
+private fun WearSectionHeader() {
     Text(
-        label,
-        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
-        style = MaterialTheme.typography.headlineSmall,
-        color = MaterialTheme.colorScheme.primary,
+        stringResource(R.string.wear_sensors),
+        modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
 @Composable
 private fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, sensorBorderColor(selected)),
-    ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(R.drawable.ic_gps), stringResource(R.string.gps), Modifier.size(54.dp))
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.gps), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.device_location), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            SensorInformationButton(stringResource(R.string.information_about_gps), onInfo)
-            Spacer(Modifier.width(12.dp))
-            SensorSelectionIndicator(selected)
-        }
-    }
+    SourceRow(
+        title = stringResource(R.string.gps),
+        icon = R.drawable.ic_source_location,
+        selected = selected,
+        informationDescription = stringResource(R.string.information_about_gps),
+        onToggle = onToggle,
+        onInfo = onInfo,
+    )
 }
 
 @Composable
-private fun RecordHeader(state: RecordingState, onOptions: () -> Unit) {
-    val optionsDescription = stringResource(R.string.options)
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        SensorBoxScreenHeader(
-            title = stringResource(R.string.pick_sensors),
-            subtitle = stringResource(
-                if (state.isWearConnected) R.string.phone_and_wear_ready else R.string.choose_measurement_signals,
-            ),
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(12.dp))
-        Surface(
-            onClick = onOptions,
-            modifier = Modifier.size(48.dp).semantics { contentDescription = optionsDescription },
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
+private fun RecordHeader(onOptions: () -> Unit) {
+    SensorBoxTopAppBar(
+        title = stringResource(R.string.sources),
+        actions = {
+            IconButton(onClick = onOptions) {
                 Icon(
                     painterResource(R.drawable.ic_baseline_settings_24),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.options),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun SensorSectionHeader(selected: Int, available: Int) {
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(stringResource(R.string.sensors), style = MaterialTheme.typography.titleLarge)
-        Text(
-            stringResource(R.string.selected_count, selected, available),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+        },
+    )
 }
 
 @Composable
 private fun SensorRow(sensor: SensorDescriptor, selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, sensorBorderColor(selected)),
-    ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            SensorIdentity(sensor)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(sensor.name, style = MaterialTheme.typography.titleMedium)
-                Text(sensor.vendor, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            SensorInformationButton(stringResource(R.string.information_about_sensor, sensor.name), onInfo)
-            Spacer(Modifier.width(12.dp))
-            SensorSelectionIndicator(selected)
-        }
-    }
+    SourceRow(
+        title = sensor.name,
+        icon = sensorIconResource(sensor.type),
+        selected = selected,
+        informationDescription = stringResource(R.string.information_about_sensor, sensor.name),
+        onToggle = onToggle,
+        onInfo = onInfo,
+    )
 }
 
 @Composable
-private fun SensorInformationButton(contentDescription: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.size(40.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+private fun SourceRow(
+    title: String,
+    @DrawableRes icon: Int,
+    selected: Boolean,
+    informationDescription: String,
+    onToggle: () -> Unit,
+    onInfo: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                stringResource(R.string.info_symbol),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.semantics { this.contentDescription = contentDescription },
+        Icon(painterResource(icon), null, Modifier.size(34.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(18.dp))
+        Text(
+            title,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        IconButton(onClick = onInfo) {
+            Icon(
+                painterResource(R.drawable.ic_info),
+                contentDescription = informationDescription,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
             )
         }
+        Spacer(Modifier.width(4.dp))
+        Checkbox(checked = selected, onCheckedChange = { onToggle() })
     }
 }
 
 @Composable
-private fun sensorBorderColor(selected: Boolean) =
-    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+private fun SourceDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
+}
 
 @Composable
 private fun SensorSelectionActionBar(
@@ -216,24 +199,27 @@ private fun SensorSelectionActionBar(
     modifier: Modifier = Modifier,
 ) {
     val sensorCount = selectedSourceCount(state)
-    SensorBoxBottomAction(
-        title = pluralStringResource(R.plurals.sensor_count, sensorCount, sensorCount),
-        description = stringResource(R.string.step_one_of_two),
-        buttonLabel = stringResource(R.string.continue_action),
-        enabled = sensorCount > 0,
-        onClick = { onIntent(RecordingIntent.OpenMeasurementSetup) },
-        modifier = modifier,
-    )
+    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            SensorBoxPrimaryButton(
+                label = stringResource(R.string.continue_action),
+                onClick = { onIntent(RecordingIntent.OpenMeasurementSetup) },
+                modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
+                enabled = sensorCount > 0,
+            )
+        }
+    }
 }
 
-private fun phoneSourceCount(state: RecordingState): Int =
-    state.selectedSensorIds.size + if (state.includesGps) 1 else 0
-
-private fun wearSourceCount(state: RecordingState): Int =
-    state.selectedWearSensorIds.size + if (state.wearIncludesGps) 1 else 0
-
-private fun selectedSourceCount(state: RecordingState): Int = phoneSourceCount(state) + wearSourceCount(state) +
-    (if (state.activityRecognition) 1 else 0) + (if (state.significantMotion) 1 else 0)
+private fun selectedSourceCount(state: RecordingState): Int = state.selectedSensorIds.size +
+    state.selectedWearSensorIds.size +
+    (if (state.includesGps) 1 else 0) +
+    (if (state.wearIncludesGps) 1 else 0) +
+    (if (state.activityRecognition) 1 else 0) +
+    (if (state.significantMotion) 1 else 0)
 
 @Composable
 fun RecordingMessageText(message: RecordingMessage) {

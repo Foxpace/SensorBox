@@ -124,7 +124,7 @@ class FileDiagnostics internal constructor(
 
     private fun readTextLocked(): String {
         val files = diagnosticFiles().sortedBy(File::getName)
-        return if (files.isEmpty()) NO_DIAGNOSTICS else files.joinToString(separator = "") { it.readText() }
+        return files.joinToString(separator = "") { it.readText() }
     }
 
     private fun diagnosticFiles(): List<File> = diagnosticsDirectory.listFiles().orEmpty()
@@ -165,7 +165,6 @@ class FileDiagnostics internal constructor(
         const val FILE_SUFFIX = ".txt"
         const val EXPORT_FILE_NAME = "sensorbox-diagnostics-export.txt"
         const val ENTRY_SEPARATOR = "---"
-        const val NO_DIAGNOSTICS = "No diagnostics have been recorded.\n"
         const val MAX_ENTRY_CHARS = 32_000
         const val MAX_FIELD_CHARS = 512
         const val MAX_STACK_FRAMES = 80

@@ -53,7 +53,10 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(state.preferences.display.keepWearDisplayOn) {
                 updateDisplayPolicy(state.preferences.display.keepWearDisplayOn)
             }
-            WearSensorBoxTheme {
+            WearSensorBoxTheme(
+                themeMode = state.preferences.display.themeMode,
+                dynamicColor = state.preferences.display.dynamicColors,
+            ) {
                 WearDashboardScreen(
                     state = state,
                     chartModelProducer = viewModel.chartModelProducer,

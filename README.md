@@ -8,7 +8,7 @@ This is the hard-cut Android 17 generation of the project. It does not retain th
 
 | Sensor selection | Measurement setup |
 |:---:|:---:|
-| <img src="docs/images/sensorbox-phone-record.png" alt="SensorBox sensor selection with original icons" width="280"> | <img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox measurement setup" width="280"> |
+| <img src="docs/images/sensorbox-phone-record.png" alt="SensorBox source selection" width="280"> | <img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox measurement setup" width="280"> |
 
 | Wear dashboard | Wear live-sensor picker |
 |:---:|:---:|
@@ -24,7 +24,13 @@ This is the hard-cut Android 17 generation of the project. It does not retain th
 |:---:|:---:|:---:|
 | <img src="docs/images/sensorbox-intro-lifecycle.png" alt="SensorBox Android lifecycle introduction" width="220"> | <img src="docs/images/sensorbox-intro-battery.png" alt="SensorBox battery optimization introduction" width="220"> | <img src="docs/images/sensorbox-intro-storage.png" alt="SensorBox recording-folder introduction" width="220"> |
 
-The introduction uses the original repository artwork. Privacy Policy, Terms of Use, battery optimization, and folder selection are live native actions. Folder selection remains mandatory before setup can finish.
+The introduction uses tintable vector illustrations that follow the app theme. Privacy Policy, Terms of Use, battery optimization, and folder selection are live native actions. Folder selection remains mandatory before setup can finish.
+
+All screenshots above come from deterministic Compose preview fixtures. Refresh the complete gallery on the host without an emulator or connected device:
+
+```shell
+./gradlew refreshReadmeScreenshots
+```
 
 ## Current feature set
 
@@ -59,7 +65,7 @@ Paired phone/watch recording is all-or-nothing: both sides prepare before either
 
 ## Platform and toolchain
 
-- Android Gradle Plugin 9.3.1 and Gradle 9.7
+- Android Gradle Plugin 9.3.2 and Gradle 9.7
 - Android compile/target SDK 37 (Android 17)
 - Java 17 and Kotlin 2.4.10
 - Jetpack Compose Material 3 and Wear Compose Material 3
@@ -77,6 +83,7 @@ Install JDK 17 and Android SDK 37, then run:
 ./gradlew :app:assembleDebug :wear:assembleDebug
 ./gradlew testDebugUnitTest detekt
 ./gradlew :app:lintDebug :wear:lintDebug
+./gradlew :app:validateDebugScreenshotTest :wear:validateDebugScreenshotTest
 ```
 
 Instrumentation test sources can be compiled without a device:

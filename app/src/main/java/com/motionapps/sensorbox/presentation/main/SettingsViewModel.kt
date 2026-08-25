@@ -54,9 +54,9 @@ class SettingsViewModel @Inject constructor(
             SettingsIntent.RequestBatteryOptimizationExemption ->
                 mutableEffects.trySend(SettingsEffect.RequestBatteryOptimizationExemption)
 
-            SettingsIntent.ShareDiagnosticsText -> mutableEffects.trySend(SettingsEffect.ShareDiagnosticsText)
+            SettingsIntent.ShareDiagnosticsText -> shareDiagnosticsText()
 
-            SettingsIntent.ShareDiagnosticsFile -> mutableEffects.trySend(SettingsEffect.ShareDiagnosticsFile)
+            SettingsIntent.ShareDiagnosticsFile -> shareDiagnosticsFile()
 
             SettingsIntent.ViewDiagnostics -> viewDiagnostics()
 
@@ -74,6 +74,8 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetKeepScreenAwake,
             is SettingsIntent.SetGpsInterval,
             is SettingsIntent.SetGpsDistance,
+            is SettingsIntent.SetThemeMode,
+            is SettingsIntent.SetDynamicColors,
             -> Unit
         }
     }
@@ -85,6 +87,8 @@ class SettingsViewModel @Inject constructor(
         is SettingsIntent.SetKeepScreenAwake -> AppPreferencesIntent.SetKeepPhoneDisplayOn(enabled)
         is SettingsIntent.SetGpsInterval -> AppPreferencesIntent.SetGpsInterval(seconds)
         is SettingsIntent.SetGpsDistance -> AppPreferencesIntent.SetGpsMinDistance(meters)
+        is SettingsIntent.SetThemeMode -> AppPreferencesIntent.SetThemeMode(mode)
+        is SettingsIntent.SetDynamicColors -> AppPreferencesIntent.SetDynamicColors(enabled)
         else -> null
     }
 
@@ -101,8 +105,34 @@ class SettingsViewModel @Inject constructor(
             when (val result = diagnosticsStore.readText()) {
                 is AppResult.Success -> mutableState.value = state.value.copy(
                     diagnosticsText = result.value,
+                    diagnosticsLoaded = true,
                     errorCode = null,
                 )
+
+                is AppResult.Failure -> fail(result.error.code)
+            }
+        }
+    }
+
+    private fun shareDiagnosticsText() {
+        withDiagnostics { mutableEffects.send(SettingsEffect.ShareDiagnosticsText) }
+    }
+
+    private fun shareDiagnosticsFile() {
+        withDiagnostics { mutableEffects.send(SettingsEffect.ShareDiagnosticsFile) }
+    }
+
+    private fun withDiagnostics(action: suspend () -> Unit) {
+        viewModelScope.launch(ioDispatcher) {
+            when (val result = diagnosticsStore.readText()) {
+                is AppResult.Success -> {
+                    mutableState.value = state.value.copy(
+                        diagnosticsText = result.value,
+                        diagnosticsLoaded = true,
+                        errorCode = null,
+                    )
+                    if (result.value.isNotBlank()) action()
+                }
 
                 is AppResult.Failure -> fail(result.error.code)
             }
@@ -122,7 +152,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch(ioDispatcher) {
             when (val result = diagnosticsStore.clear()) {
                 is AppResult.Success -> {
-                    mutableState.value = state.value.copy(diagnosticsText = null, errorCode = null)
+                    mutableState.value = state.value.copy(
+                        diagnosticsText = "",
+                        diagnosticsLoaded = true,
+                        errorCode = null,
+                    )
                     mutableEffects.send(SettingsEffect.DiagnosticsCleared)
                 }
 

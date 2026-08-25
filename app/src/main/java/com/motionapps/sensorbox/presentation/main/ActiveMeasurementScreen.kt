@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -45,6 +46,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,44 +59,47 @@ import com.motionapps.sensorservices.session.MeasurementSessionState
 fun ActiveMeasurementScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, modifier: Modifier = Modifier) {
     val session = state.session as? MeasurementSessionState.Running ?: return
     Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.fillMaxSize(),
     ) {
-        RecordingHeader()
+        RecordingHeader(Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp))
         Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
         ) {
-            Spacer(Modifier.height(48.dp))
             MeasurementTimer(state.elapsedSeconds, session.folderName)
-            Spacer(Modifier.height(36.dp))
+            SensorBoxSettingsDivider()
             MeasurementSummary(state, session)
-            Spacer(Modifier.height(24.dp))
+            SensorBoxSettingsSection(stringResource(R.string.measurement_markers_category))
             AnnotationEditor(onIntent)
             Spacer(Modifier.height(24.dp))
         }
-        SensorBoxDangerButton(
-            label = stringResource(R.string.stop_and_save),
-            onClick = { onIntent(RecordingIntent.StopMeasurement) },
-            modifier = Modifier.fillMaxWidth(),
-        )
+        ActiveMeasurementActionBar(onIntent)
     }
 }
 
 @Composable
 private fun AnnotationEditor(onIntent: (RecordingIntent) -> Unit) {
     var annotation by remember { mutableStateOf("") }
-    SensorBoxPanel {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedTextField(
-                value = annotation,
-                onValueChange = { annotation = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.annotation)) },
-                supportingText = { Text(stringResource(R.string.annotation_description)) },
-                singleLine = true,
-            )
-            SensorBoxSecondaryButton(
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.annotation_description),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        OutlinedTextField(
+            value = annotation,
+            onValueChange = { annotation = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.annotation)) },
+            singleLine = true,
+        )
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            SensorBoxPrimaryButton(
                 label = stringResource(R.string.add_annotation),
                 onClick = {
                     annotation.trim().takeIf(String::isNotEmpty)?.let {
@@ -102,15 +107,18 @@ private fun AnnotationEditor(onIntent: (RecordingIntent) -> Unit) {
                         annotation = ""
                     }
                 },
+                modifier = Modifier.widthIn(min = 152.dp, max = 196.dp),
+                enabled = annotation.isNotBlank(),
             )
         }
     }
+    SensorBoxSettingsDivider()
 }
 
 @Composable
-private fun RecordingHeader() {
+private fun RecordingHeader(modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        modifier = modifier.fillMaxWidth().height(64.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -160,11 +168,14 @@ private fun RecordingIndicator() {
 
 @Composable
 private fun MeasurementTimer(elapsedSeconds: Long, folderName: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(stringResource(R.string.elapsed_time), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(4.dp))
         Text(ValueFormats.elapsedSeconds(elapsedSeconds), style = MaterialTheme.typography.displayLarge)
-        Text(folderName, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
+        Text(folderName, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 
@@ -172,45 +183,37 @@ private fun MeasurementTimer(elapsedSeconds: Long, folderName: String) {
 private fun MeasurementSummary(state: RecordingState, session: MeasurementSessionState.Running) {
     var expanded by remember { mutableStateOf(false) }
     val sources = recordingSourceNames(state, session, LocalContext.current.resources)
-    SensorBoxPanel {
-        Column(
-            Modifier.fillMaxWidth().padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+    Column(Modifier.fillMaxWidth()) {
+        SourceListToggle(sourceCount = sources.size, expanded = expanded, onClick = { expanded = !expanded })
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                SummaryValue(sources.size.toString(), stringResource(R.string.sources))
-                SummaryValue(
-                    stringResource(if (session.includesGps) R.string.on else R.string.off),
-                    stringResource(R.string.gps),
-                )
-            }
-            SensorListToggle(expanded = expanded, onClick = { expanded = !expanded })
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
-            ) {
-                RecordingSourceList(sources)
-            }
+            RecordingSourceList(sources)
         }
+        SensorBoxSettingsDivider()
     }
 }
 
 @Composable
-private fun SensorListToggle(expanded: Boolean, onClick: () -> Unit) {
+private fun SourceListToggle(sourceCount: Int, expanded: Boolean, onClick: () -> Unit) {
     val arrowRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "sensor list arrow",
     )
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = stringResource(R.string.sensor_list),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-        )
+        Column(Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.sources), style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = pluralStringResource(R.plurals.source_count, sourceCount, sourceCount),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
         Icon(
             painter = painterResource(R.drawable.ic_expand_more_24),
             contentDescription = stringResource(if (expanded) R.string.hide_sensor_list else R.string.show_sensor_list),
@@ -222,10 +225,14 @@ private fun SensorListToggle(expanded: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun RecordingSourceList(sources: List<String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         sources.forEach { source ->
-            Text(source, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                source,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }
@@ -245,10 +252,16 @@ private fun recordingSourceNames(
 }
 
 @Composable
-private fun SummaryValue(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.headlineMedium)
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun ActiveMeasurementActionBar(onIntent: (RecordingIntent) -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        SensorBoxDangerButton(
+            label = stringResource(R.string.stop_and_save),
+            onClick = { onIntent(RecordingIntent.StopMeasurement) },
+            modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
+        )
     }
 }
 

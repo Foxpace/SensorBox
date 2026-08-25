@@ -2,10 +2,12 @@ package com.motionapps.sensorbox.presentation.main
 
 import com.motionapps.sensorbox.core.error.AppErrorCode
 import com.motionapps.sensorbox.core.preferences.AppPreferences
+import com.motionapps.sensorbox.core.preferences.AppThemeMode
 
 data class SettingsState(
     val preferences: AppPreferences = AppPreferences(),
     val diagnosticsText: String? = null,
+    val diagnosticsLoaded: Boolean = false,
     val errorCode: AppErrorCode? = null,
 )
 
@@ -16,6 +18,8 @@ sealed interface SettingsIntent {
     data class SetKeepScreenAwake(val enabled: Boolean) : SettingsIntent
     data class SetGpsInterval(val seconds: Int) : SettingsIntent
     data class SetGpsDistance(val meters: Int) : SettingsIntent
+    data class SetThemeMode(val mode: AppThemeMode) : SettingsIntent
+    data class SetDynamicColors(val enabled: Boolean) : SettingsIntent
     data object RequestBatteryOptimizationExemption : SettingsIntent
     data object ShareDiagnosticsText : SettingsIntent
     data object ShareDiagnosticsFile : SettingsIntent

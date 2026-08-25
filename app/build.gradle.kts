@@ -6,11 +6,14 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.oss.licenses)
+    alias(libs.plugins.screenshot)
 }
 
 android {
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
     namespace = "com.motionapps.sensorbox"
     compileSdk = 37
+    sourceSets["main"].res.directories.add(rootProject.file("shared-resources/branding").path)
 
     defaultConfig {
         applicationId = "motionapps.sensorbox"
@@ -93,6 +96,9 @@ dependencies {
     androidTestImplementation(testFixtures(project(":wearoslib")))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    screenshotTestImplementation(platform(libs.androidx.compose.bom))
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+    screenshotTestImplementation(libs.screenshot.validation.api)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

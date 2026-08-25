@@ -26,6 +26,14 @@ object AppPreferencesReducer {
             display = current.display.copy(keepPhoneDisplayOn = intent.enabled),
         )
 
+        is AppPreferencesIntent.SetThemeMode -> current.copy(
+            display = current.display.copy(themeMode = intent.mode),
+        )
+
+        is AppPreferencesIntent.SetDynamicColors -> current.copy(
+            display = current.display.copy(dynamicColors = intent.enabled),
+        )
+
         is AppPreferencesIntent.SetLowBatteryRestriction -> current.copy(
             recording = current.recording.copy(restrictMeasurementOnLowBattery = intent.enabled),
         )
