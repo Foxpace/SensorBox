@@ -3,16 +3,6 @@ package com.motionapps.sensorservices.serviceController
 import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.DiagnosticLogger
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.time.EpochClock
-import com.motionapps.sensorbox.recording.RecordingSource
-import com.motionapps.sensorbox.recording.RecordingSourceSpec
-import com.motionapps.sensorbox.recording.RecordingSourceType
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.handlers.measurements.ActivityRecognitionMeasurement
@@ -22,6 +12,16 @@ import com.motionapps.sensorservices.handlers.measurements.ExtraInfoHandler
 import com.motionapps.sensorservices.handlers.measurements.GPSMeasurement
 import com.motionapps.sensorservices.handlers.measurements.SensorMeasurement
 import com.motionapps.sensorservices.handlers.measurements.SignificantMotion
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.recording.RecordingSource
+import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
+import com.tomasrepcik.sensorbox.recording.RecordingSourceType
 
 internal class AndroidRecordingSources(
     private val context: Context,

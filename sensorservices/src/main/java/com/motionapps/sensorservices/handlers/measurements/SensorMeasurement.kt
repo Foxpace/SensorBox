@@ -2,17 +2,17 @@ package com.motionapps.sensorservices.handlers.measurements
 
 import android.content.Context
 import android.hardware.SensorManager
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.DiagnosticLogger
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.error.withAppError
-import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.handlers.MeasurementStorage
 import com.motionapps.sensorservices.types.SensorHolder
 import com.motionapps.sensorservices.types.SensorSpec
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.error.withAppError
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 
 internal class SensorMeasurement(
     private val storage: MeasurementStorage,

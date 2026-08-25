@@ -1,6 +1,6 @@
 package com.motionapps.sensorservices.session
 
-import com.motionapps.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.AppResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

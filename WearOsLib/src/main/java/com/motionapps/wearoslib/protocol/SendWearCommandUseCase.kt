@@ -1,8 +1,8 @@
 package com.motionapps.wearoslib.protocol
 
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.suspendFlatMap
 import com.motionapps.wearoslib.connectivity.SendWearMessageUseCase
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.suspendFlatMap
 import javax.inject.Inject
 
 class SendWearCommandUseCase @Inject constructor(private val sendMessage: SendWearMessageUseCase) {

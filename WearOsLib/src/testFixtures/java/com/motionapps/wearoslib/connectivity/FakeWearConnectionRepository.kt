@@ -1,7 +1,7 @@
 package com.motionapps.wearoslib.connectivity
 
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.AppError
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

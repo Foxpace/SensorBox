@@ -1,12 +1,12 @@
 package com.motionapps.sensorservices.handlers
 
 import android.content.Context
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.flatMap
-import com.motionapps.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream

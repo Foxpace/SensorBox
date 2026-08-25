@@ -1,6 +1,6 @@
 package com.motionapps.wearoslib.protocol
 
-import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

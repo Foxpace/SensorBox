@@ -5,11 +5,11 @@ import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.suspendAppResult
-import com.motionapps.sensorbox.core.error.suspendFlatMap
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.suspendAppResult
+import com.tomasrepcik.sensorbox.core.error.suspendFlatMap
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

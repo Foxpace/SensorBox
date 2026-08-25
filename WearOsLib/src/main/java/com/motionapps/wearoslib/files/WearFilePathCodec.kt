@@ -1,10 +1,10 @@
 package com.motionapps.wearoslib.files
 
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.flatMap
 
 object WearFilePathCodec {
     fun encode(metadata: WearFileMetadata): AppResult<String> = if (

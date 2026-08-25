@@ -1,6 +1,6 @@
 package com.motionapps.wearoslib.protocol
 
-import com.motionapps.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 
 sealed interface WearCommand {
     data object LaunchPhone : WearCommand

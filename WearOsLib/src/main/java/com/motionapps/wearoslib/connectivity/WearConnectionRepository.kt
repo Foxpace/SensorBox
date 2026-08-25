@@ -1,6 +1,6 @@
 package com.motionapps.wearoslib.connectivity
 
-import com.motionapps.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.AppResult
 import kotlinx.coroutines.flow.Flow
 
 interface WearConnectionRepository {

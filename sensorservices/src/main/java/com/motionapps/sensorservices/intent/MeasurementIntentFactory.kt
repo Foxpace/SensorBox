@@ -2,9 +2,9 @@ package com.motionapps.sensorservices.intent
 
 import android.content.Context
 import android.content.Intent
-import com.motionapps.sensorbox.core.time.ClockFormats
-import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.services.MeasurementService
+import com.tomasrepcik.sensorbox.core.time.ClockFormats
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

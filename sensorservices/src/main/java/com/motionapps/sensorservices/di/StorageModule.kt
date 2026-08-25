@@ -1,10 +1,10 @@
 package com.motionapps.sensorservices.di
 
 import android.content.Context
-import com.motionapps.sensorbox.core.storage.DocumentStorage
-import com.motionapps.sensorbox.core.storage.NativeDocumentStorage
-import com.motionapps.sensorbox.core.time.EpochClock
-import com.motionapps.sensorbox.core.time.SystemEpochClock
+import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.NativeDocumentStorage
+import com.tomasrepcik.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

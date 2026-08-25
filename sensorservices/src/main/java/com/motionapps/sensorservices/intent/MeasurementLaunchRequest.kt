@@ -1,6 +1,6 @@
 package com.motionapps.sensorservices.intent
 
-import com.motionapps.sensorbox.core.time.SystemEpochClock
+import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
 
 data class MeasurementLaunchRequest(
     val sessionId: String = java.util.UUID.randomUUID().toString(),

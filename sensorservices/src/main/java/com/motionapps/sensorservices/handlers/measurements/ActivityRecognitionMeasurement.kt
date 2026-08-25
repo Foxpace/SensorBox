@@ -1,13 +1,13 @@
 package com.motionapps.sensorservices.handlers.measurements
 
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.error.flatMap
-import com.motionapps.sensorbox.core.error.withAppError
 import com.motionapps.sensorservices.handlers.MeasurementStorage
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.core.error.withAppError
 import java.io.OutputStream
 
 /** Records periodic activity-recognition confidence values. */

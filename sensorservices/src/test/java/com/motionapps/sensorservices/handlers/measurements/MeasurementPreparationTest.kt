@@ -1,13 +1,13 @@
 package com.motionapps.sensorservices.handlers.measurements
 
 import android.hardware.Sensor
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.DiagnosticLogger
-import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.handlers.GPSHandler
 import com.motionapps.sensorservices.handlers.MeasurementStorage
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

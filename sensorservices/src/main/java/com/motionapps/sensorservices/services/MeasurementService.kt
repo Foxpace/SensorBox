@@ -11,20 +11,20 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.DiagnosticLogger
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.time.EpochClock
-import com.motionapps.sensorbox.recording.RecordingEvent
-import com.motionapps.sensorbox.recording.RecordingStopReason
 import com.motionapps.sensorservices.handlers.StorageHandler
 import com.motionapps.sensorservices.serviceController.MeasurementConfig
 import com.motionapps.sensorservices.serviceController.ServiceController
 import com.motionapps.sensorservices.session.MeasurementSessionState
 import com.motionapps.sensorservices.session.MeasurementSessionStore
 import com.motionapps.sensorservices.session.MeasurementStopReason
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.recording.RecordingEvent
+import com.tomasrepcik.sensorbox.recording.RecordingStopReason
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -302,10 +302,10 @@ class MeasurementService : Service() {
         const val ACTIVITY_RECOGNITION = "ACTIVITY_RECOGNITION"
         const val ACTIVITY_RECOGNITION_PERIOD_SECONDS = "ACTIVITY_RECOGNITION_PERIOD_SECONDS"
         const val SIGNIFICANT_MOTION = "SIGNIFICANT_MOTION"
-        const val ACTION_ANNOTATE = "com.motionapps.sensorbox.action.ANNOTATE_MEASUREMENT"
+        const val ACTION_ANNOTATE = "com.tomasrepcik.sensorbox.action.ANNOTATE_MEASUREMENT"
         const val ANNOTATION_TIME = "ANNOTATION_TIME"
         const val ANNOTATION_TEXT = "ANNOTATION_TEXT"
-        const val ACTION_STOP = "com.motionapps.sensorbox.action.STOP_MEASUREMENT"
+        const val ACTION_STOP = "com.tomasrepcik.sensorbox.action.STOP_MEASUREMENT"
 
         private const val NOTIFICATION_ID = 729
         private const val WAKE_LOCK_TAG = "SensorBox::Measurement"

@@ -1,11 +1,11 @@
 package com.motionapps.sensorservices.types
 
 import android.hardware.Sensor
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.DiagnosticEvent
-import com.motionapps.sensorbox.core.error.DiagnosticLogger
-import com.motionapps.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.DiagnosticEvent
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

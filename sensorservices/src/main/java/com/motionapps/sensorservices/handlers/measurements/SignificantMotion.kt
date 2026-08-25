@@ -5,15 +5,15 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.hardware.TriggerEvent
 import android.hardware.TriggerEventListener
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.appResult
-import com.motionapps.sensorbox.core.error.combineAppResults
-import com.motionapps.sensorbox.core.error.flatMap
-import com.motionapps.sensorbox.core.error.withAppError
-import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.handlers.MeasurementStorage
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.core.error.withAppError
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 import java.io.OutputStream
 
 /** Handles Android's one-shot significant-motion trigger and re-arms it after every event. */

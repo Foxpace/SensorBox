@@ -17,10 +17,10 @@ import com.google.android.gms.location.ActivityTransition
 import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.ActivityTransitionResult
 import com.google.android.gms.location.DetectedActivity
-import com.motionapps.sensorbox.core.error.AppError
-import com.motionapps.sensorbox.core.error.AppErrorCode
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.appResult
 
 internal data class ActivityUpdate(val elapsedRealtimeMillis: Long, val confidences: List<Int>)
 
@@ -135,8 +135,8 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
         PackageManager.PERMISSION_GRANTED
 
     private companion object {
-        const val ACTION_UPDATE = "com.motionapps.sensorbox.ACTIVITY_RECOGNITION_UPDATE"
-        const val ACTION_TRANSITION = "com.motionapps.sensorbox.ACTIVITY_RECOGNITION_TRANSITION"
+        const val ACTION_UPDATE = "com.tomasrepcik.sensorbox.ACTIVITY_RECOGNITION_UPDATE"
+        const val ACTION_TRANSITION = "com.tomasrepcik.sensorbox.ACTIVITY_RECOGNITION_TRANSITION"
         const val UPDATES_REQUEST_CODE = 457
         const val TRANSITIONS_REQUEST_CODE = 1_654
         val ACTIVITIES = intArrayOf(

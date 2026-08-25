@@ -2,8 +2,8 @@ package com.motionapps.sensorservices.handlers
 
 import android.content.ContextWrapper
 import android.content.Intent
-import com.motionapps.sensorbox.core.error.AppResult
-import com.motionapps.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue

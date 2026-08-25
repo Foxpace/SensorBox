@@ -2,8 +2,8 @@ package com.motionapps.sensorservices.serviceController
 
 import android.content.Intent
 import android.hardware.SensorManager
-import com.motionapps.sensorbox.core.time.EpochClock
 import com.motionapps.sensorservices.services.MeasurementService
+import com.tomasrepcik.sensorbox.core.time.EpochClock
 
 data class MeasurementConfig(
     val sessionId: String,
