@@ -1,15 +1,5 @@
 package com.tomasrepcik.sensorbox.domain.paired
 
-import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
-import com.motionapps.wearoslib.connectivity.SendWearMessageUseCase
-import com.motionapps.wearoslib.connectivity.WearConnectionRepository
-import com.motionapps.wearoslib.connectivity.WearNode
-import com.motionapps.wearoslib.protocol.SendWearCommandUseCase
-import com.motionapps.wearoslib.protocol.WearAcknowledgementOutcome
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearCommandCodec
-import com.motionapps.wearoslib.protocol.WearSessionCommand
-import com.motionapps.wearoslib.protocol.WearStopReason
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
@@ -18,6 +8,17 @@ import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
 import com.tomasrepcik.sensorbox.domain.measurement.PhoneRecordingController
 import com.tomasrepcik.sensorbox.domain.measurement.PreparedPhoneRecording
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnectionRepository
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearNode
+import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -162,8 +163,7 @@ private class InteractiveRepository : WearConnectionRepository {
     val commands = mutableListOf<WearCommand>()
     var onCommand: (WearCommand) -> Unit = { }
 
-    override fun observeCapability(capability: String): Flow<com.motionapps.wearoslib.connectivity.WearConnection> =
-        emptyFlow()
+    override fun observeCapability(capability: String): Flow<WearConnection> = emptyFlow()
 
     override suspend fun findNode(capability: String): WearNode? = WearNode("wear", "Wear", isNearby = true)
 

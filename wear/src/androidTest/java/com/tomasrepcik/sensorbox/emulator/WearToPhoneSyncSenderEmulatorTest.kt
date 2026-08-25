@@ -6,16 +6,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
-import com.motionapps.wearoslib.connectivity.GooglePlayWearConnectionRepository
-import com.motionapps.wearoslib.files.GooglePlayWearFileTransferClient
-import com.motionapps.wearoslib.files.WearSyncEmulatorFixture
-import java.io.File
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.GooglePlayWearConnectionRepository
+import com.tomasrepcik.sensorbox.wearoslib.files.GooglePlayWearFileTransferClient
+import com.tomasrepcik.sensorbox.wearoslib.files.WearSyncEmulatorFixture
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class WearToPhoneSyncSenderEmulatorTest {

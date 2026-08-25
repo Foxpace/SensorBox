@@ -1,10 +1,6 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
 import android.content.Intent
-import com.motionapps.sensorservices.session.MeasurementSessionStore
-import com.motionapps.wearoslib.connectivity.FakeWearConnectionRepository
-import com.motionapps.wearoslib.connectivity.ObserveWearCapabilityUseCase
-import com.motionapps.wearoslib.connectivity.SendWearMessageUseCase
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
@@ -16,7 +12,11 @@ import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
 import com.tomasrepcik.sensorbox.domain.measurement.RecordingWorkflowGateway
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
 import com.tomasrepcik.sensorbox.domain.sensors.WearSensorCatalogStore
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.FakeWearConnectionRepository
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first

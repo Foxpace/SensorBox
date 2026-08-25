@@ -1,17 +1,17 @@
 package com.tomasrepcik.sensorbox.communication
 
-import com.motionapps.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
-import com.motionapps.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
-import com.motionapps.wearoslib.protocol.SendWearCommandUseCase
-import com.motionapps.wearoslib.protocol.WearAcknowledgementOutcome
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearRecordingRequest
-import com.motionapps.wearoslib.protocol.WearSessionCommand
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.domain.measurement.WearRecordingController
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -50,7 +50,7 @@ class WearCommandHandler @Inject constructor(
         -> AppResult.success(Unit)
     }
 
-    suspend fun onAutomaticStop(reason: com.motionapps.wearoslib.protocol.WearStopReason): AppResult<Unit> {
+    suspend fun onAutomaticStop(reason: com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason): AppResult<Unit> {
         val sessionId = mutex.withLock {
             activeSessionId?.also(::clearSession) ?: return AppResult.success(Unit)
         }
@@ -134,7 +134,7 @@ class WearCommandHandler @Inject constructor(
         val result = when {
             activeSessionId == command.sessionId -> recordingController.stop(
                 command.sessionId,
-                com.motionapps.wearoslib.protocol.WearStopReason.PAIRED_ABORT,
+                com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason.PAIRED_ABORT,
             )
 
             preparedSession?.sessionId == command.sessionId -> AppResult.success(Unit)

@@ -1,13 +1,13 @@
 package com.tomasrepcik.sensorbox.presentation.phonelaunch
 
-import com.motionapps.wearoslib.connectivity.FakeWearConnectionRepository
-import com.motionapps.wearoslib.connectivity.ObserveWearCapabilityUseCase
-import com.motionapps.wearoslib.connectivity.SendWearMessageUseCase
-import com.motionapps.wearoslib.connectivity.WearConnection
-import com.motionapps.wearoslib.connectivity.WearNode
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearCommandCodec
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.FakeWearConnectionRepository
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearNode
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest

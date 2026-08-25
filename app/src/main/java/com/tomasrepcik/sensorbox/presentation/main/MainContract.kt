@@ -1,7 +1,7 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.navigation3.runtime.NavKey
-import com.motionapps.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -50,9 +50,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.motionapps.sensorservices.session.MeasurementSessionState
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.format.ValueFormats
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 import com.tomasrepcik.sensorbox.ui.theme.SensorBoxRecording
 
 @Composable

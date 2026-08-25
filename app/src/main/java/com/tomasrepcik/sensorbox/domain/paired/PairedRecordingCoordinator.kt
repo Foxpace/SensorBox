@@ -1,14 +1,5 @@
 package com.tomasrepcik.sensorbox.domain.paired
 
-import com.motionapps.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
-import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
-import com.motionapps.wearoslib.protocol.SendWearCommandUseCase
-import com.motionapps.wearoslib.protocol.WearAcknowledgementOutcome
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearCommandCodec
-import com.motionapps.wearoslib.protocol.WearRecordingRequest
-import com.motionapps.wearoslib.protocol.WearSessionCommand
-import com.motionapps.wearoslib.protocol.WearStopReason
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
@@ -19,6 +10,15 @@ import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
 import com.tomasrepcik.sensorbox.domain.measurement.PhoneRecordingController
 import com.tomasrepcik.sensorbox.domain.measurement.PreparedPhoneRecording
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

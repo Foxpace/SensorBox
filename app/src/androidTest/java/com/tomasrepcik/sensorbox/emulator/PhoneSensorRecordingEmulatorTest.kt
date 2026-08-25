@@ -6,19 +6,19 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.motionapps.sensorservices.intent.MeasurementIntentFactory
-import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
-import com.motionapps.sensorservices.services.MeasurementService
-import java.io.File
+import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class PhoneSensorRecordingEmulatorTest {

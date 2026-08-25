@@ -4,13 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.motionapps.wearoslib.files.WearSyncEmulatorFixture
-import java.io.File
+import com.tomasrepcik.sensorbox.wearoslib.files.WearSyncEmulatorFixture
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class WearToPhoneSyncReceiverEmulatorTest {

@@ -2,8 +2,6 @@ package com.tomasrepcik.sensorbox.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.motionapps.sensorservices.session.MeasurementSessionState
-import com.motionapps.sensorservices.session.MeasurementSessionStore
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
 import com.tomasrepcik.sensorbox.core.error.AppError
@@ -17,6 +15,8 @@ import com.tomasrepcik.sensorbox.domain.sensors.GetWearSensorsUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.ObserveSensorValuesUseCase
 import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel

@@ -4,16 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.SensorManager
 import androidx.core.content.ContextCompat
-import com.motionapps.sensorservices.intent.MeasurementIntentFactory
-import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
-import com.motionapps.sensorservices.services.MeasurementService
-import com.motionapps.wearoslib.protocol.WearRecordingRequest
-import com.motionapps.wearoslib.protocol.WearStopReason
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

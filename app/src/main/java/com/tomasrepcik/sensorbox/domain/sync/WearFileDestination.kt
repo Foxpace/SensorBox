@@ -2,13 +2,13 @@ package com.tomasrepcik.sensorbox.domain.sync
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import com.motionapps.wearoslib.files.WearFileMetadata
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.wearoslib.files.WearFileMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.InputStream

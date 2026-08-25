@@ -1,10 +1,6 @@
 package com.tomasrepcik.sensorbox.domain.sync
 
 import android.content.Context
-import com.motionapps.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
-import com.motionapps.wearoslib.connectivity.WearConnectionRepository
-import com.motionapps.wearoslib.files.WearFileMetadata
-import com.motionapps.wearoslib.files.WearFileTransferClient
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
@@ -12,6 +8,10 @@ import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.suspendAppResult
 import com.tomasrepcik.sensorbox.core.error.suspendFlatMap
 import com.tomasrepcik.sensorbox.core.error.withAppError
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnectionRepository
+import com.tomasrepcik.sensorbox.wearoslib.files.WearFileMetadata
+import com.tomasrepcik.sensorbox.wearoslib.files.WearFileTransferClient
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject

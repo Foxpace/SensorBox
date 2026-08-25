@@ -2,14 +2,14 @@ package com.tomasrepcik.sensorbox.presentation.phonelaunch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.motionapps.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
-import com.motionapps.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
-import com.motionapps.wearoslib.connectivity.ObserveWearCapabilityUseCase
-import com.motionapps.wearoslib.connectivity.SendWearMessageUseCase
-import com.motionapps.wearoslib.connectivity.WearConnection
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearCommandCodec
 import com.tomasrepcik.sensorbox.core.error.suspendFlatMap
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
+import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,7 +1,7 @@
 package com.tomasrepcik.sensorbox.domain.measurement
 
 import android.hardware.SensorManager
-import com.motionapps.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 
 data class MeasurementRequest(
     val sensorIds: Set<Int>,

@@ -1,7 +1,5 @@
 package com.tomasrepcik.sensorbox.communication
 
-import com.motionapps.wearoslib.protocol.WearRecordingRequest
-import com.motionapps.wearoslib.protocol.WearSensorInfo
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
@@ -9,6 +7,8 @@ import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
 import com.tomasrepcik.sensorbox.domain.measurement.WearMeasurementPermissionUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.GetWearSensorsUseCase
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSensorInfo
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 

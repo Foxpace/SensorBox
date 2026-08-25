@@ -1,9 +1,9 @@
 package com.tomasrepcik.sensorbox.domain.measurement
 
-import com.motionapps.wearoslib.protocol.WearStopReason
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.domain.paired.PairedRecordingCoordinator
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import javax.inject.Inject
 
 class MeasurementControlUseCase @Inject constructor(

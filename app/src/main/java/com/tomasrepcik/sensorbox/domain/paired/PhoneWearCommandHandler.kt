@@ -2,18 +2,18 @@ package com.tomasrepcik.sensorbox.domain.paired
 
 import android.content.Context
 import android.content.Intent
-import com.motionapps.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
-import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
-import com.motionapps.wearoslib.protocol.SendWearCommandUseCase
-import com.motionapps.wearoslib.protocol.WearAcknowledgementOutcome
-import com.motionapps.wearoslib.protocol.WearCommand
-import com.motionapps.wearoslib.protocol.WearSessionCommand
 import com.tomasrepcik.sensorbox.activities.MainActivity
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.domain.sensors.WearSensorCatalogStore
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

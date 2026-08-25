@@ -1,11 +1,11 @@
 package com.tomasrepcik.sensorbox.communication
 
-import com.motionapps.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
-import com.motionapps.wearoslib.protocol.WearCommandCodec
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.suspendFlatMap
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
+import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
 import javax.inject.Inject
 
 class WearMessageDispatcher @Inject constructor(

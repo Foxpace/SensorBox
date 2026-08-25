@@ -1,10 +1,10 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
-import com.motionapps.sensorservices.session.MeasurementSessionState
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 
 enum class RecordingMessage {
     NONE,

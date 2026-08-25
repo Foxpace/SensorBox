@@ -32,11 +32,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationAvailability
-import com.motionapps.sensorservices.handlers.GPSHandler
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.format.ValueFormats
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
 import com.tomasrepcik.sensorbox.domain.sensors.SensorReportingMode
+import com.tomasrepcik.sensorbox.sensorservices.handlers.GPSHandler
 
 @Composable
 fun SensorDetailsScreen(
