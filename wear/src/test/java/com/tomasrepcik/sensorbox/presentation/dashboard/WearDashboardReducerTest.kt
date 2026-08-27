@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.presentation.dashboard
 
 import com.tomasrepcik.sensorbox.core.testing.AppPreferencesFixtures
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,6 +33,16 @@ class WearDashboardReducerTest {
     }
 
     @Test
+    fun `Given menu When sync is selected Then transfer screen is opened`() {
+        val actual = WearDashboardReducer.reduce(
+            WearDashboardState(),
+            WearDashboardIntent.Open(WearMenuDestination.SYNC),
+        )
+
+        assertEquals(WearRoute.SETTINGS, actual.route)
+    }
+
+    @Test
     fun `Given live picker When sensor is chosen Then chart route retains sensor`() {
         val givenState = WearDashboardState(route = WearRoute.LIVE)
 
@@ -39,5 +50,18 @@ class WearDashboardReducerTest {
 
         assertEquals(WearRoute.LIVE, actual.route)
         assertEquals(4, actual.liveSensorType)
+    }
+
+    @Test
+    fun `Given recording screen When recording finishes Then menu with sync is restored`() {
+        val active = WearDashboardReducer.measurementSessionChanged(
+            WearDashboardState(route = WearRoute.RECORD),
+            MeasurementSessionState.Running("session", "fixture", 1L, listOf(1), false),
+        )
+
+        val finished = WearDashboardReducer.measurementSessionChanged(active, MeasurementSessionState.Idle)
+
+        assertEquals(WearRoute.ACTIVE, active.route)
+        assertEquals(WearRoute.MENU, finished.route)
     }
 }

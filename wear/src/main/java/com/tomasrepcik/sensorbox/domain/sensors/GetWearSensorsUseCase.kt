@@ -20,6 +20,15 @@ class GetWearSensorsUseCase @Inject constructor(@ApplicationContext context: Con
         type = type,
         name = name,
         vendor = vendor,
+        version = version,
+        stringType = stringType,
+        maximumRange = maximumRange,
+        resolution = resolution,
+        power = power,
+        minimumDelayMicros = minDelay,
+        maximumDelayMicros = maxDelay,
+        reportingMode = reportingMode,
+        isWakeUpSensor = isWakeUpSensor,
     )
 }
 

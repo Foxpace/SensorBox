@@ -19,6 +19,7 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.ScreenScaffold
@@ -178,6 +179,13 @@ private fun WearSettingsScreen(state: WearDashboardState, accept: (WearDashboard
                 transformation = transformation,
                 enabled = !state.isSyncing,
             ) { accept(WearDashboardIntent.SyncMeasurements) }
+        }
+        if (state.isSyncing) {
+            item {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                )
+            }
         }
         state.message?.let { message ->
             item { WearSectionTitle(wearMessageText(message), transformation) }

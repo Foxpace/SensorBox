@@ -1,7 +1,5 @@
 package com.tomasrepcik.sensorbox.sensorservices.intent
 
-import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
-
 data class MeasurementLaunchRequest(
     val sessionId: String = java.util.UUID.randomUUID().toString(),
     val folderName: String,
@@ -13,7 +11,6 @@ data class MeasurementLaunchRequest(
     val useWakeLock: Boolean,
     val gpsIntervalSeconds: Int,
     val gpsMinDistanceMeters: Int,
-    val startAtEpochMillis: Long = SystemEpochClock.nowMillis(),
     val durationMillis: Long = 0L,
     val notes: List<String> = emptyList(),
     val alarmOffsetsSeconds: List<Int> = emptyList(),

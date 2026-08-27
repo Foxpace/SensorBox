@@ -23,6 +23,8 @@ import com.tomasrepcik.sensorbox.core.error.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.presentation.main.MainViewModel
+import com.tomasrepcik.sensorbox.presentation.main.MeasurementBrowserEffect
+import com.tomasrepcik.sensorbox.presentation.main.MeasurementBrowserViewModel
 import com.tomasrepcik.sensorbox.presentation.main.OnboardingEffect
 import com.tomasrepcik.sensorbox.presentation.main.OnboardingViewModel
 import com.tomasrepcik.sensorbox.presentation.main.RecordingEffect
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
     private val onboardingViewModel: OnboardingViewModel by viewModels()
     private val recordingViewModel: RecordingViewModel by viewModels()
+    private val measurementBrowserViewModel: MeasurementBrowserViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private var storageRequestOwner = StorageRequestOwner.RECORDING
     private val directoryPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -61,6 +64,7 @@ class MainActivity : ComponentActivity() {
             val mainState by mainViewModel.state.collectAsStateWithLifecycle()
             val onboardingState by onboardingViewModel.state.collectAsStateWithLifecycle()
             val recordingState by recordingViewModel.state.collectAsStateWithLifecycle()
+            val measurementBrowserState by measurementBrowserViewModel.state.collectAsStateWithLifecycle()
             val settingsState by settingsViewModel.state.collectAsStateWithLifecycle()
             LaunchedEffect(onboardingViewModel) {
                 onboardingViewModel.effects.collect(::handleOnboardingEffect)
@@ -71,6 +75,9 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(settingsViewModel) {
                 settingsViewModel.effects.collect(::handleSettingsEffect)
             }
+            LaunchedEffect(measurementBrowserViewModel) {
+                measurementBrowserViewModel.effects.collect(::handleMeasurementBrowserEffect)
+            }
             SensorBoxTheme(
                 themeMode = settingsState.preferences.display.themeMode,
                 dynamicColor = settingsState.preferences.display.dynamicColors,
@@ -79,10 +86,12 @@ class MainActivity : ComponentActivity() {
                     mainState = mainState,
                     onboardingState = onboardingState,
                     recordingState = recordingState,
+                    measurementBrowserState = measurementBrowserState,
                     settingsState = settingsState,
                     onNavigate = mainViewModel::navigate,
                     onOnboardingIntent = onboardingViewModel::accept,
                     onRecordingIntent = recordingViewModel::accept,
+                    onMeasurementBrowserIntent = measurementBrowserViewModel::onIntent,
                     onSettingsIntent = settingsViewModel::accept,
                 )
             }
@@ -120,6 +129,12 @@ class MainActivity : ComponentActivity() {
             SettingsEffect.DiagnosticsCleared -> showToast(R.string.diagnostics_cleared)
             is SettingsEffect.DiagnosticsFailed -> showToast(R.string.diagnostics_action_failed)
             is SettingsEffect.Navigate -> mainViewModel.navigate(effect.route)
+        }
+    }
+
+    private fun handleMeasurementBrowserEffect(effect: MeasurementBrowserEffect) {
+        when (effect) {
+            is MeasurementBrowserEffect.Navigate -> mainViewModel.navigate(effect.route)
         }
     }
 

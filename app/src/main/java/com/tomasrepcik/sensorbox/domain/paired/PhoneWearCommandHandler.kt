@@ -11,43 +11,37 @@ import com.tomasrepcik.sensorbox.domain.sensors.WearSensorCatalogStore
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-
-fun interface PhoneWearCommandPolicy {
-    suspend fun handle(command: WearCommand): AppResult<Unit>
-}
 
 class PhoneWearCommandHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val wearSensorCatalog: WearSensorCatalogStore,
-    private val acknowledgementInbox: WearAcknowledgementInbox,
+    private val recordingResults: WearRecordingResultInbox,
     private val pairedRecordingCoordinator: PairedRecordingCoordinator,
     private val sendCommand: SendWearCommandUseCase,
-) : PhoneWearCommandPolicy {
-    override suspend fun handle(command: WearCommand): AppResult<Unit> = when (command) {
+) {
+    suspend fun handle(command: WearCommand): AppResult<Unit> = when (command) {
         WearCommand.LaunchPhone -> launchPhone()
 
-        is WearCommand.SensorList -> {
+        is WearCommand.AvailableSensors -> {
             wearSensorCatalog.update(command.sensors)
             AppResult.success(Unit)
         }
 
-        is WearCommand.Acknowledgement -> {
-            acknowledgementInbox.publish(command)
+        is WearCommand.RecordingResult -> {
+            recordingResults.publish(command)
             AppResult.success(Unit)
         }
 
         is WearCommand.StopRecording -> stopFromWear(command)
 
-        WearCommand.RequestSensorList,
+        WearCommand.RequestAvailableSensors,
         WearCommand.SyncMeasurements,
-        is WearCommand.PrepareRecording,
-        is WearCommand.CommitRecording,
-        is WearCommand.AbortRecording,
+        is WearCommand.StartRecording,
         -> AppResult.failure(AppError(AppErrorCode.VALIDATION, "Handle unsupported phone Wear command"))
     }
 
@@ -60,18 +54,22 @@ class PhoneWearCommandHandler @Inject constructor(
     }
 
     private suspend fun stopFromWear(command: WearCommand.StopRecording): AppResult<Unit> {
-        val stopResult = pairedRecordingCoordinator.stopFromPeer(command.sessionId, command.reason)
-        val acknowledgement = WearCommand.Acknowledgement(
+        val stopResult = pairedRecordingCoordinator.stopFromWatch(command.sessionId, command.reason)
+        val error = stopResult.errorOrNull()
+        val result = WearCommand.RecordingResult(
             sessionId = command.sessionId,
-            command = WearSessionCommand.STOP,
+            action = WearRecordingAction.STOP,
             outcome = if (stopResult.isSuccess) {
-                WearAcknowledgementOutcome.SUCCEEDED
+                WearRecordingOutcome.SUCCEEDED
             } else {
-                WearAcknowledgementOutcome.FAILED
+                WearRecordingOutcome.FAILED
             },
-            errorCode = stopResult.errorOrNull()?.code,
+            errorCode = error?.code,
+            errorOperation = error?.operation,
+            errorMessage = error?.diagnosticMessage,
+            errorContext = error?.context.orEmpty(),
             failureCount = if (stopResult.isFailure) 1 else 0,
         )
-        return sendCommand(WEAR_APP_CAPABILITY, WEAR_MESSAGE_PATH, acknowledgement)
+        return sendCommand(WEAR_APP_CAPABILITY, WEAR_MESSAGE_PATH, result)
     }
 }

@@ -7,7 +7,7 @@ import org.junit.Test
 
 class WearCommandCodecTest {
     @Test
-    fun `Given protocol v3 commands When round tripped Then every field survives`() {
+    fun `Given protocol v5 commands When round tripped Then every field survives`() {
         val request = WearRecordingRequest(
             folderName = "shared_session",
             sensorIds = listOf(1, 4, 21),
@@ -17,22 +17,40 @@ class WearCommandCodecTest {
         val commands = listOf(
             WearCommand.LaunchPhone,
             WearCommand.SyncMeasurements,
-            WearCommand.RequestSensorList,
-            WearCommand.SensorList(listOf(WearSensorInfo(1, "Accelerometer", "Fixture"))),
-            WearCommand.PrepareRecording("session-123", request),
-            WearCommand.CommitRecording("session-123", 1_800_000_000_000L),
-            WearCommand.AbortRecording("session-123"),
-            WearCommand.StopRecording("session-123", WearStopReason.LOW_BATTERY),
-            WearCommand.Acknowledgement(
-                sessionId = "session-123",
-                command = WearSessionCommand.PREPARE,
-                outcome = WearAcknowledgementOutcome.SUCCEEDED,
+            WearCommand.RequestAvailableSensors,
+            WearCommand.AvailableSensors(
+                listOf(
+                    WearSensorInfo(
+                        type = 1,
+                        name = "Accelerometer",
+                        vendor = "Fixture",
+                        version = 7,
+                        stringType = "android.sensor.accelerometer",
+                        maximumRange = 78.4f,
+                        resolution = 0.0024f,
+                        power = 0.25f,
+                        minimumDelayMicros = 5_000,
+                        maximumDelayMicros = 200_000,
+                        reportingMode = 0,
+                        isWakeUpSensor = true,
+                    ),
+                ),
             ),
-            WearCommand.Acknowledgement(
+            WearCommand.StartRecording("session-123", request),
+            WearCommand.StopRecording("session-123", WearStopReason.LOW_BATTERY),
+            WearCommand.RecordingResult(
                 sessionId = "session-123",
-                command = WearSessionCommand.STOP,
-                outcome = WearAcknowledgementOutcome.FAILED,
+                action = WearRecordingAction.START,
+                outcome = WearRecordingOutcome.SUCCEEDED,
+            ),
+            WearCommand.RecordingResult(
+                sessionId = "session-123",
+                action = WearRecordingAction.STOP,
+                outcome = WearRecordingOutcome.FAILED,
                 errorCode = AppErrorCode.MEASUREMENT,
+                errorOperation = "Stop Wear recording",
+                errorMessage = "Wear recording service could not stop",
+                errorContext = mapOf("serviceState" to "stopping"),
                 failureCount = 2,
             ),
         )
@@ -44,20 +62,6 @@ class WearCommandCodecTest {
     }
 
     @Test
-    fun `Given a protocol v1 header When decoded Then it is rejected`() {
-        val v1Payload = byteArrayOf(0x53, 0x42, 0x58, 0x31, 0x01, 0x01)
-
-        assertTrue(WearCommandCodec.decode(v1Payload).isFailure)
-    }
-
-    @Test
-    fun `Given a protocol v2 header When decoded Then it is rejected`() {
-        val v2Payload = byteArrayOf(0x53, 0x42, 0x58, 0x32, 0x02, 0x01)
-
-        assertTrue(WearCommandCodec.decode(v2Payload).isFailure)
-    }
-
-    @Test
     fun `Given trailing bytes When decoded Then payload is rejected`() {
         val valid = WearCommandCodec.encode(WearCommand.LaunchPhone).getOrThrow()
 
@@ -65,19 +69,21 @@ class WearCommandCodecTest {
     }
 
     @Test
-    fun `Given a truncated v3 payload When decoded Then it is rejected`() {
-        val malformed = byteArrayOf(0x53, 0x42, 0x58, 0x33, 0x03)
+    fun `Given a truncated current payload When decoded Then it is rejected`() {
+        val malformed = byteArrayOf(0x53, 0x42, 0x58, 0x34, 0x04)
 
         assertTrue(WearCommandCodec.decode(malformed).isFailure)
     }
 
     @Test
-    fun `Given a successful acknowledgement with an error When encoded Then it is rejected`() {
-        val invalid = WearCommand.Acknowledgement(
+    fun `Given a successful result with an error When encoded Then it is rejected`() {
+        val invalid = WearCommand.RecordingResult(
             sessionId = "session-123",
-            command = WearSessionCommand.COMMIT,
-            outcome = WearAcknowledgementOutcome.SUCCEEDED,
+            action = WearRecordingAction.START,
+            outcome = WearRecordingOutcome.SUCCEEDED,
             errorCode = AppErrorCode.MEASUREMENT,
+            errorOperation = "Unexpected failure",
+            errorMessage = "A successful result cannot contain an error",
         )
 
         assertTrue(WearCommandCodec.encode(invalid).isFailure)
@@ -85,7 +91,10 @@ class WearCommandCodecTest {
 
     @Test
     fun `Given a malformed session identifier When encoded Then it is rejected`() {
-        val invalid = WearCommand.AbortRecording("session/with/private/path")
+        val invalid = WearCommand.StopRecording(
+            "session/with/private/path",
+            WearStopReason.USER_REQUEST,
+        )
 
         assertTrue(WearCommandCodec.encode(invalid).isFailure)
     }

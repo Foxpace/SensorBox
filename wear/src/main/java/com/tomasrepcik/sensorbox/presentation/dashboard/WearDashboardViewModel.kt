@@ -15,7 +15,6 @@ import com.tomasrepcik.sensorbox.domain.sensors.GetWearSensorsUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.ObserveSensorValuesUseCase
 import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -71,6 +70,7 @@ class WearDashboardViewModel @Inject constructor(
     private fun handleDestination(destination: WearMenuDestination) {
         when (destination) {
             WearMenuDestination.PHONE_INFO -> mutableEffects.trySend(WearDashboardEffect.OpenPhone)
+            WearMenuDestination.SYNC -> startSync()
             WearMenuDestination.PRIVACY, WearMenuDestination.TERMS -> openUrl(destination)
             else -> Unit
         }
@@ -142,11 +142,7 @@ class WearDashboardViewModel @Inject constructor(
 
     private fun observeSession() = viewModelScope.launch {
         sessionStore.state.collect { session ->
-            val route = if (session is MeasurementSessionState.Running) WearRoute.ACTIVE else null
-            if (route != null) mutableState.value = mutableState.value.copy(route = route)
-            if (session is MeasurementSessionState.Idle && mutableState.value.route == WearRoute.ACTIVE) {
-                mutableState.value = mutableState.value.copy(route = WearRoute.MENU)
-            }
+            mutableState.value = WearDashboardReducer.measurementSessionChanged(mutableState.value, session)
         }
     }
 

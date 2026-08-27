@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationAvailability
+import com.google.android.gms.location.LocationServices
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.format.ValueFormats
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
@@ -45,14 +46,21 @@ fun SensorDetailsScreen(
     onPreview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sensor = state.detailsSensorType?.let { type -> state.sensors.firstOrNull { it.type == type } }
+    val sensor = state.detailsSensorType?.let { type ->
+        val sensors = when (state.detailsSensorSource) {
+            RecordingSensorSource.PHONE -> state.sensors
+            RecordingSensorSource.WEAR -> state.wearSensors
+        }
+        sensors.firstOrNull { it.type == type }
+    }
     val canPreview = state.detailsSensorType == null || sensor?.type != Sensor.TYPE_STEP_DETECTOR
     val title = when {
         state.detailsSensorType == null -> stringResource(R.string.gps)
         sensor != null -> sensor.name
         else -> stringResource(R.string.sensor_unavailable)
     }
-    val showPreview = (state.detailsSensorType == null || sensor != null) && canPreview
+    val showPreview = state.detailsSensorSource == RecordingSensorSource.PHONE &&
+        (state.detailsSensorType == null || sensor != null) && canPreview
     Box(modifier.fillMaxSize()) {
         SensorDetailsList(state, sensor, title, showPreview, onBack)
         if (showPreview) {
@@ -77,7 +85,9 @@ private fun SensorDetailsList(
         if (state.detailsSensorType == null) {
             item { GpsDetails(state) }
         } else if (sensor != null) {
-            item { HardwareSensorDetails(sensor) }
+            item {
+                HardwareSensorDetails(sensor)
+            }
         }
     }
 }
@@ -244,14 +254,15 @@ internal fun rememberGpsDetails(
     val hasPermission = remember(context, permissionRevision) { context.hasLocationPermission() }
     var location by remember { mutableStateOf<Location?>(null) }
     var isAvailable by remember { mutableStateOf<Boolean?>(null) }
-    val gpsHandler = remember { GPSHandler() }
+    val gpsHandler = remember(context) {
+        GPSHandler(LocationServices.getFusedLocationProviderClient(context))
+    }
 
     DisposableEffect(gpsHandler, hasPermission, intervalSeconds, minimumDistanceMeters) {
         var active = true
         if (hasPermission) {
             gpsHandler.configure(intervalSeconds, minimumDistanceMeters)
             gpsHandler.addCallback(
-                context,
                 GpsDetailsCallback(
                     onLocation = { if (active && it != null) location = it },
                     onAvailability = { if (active) isAvailable = it },

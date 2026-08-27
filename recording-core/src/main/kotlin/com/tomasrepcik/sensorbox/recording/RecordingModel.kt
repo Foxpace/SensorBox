@@ -48,21 +48,8 @@ sealed interface RecordingSourceSpec {
 data class RecordingPlan(
     val sessionId: RecordingSessionId,
     val sources: List<RecordingSourceSpec>,
-    val startAtEpochMillis: Long,
     val durationMillis: Long = 0L,
 )
-
-sealed interface RecordingSessionState {
-    data object Idle : RecordingSessionState
-
-    data class Preparing(val plan: RecordingPlan) : RecordingSessionState
-
-    data class Prepared(val plan: RecordingPlan) : RecordingSessionState
-
-    data class Running(val plan: RecordingPlan, val startedAtEpochMillis: Long) : RecordingSessionState
-
-    data class Stopping(val sessionId: RecordingSessionId, val reason: RecordingStopReason) : RecordingSessionState
-}
 
 enum class RecordingStopReason {
     USER_REQUEST,
@@ -70,7 +57,6 @@ enum class RecordingStopReason {
     LOW_BATTERY,
     SOURCE_FAILURE,
     PLATFORM_DESTROYED,
-    PAIRED_ABORT,
 }
 
 sealed interface RecordingEvent {

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
@@ -37,9 +36,11 @@ import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
 
 @Composable
 fun RecordScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize()) {
-        RecordContent(state, onIntent)
-        SensorSelectionActionBar(state, onIntent, Modifier.align(Alignment.BottomCenter))
+    Column(modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) {
+            RecordContent(state, onIntent)
+        }
+        SensorSelectionActionBar(state, onIntent)
     }
 }
 
@@ -47,12 +48,15 @@ fun RecordScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, mod
 @OptIn(ExperimentalFoundationApi::class)
 private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
     LazyColumn(
-        contentPadding = PaddingValues(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 112.dp),
+        contentPadding = PaddingValues(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 24.dp),
     ) {
         stickyHeader {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Column {
-                    RecordHeader { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) }
+                    RecordHeader(
+                        onMeasurements = { onIntent(RecordingIntent.Navigate(MainRoute.MEASUREMENTS)) },
+                        onOptions = { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) },
+                    )
                     Spacer(Modifier.height(18.dp))
                 }
             }
@@ -82,7 +86,6 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
                 GpsRow(
                     selected = state.wearIncludesGps,
                     onToggle = { onIntent(RecordingIntent.ToggleWearGps) },
-                    onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
                 )
             }
             item { SourceDivider() }
@@ -92,7 +95,14 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
                         sensor = sensor,
                         selected = sensor.type in state.selectedWearSensorIds,
                         onToggle = { onIntent(RecordingIntent.ToggleWearSensor(sensor.type)) },
-                        onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
+                        onInfo = {
+                            onIntent(
+                                RecordingIntent.OpenSensorDetails(
+                                    sensor.type,
+                                    RecordingSensorSource.WEAR,
+                                ),
+                            )
+                        },
                     )
                     SourceDivider()
                 }
@@ -113,7 +123,7 @@ private fun WearSectionHeader() {
 }
 
 @Composable
-private fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) {
+private fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: (() -> Unit)? = null) {
     SourceRow(
         title = stringResource(R.string.gps),
         icon = R.drawable.ic_source_location,
@@ -125,10 +135,17 @@ private fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) 
 }
 
 @Composable
-private fun RecordHeader(onOptions: () -> Unit) {
+private fun RecordHeader(onMeasurements: () -> Unit, onOptions: () -> Unit) {
     SensorBoxTopAppBar(
         title = stringResource(R.string.sources),
         actions = {
+            IconButton(onClick = onMeasurements) {
+                Icon(
+                    painterResource(R.drawable.ic_baseline_folder),
+                    contentDescription = stringResource(R.string.measurements),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             IconButton(onClick = onOptions) {
                 Icon(
                     painterResource(R.drawable.ic_baseline_settings_24),
@@ -141,7 +158,12 @@ private fun RecordHeader(onOptions: () -> Unit) {
 }
 
 @Composable
-private fun SensorRow(sensor: SensorDescriptor, selected: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) {
+private fun SensorRow(
+    sensor: SensorDescriptor,
+    selected: Boolean,
+    onToggle: () -> Unit,
+    onInfo: (() -> Unit)? = null,
+) {
     SourceRow(
         title = sensor.name,
         icon = sensorIconResource(sensor.type),
@@ -159,7 +181,7 @@ private fun SourceRow(
     selected: Boolean,
     informationDescription: String,
     onToggle: () -> Unit,
-    onInfo: () -> Unit,
+    onInfo: (() -> Unit)?,
 ) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 16.dp),
@@ -174,13 +196,15 @@ private fun SourceRow(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        IconButton(onClick = onInfo) {
-            Icon(
-                painterResource(R.drawable.ic_info),
-                contentDescription = informationDescription,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
-            )
+        onInfo?.let { showInfo ->
+            IconButton(onClick = showInfo) {
+                Icon(
+                    painterResource(R.drawable.ic_info),
+                    contentDescription = informationDescription,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
         Spacer(Modifier.width(4.dp))
         Checkbox(checked = selected, onCheckedChange = { onToggle() })
@@ -199,7 +223,11 @@ private fun SensorSelectionActionBar(
     modifier: Modifier = Modifier,
 ) {
     val sensorCount = selectedSourceCount(state)
-    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background,
+        shadowElevation = 8.dp,
+    ) {
         Box(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
             contentAlignment = Alignment.Center,
@@ -207,7 +235,7 @@ private fun SensorSelectionActionBar(
             SensorBoxPrimaryButton(
                 label = stringResource(R.string.continue_action),
                 onClick = { onIntent(RecordingIntent.OpenMeasurementSetup) },
-                modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = sensorCount > 0,
             )
         }
@@ -224,13 +252,46 @@ private fun selectedSourceCount(state: RecordingState): Int = state.selectedSens
 @Composable
 fun RecordingMessageText(message: RecordingMessage) {
     if (message == RecordingMessage.NONE) return
-    Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
-        Text(
-            stringResource(messageTextResource(message)),
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.padding(14.dp),
-        )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_info),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = stringResource(messageTitleResource(message)),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = stringResource(messageTextResource(message)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
     }
+}
+
+@StringRes
+private fun messageTitleResource(message: RecordingMessage): Int = when (message) {
+    RecordingMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source_title
+    RecordingMessage.STORAGE_REQUIRED -> R.string.message_storage_required_title
+    RecordingMessage.PERMISSION_REQUIRED -> R.string.message_permission_required_title
+    RecordingMessage.WEAR_PERMISSION_REQUIRED -> R.string.message_wear_permission_required_title
+    RecordingMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed_title
+    RecordingMessage.NONE -> R.string.app_name
 }
 
 @StringRes
@@ -238,6 +299,7 @@ private fun messageTextResource(message: RecordingMessage): Int = when (message)
     RecordingMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source
     RecordingMessage.STORAGE_REQUIRED -> R.string.message_storage_required
     RecordingMessage.PERMISSION_REQUIRED -> R.string.message_permission_required
+    RecordingMessage.WEAR_PERMISSION_REQUIRED -> R.string.message_wear_permission_required
     RecordingMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed
     RecordingMessage.NONE -> R.string.app_name
 }

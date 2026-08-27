@@ -2,7 +2,6 @@ package com.tomasrepcik.sensorbox.sensorservices.serviceController
 
 import android.content.Intent
 import android.hardware.SensorManager
-import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
 
 data class MeasurementConfig(
@@ -16,7 +15,6 @@ data class MeasurementConfig(
     val useWakeLock: Boolean,
     val gpsIntervalSeconds: Int,
     val gpsMinDistanceMeters: Int,
-    val startAtEpochMillis: Long,
     val durationMillis: Long,
     val notes: List<String>,
     val alarmOffsetsSeconds: List<Int>,
@@ -25,7 +23,7 @@ data class MeasurementConfig(
     val significantMotion: Boolean,
 ) {
     companion object {
-        fun from(intent: Intent, clock: EpochClock): MeasurementConfig = MeasurementConfig(
+        fun from(intent: Intent): MeasurementConfig = MeasurementConfig(
             sessionId = intent.getStringExtra(MeasurementService.SESSION_ID).orEmpty(),
             folderName = intent.getStringExtra(MeasurementService.FOLDER_NAME).orEmpty(),
             useInternalStorage = intent.getBooleanExtra(MeasurementService.INTERNAL_STORAGE, false),
@@ -39,10 +37,6 @@ data class MeasurementConfig(
             useWakeLock = intent.getBooleanExtra(MeasurementService.USE_WAKE_LOCK, false),
             gpsIntervalSeconds = intent.getIntExtra(MeasurementService.GPS_INTERVAL_SECONDS, 10),
             gpsMinDistanceMeters = intent.getIntExtra(MeasurementService.GPS_DISTANCE_METERS, 20),
-            startAtEpochMillis = intent.getLongExtra(
-                MeasurementService.START_AT_EPOCH_MILLIS,
-                clock.nowMillis(),
-            ),
             durationMillis = intent.getLongExtra(MeasurementService.DURATION_MILLIS, 0L).coerceAtLeast(0L),
             notes = intent.getStringArrayListExtra(MeasurementService.NOTES).orEmpty(),
             alarmOffsetsSeconds = intent.getIntArrayExtra(MeasurementService.ALARM_OFFSETS_SECONDS)

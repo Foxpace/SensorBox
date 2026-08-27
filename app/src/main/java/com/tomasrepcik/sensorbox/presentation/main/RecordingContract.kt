@@ -11,13 +11,20 @@ enum class RecordingMessage {
     PICK_AT_LEAST_ONE_SOURCE,
     STORAGE_REQUIRED,
     PERMISSION_REQUIRED,
+    WEAR_PERMISSION_REQUIRED,
     MEASUREMENT_FAILED,
+}
+
+enum class RecordingSensorSource {
+    PHONE,
+    WEAR,
 }
 
 data class RecordingState(
     val sensors: List<SensorDescriptor> = emptyList(),
     val wearSensors: List<SensorDescriptor> = emptyList(),
     val detailsSensorType: Int? = null,
+    val detailsSensorSource: RecordingSensorSource = RecordingSensorSource.PHONE,
     val selectedSensorIds: Set<Int> = emptySet(),
     val includesGps: Boolean = false,
     val selectedWearSensorIds: Set<Int> = emptySet(),
@@ -35,6 +42,8 @@ data class RecordingState(
     val session: MeasurementSessionState = MeasurementSessionState.Idle,
     val elapsedSeconds: Long = 0,
     val isWearConnected: Boolean = false,
+    val isStarting: Boolean = false,
+    val startCountdownSeconds: Int? = null,
     val message: RecordingMessage = RecordingMessage.NONE,
     val errorCode: AppErrorCode? = null,
 ) {
@@ -49,7 +58,6 @@ data class RecordingState(
         wearSensorIds = selectedWearSensorIds,
         wearIncludesGps = wearIncludesGps,
         customName = customMeasurementName,
-        delaySeconds = startDelaySeconds,
         durationSeconds = durationSeconds.coerceAtLeast(0),
         notes = notes.lines().map(String::trim).filter(String::isNotEmpty),
         alarmOffsetsSeconds = alarmOffsets.split(',', ';', ' ')
@@ -64,7 +72,10 @@ sealed interface RecordingIntent {
     data class Navigate(val route: MainRoute) : RecordingIntent
     data class ToggleSensor(val sensorId: Int) : RecordingIntent
     data class ToggleWearSensor(val sensorId: Int) : RecordingIntent
-    data class OpenSensorDetails(val sensorType: Int?) : RecordingIntent
+    data class OpenSensorDetails(
+        val sensorType: Int?,
+        val source: RecordingSensorSource = RecordingSensorSource.PHONE,
+    ) : RecordingIntent
     data object ToggleGps : RecordingIntent
     data object ToggleWearGps : RecordingIntent
     data object ChooseStorage : RecordingIntent
@@ -103,13 +114,39 @@ object RecordingReducer {
         ?: reduceSelection(state, intent)
         ?: reduceConfiguration(state, intent)
 
+    fun measurementStartRequested(state: RecordingState, countdownSeconds: Int): RecordingState = state.copy(
+        isStarting = true,
+        startCountdownSeconds = countdownSeconds.takeIf { it > 0 },
+        message = RecordingMessage.NONE,
+        errorCode = null,
+    )
+
+    fun measurementCountdownChanged(state: RecordingState, seconds: Int?): RecordingState = state.copy(
+        startCountdownSeconds = seconds,
+    )
+
+    fun measurementStartFailed(state: RecordingState): RecordingState = state.copy(
+        isStarting = false,
+        startCountdownSeconds = null,
+    )
+
+    fun measurementSessionChanged(state: RecordingState, session: MeasurementSessionState): RecordingState = state.copy(
+        session = session,
+        elapsedSeconds = 0,
+        isStarting = if (session is MeasurementSessionState.Running) false else state.isStarting,
+        startCountdownSeconds = if (session is MeasurementSessionState.Running) null else state.startCountdownSeconds,
+    )
+
     private fun reduceNavigation(state: RecordingState, intent: RecordingIntent): RecordingNext? = when (intent) {
         RecordingIntent.ChooseStorage -> RecordingNext(state, RecordingEffect.PickStorageDirectory)
 
         is RecordingIntent.Navigate -> RecordingNext(state, RecordingEffect.Navigate(intent.route))
 
         is RecordingIntent.OpenSensorDetails -> RecordingNext(
-            state.copy(detailsSensorType = intent.sensorType),
+            state.copy(
+                detailsSensorType = intent.sensorType,
+                detailsSensorSource = intent.source,
+            ),
             RecordingEffect.Navigate(MainRoute.SENSOR_DETAILS),
         )
 

@@ -1,6 +1,5 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers.measurements
 
-import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.hardware.TriggerEvent
@@ -17,16 +16,17 @@ import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
 import java.io.OutputStream
 
 /** Handles Android's one-shot significant-motion trigger and re-arms it after every event. */
-internal class SignificantMotion(private val storage: MeasurementStorage, private val clock: EpochClock) :
-    TriggerEventListener() {
-    private var sensorManager: SensorManager? = null
+internal class SignificantMotion(
+    private val storage: MeasurementStorage,
+    private val clock: EpochClock,
+    private val sensorManager: SensorManager,
+) : TriggerEventListener() {
     private var sensor: Sensor? = null
     private var output: OutputStream? = null
     private var writeFailure: AppError? = null
 
-    fun prepare(context: Context, folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
-        sensorManager = context.getSystemService(SensorManager::class.java)
-        sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
+    fun prepare(folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
         val stream = storage.openMeasurementFile(
             folderName = folderName,
             mimeType = "text/csv",
@@ -51,7 +51,7 @@ internal class SignificantMotion(private val storage: MeasurementStorage, privat
         AppErrorCode.MEASUREMENT,
         "Pause significant motion",
     ) {
-        sensor?.let { sensorManager?.cancelTriggerSensor(this, it) }
+        sensor?.let { sensorManager.cancelTriggerSensor(this, it) }
     }
 
     private suspend fun save(): AppResult<Unit> {
@@ -66,7 +66,6 @@ internal class SignificantMotion(private val storage: MeasurementStorage, privat
     suspend fun stop(): AppResult<Unit> {
         val results = listOf(pause(), save())
         sensor = null
-        sensorManager = null
         return results.combineAppResults(AppErrorCode.MEASUREMENT, "Stop significant motion")
     }
 
@@ -79,7 +78,7 @@ internal class SignificantMotion(private val storage: MeasurementStorage, privat
         if (!arm()) AppError(AppErrorCode.MEASUREMENT, "Re-arm significant motion")
     }
 
-    private fun arm(): Boolean = sensor?.let { sensorManager?.requestTriggerSensor(this, it) } == true
+    private fun arm(): Boolean = sensor?.let { sensorManager.requestTriggerSensor(this, it) } == true
 
     private companion object {
         const val FILE_NAME = "significant_motion.csv"

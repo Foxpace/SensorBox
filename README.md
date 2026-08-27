@@ -59,9 +59,9 @@ Modules:
 - `recording-core`: pure Kotlin recording state machine, source roles, scheduling, and cleanup policy.
 - `core`: Android DataStore preferences, document storage, local rotating diagnostics, and reusable test fixtures.
 - `sensorservices`: Android recording adapters, foreground host, and linear sensor/GPS writers. It has no Wear dependency.
-- `WearOsLib`: coroutine-based connectivity, strict protocol v3 command encoding, and Channel file transport. App policy stays in `app` and `wear`.
+- `WearOsLib`: coroutine-based connectivity, strict protocol v5 JSON commands, and Channel file transport. App policy stays in `app` and `wear`.
 
-Paired phone/watch recording is all-or-nothing: both sides prepare before either commits, commands are session-correlated and idempotent, timeouts use bounded retries, and rejection or timeout compensates both sides.
+Paired phone/watch recording starts directly on each device. Commands are session-correlated and idempotent, and both devices own their local duration timer after starting. A lost connection does not stop an active recording; peer stop notifications are best effort.
 
 ## Platform and toolchain
 
@@ -96,24 +96,27 @@ Tests use Given/When/Then naming, reusable state/repository fixtures, coroutine 
 
 ## Emulator integration tests
 
-The phone sensor test starts the real foreground measurement service, injects three accelerometer values through the emulator console, and verifies the generated CSV:
+The phone recording tests start the real foreground measurement service, read the device sensors, control test GPS and battery state from Kotlin, and verify the generated files. Run the class directly from Android Studio or with Gradle:
 
 ```shell
-ANDROID_HOME="$HOME/Library/Android/sdk" \
-PHONE_SERIAL=emulator-5554 \
-tools/emulator/run_phone_sensor_test.sh
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
+  "-Pandroid.testInstrumentationRunnerArguments.class=com.tomasrepcik.sensorbox.emulator.PhoneSensorRecordingEmulatorTest"
 ```
 
-The Wear sync test sends a fixture CSV through the real Wear OS Channel API and verifies its exact bytes on the phone. Use an Android 17 Google Play phone AVD and a Wear OS 7 AVD. Pair them once with Android Studio's Pairing Assistant and complete the Wear companion flow before running:
+Standalone Wear recording tests use the watch sensors and control test GPS and battery state from Kotlin. They do not require a paired phone:
 
 ```shell
-ANDROID_HOME="$HOME/Library/Android/sdk" \
-PHONE_SERIAL=emulator-5554 \
-WEAR_SERIAL=emulator-5556 \
-tools/emulator/run_wear_sync_test.sh
+ANDROID_SERIAL=emulator-5554 ./gradlew :wear:connectedDebugAndroidTest \
+  "-Pandroid.testInstrumentationRunnerArguments.class=com.tomasrepcik.sensorbox.emulator.WearSensorRecordingEmulatorTest"
 ```
 
-The runner creates Android Studio's ADB forward/reverse bridge and fails immediately with pairing guidance when the watch reports no peer. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected Storage Access Framework directory.
+The paired sync matrix sends CSV, JSON, text, empty, Unicode, overwrite, duplicate-name, ignored-extension, and 256 KiB fixtures through the real Wear OS Channel API. The phone verifies every destination and byte. Use a Google Play phone AVD and a Wear OS AVD, then pair them once with Android Studio's Pairing Assistant:
+
+```shell
+ANDROID_HOME="$HOME/Library/Android/sdk" tools/emulator/run_wear_sync_test.sh
+```
+
+The runner detects one phone and one watch automatically; `PHONE_SERIAL` and `WEAR_SERIAL` remain available when several devices are connected. It builds and installs once, refreshes the ADB bridge after installation, and launches each scenario on both devices. When an emulator transport exposes its paired node but does not propagate static capabilities, the instrumentation-only repository falls back to that connected node; file transfer still uses the production Channel client and receiver. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected Storage Access Framework directory.
 
 No Firebase project, Maps key, secrets file, or external storage permission is required.
 

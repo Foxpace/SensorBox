@@ -8,8 +8,13 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-class MeasurementPermissionUseCase @Inject constructor(@ApplicationContext private val context: Context) {
-    fun missingPermissions(request: MeasurementRequest): Set<String> =
+fun interface MeasurementPermissionsUseCase {
+    fun missingPermissions(request: MeasurementRequest): Set<String>
+}
+
+class MeasurementPermissionUseCase @Inject constructor(@ApplicationContext private val context: Context) :
+    MeasurementPermissionsUseCase {
+    override fun missingPermissions(request: MeasurementRequest): Set<String> =
         requiredMeasurementPermissions(request, Build.VERSION.SDK_INT).filterNot(::isGranted).toSet()
 
     private fun isGranted(permission: String): Boolean =

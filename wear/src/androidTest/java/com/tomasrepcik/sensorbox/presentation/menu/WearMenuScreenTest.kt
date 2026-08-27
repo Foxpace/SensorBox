@@ -21,4 +21,17 @@ class WearMenuScreenTest {
             assertEquals(WearMenuDestination.RECORD, selectedDestination)
         }
     }
+
+    @Test
+    fun givenMenuWhenSyncIsTappedThenSyncDestinationIsSelected() {
+        var selectedDestination: WearMenuDestination? = null
+        WearMenuRobot(composeRule)
+            .givenMenu { selectedDestination = it }
+            .thenSyncIsVisible()
+            .whenSyncIsTapped()
+
+        composeRule.runOnIdle {
+            assertEquals(WearMenuDestination.SYNC, selectedDestination)
+        }
+    }
 }

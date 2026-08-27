@@ -6,10 +6,14 @@ import android.hardware.SensorManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-class GetAvailableSensorsUseCase @Inject constructor(@ApplicationContext context: Context) {
+fun interface AvailableSensorsUseCase {
+    operator fun invoke(): List<SensorDescriptor>
+}
+
+class GetAvailableSensorsUseCase @Inject constructor(@ApplicationContext context: Context) : AvailableSensorsUseCase {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
 
-    operator fun invoke(): List<SensorDescriptor> = sensorManager
+    override fun invoke(): List<SensorDescriptor> = sensorManager
         .getSensorList(Sensor.TYPE_ALL)
         .filter { it.type in PHONE_SENSOR_TYPES }
         .distinctBy(Sensor::getType)

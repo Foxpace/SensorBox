@@ -1,6 +1,5 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers.measurements
 
-import android.content.Context
 import android.hardware.SensorManager
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
@@ -18,6 +17,7 @@ internal class SensorMeasurement(
     private val storage: MeasurementStorage,
     private val diagnosticLogger: DiagnosticLogger,
     private val clock: EpochClock,
+    private val sensorManager: SensorManager? = null,
 ) {
     private val holders = mutableListOf<SensorHolder>()
     private var samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST
@@ -54,13 +54,9 @@ internal class SensorMeasurement(
         ).map { SensorHolder(spec, it, diagnosticLogger, clock) }
     }
 
-    fun start(context: Context): AppResult<Unit> {
-        val managerResult = appResult(AppErrorCode.MEASUREMENT, "Access sensor manager") {
-            context.getSystemService(SensorManager::class.java)
-        }
-        val sensorManager = managerResult.getOrNull()
-            ?: return AppResult.failure(checkNotNull(managerResult.errorOrNull()))
-                .withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
+    fun start(): AppResult<Unit> {
+        val sensorManager = sensorManager
+            ?: return AppResult.failure(AppError(AppErrorCode.MEASUREMENT, "Access sensor manager"))
         for (holder in holders) {
             val registration = registerHolder(sensorManager, holder)
             if (registration.isFailure) {
@@ -86,12 +82,11 @@ internal class SensorMeasurement(
         }
     }
 
-    private fun pause(context: Context): AppResult<Unit> = appResult(
+    private fun pause(): AppResult<Unit> = appResult(
         AppErrorCode.MEASUREMENT,
         "Pause sensors",
     ) {
-        val sensorManager = context.getSystemService(SensorManager::class.java)
-        holders.forEach(sensorManager::unregisterListener)
+        sensorManager?.let { manager -> holders.forEach(manager::unregisterListener) }
     }
 
     private suspend fun save(): AppResult<Unit> {
@@ -100,8 +95,8 @@ internal class SensorMeasurement(
         return results.combineAppResults(AppErrorCode.MEASUREMENT, "Save sensors")
     }
 
-    suspend fun stop(context: Context): AppResult<Unit> = listOf(
-        pause(context),
+    suspend fun stop(): AppResult<Unit> = listOf(
+        pause(),
         save(),
     ).combineAppResults(AppErrorCode.MEASUREMENT, "Stop sensors")
 }

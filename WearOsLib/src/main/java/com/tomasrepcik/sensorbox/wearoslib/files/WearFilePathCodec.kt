@@ -5,25 +5,29 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.flatMap
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 object WearFilePathCodec {
     fun encode(metadata: WearFileMetadata): AppResult<String> = if (
         metadata.measurementName.isSafePathPart() && metadata.fileName.isSafePathPart()
     ) {
         appResult(AppErrorCode.CONNECTIVITY, "Encode Wear file path") {
-            "$PREFIX/${metadata.measurementName.encodePart()}/${metadata.fileName.encodePart()}"
+            "$PREFIX/${JSON.encodeToString(metadata).encodePart()}"
         }
     } else {
         AppResult.failure(AppError(AppErrorCode.CONNECTIVITY, "Validate Wear file path"))
     }
 
     fun decode(path: String): AppResult<WearFileMetadata> {
-        val parts = path.removePrefix("$PREFIX/").split('/')
-        if (!path.startsWith("$PREFIX/") || parts.size != 2) {
+        if (!path.startsWith("$PREFIX/")) {
             return AppResult.failure(AppError(AppErrorCode.CONNECTIVITY, "Validate Wear file path"))
         }
         return appResult(AppErrorCode.CONNECTIVITY, "Decode Wear file path") {
-            WearFileMetadata(parts[0].decodePart(), parts[1].decodePart())
+            val encodedMetadata = path.removePrefix("$PREFIX/")
+            require(encodedMetadata.isNotBlank() && '/' !in encodedMetadata)
+            JSON.decodeFromString<WearFileMetadata>(encodedMetadata.decodePart())
         }.flatMap { metadata ->
             if (metadata.measurementName.isSafePathPart() && metadata.fileName.isSafePathPart()) {
                 AppResult.success(metadata)
@@ -82,8 +86,12 @@ object WearFilePathCodec {
     private fun String.isSafePathPart(): Boolean =
         isNotBlank() && length <= MAX_PART_LENGTH && '/' !in this && '\\' !in this && this != "." && this != ".."
 
-    const val PREFIX = "/sensorbox/v1/file"
+    const val PREFIX = "/sensorbox/v2/file"
     private const val MAX_PART_LENGTH = 120
     private const val BYTE_MASK = 0xFF
     private const val BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    private val JSON = Json {
+        encodeDefaults = true
+        ignoreUnknownKeys = false
+    }
 }

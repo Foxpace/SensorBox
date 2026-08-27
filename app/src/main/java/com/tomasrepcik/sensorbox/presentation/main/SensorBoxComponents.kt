@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -150,11 +151,17 @@ fun SensorBoxPanel(modifier: Modifier = Modifier, content: @Composable () -> Uni
 }
 
 @Composable
-fun SensorBoxPrimaryButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun SensorBoxPrimaryButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    loading: Boolean = false,
+) {
     Button(
         onClick = onClick,
         modifier = modifier.height(52.dp),
-        enabled = enabled,
+        enabled = enabled && !loading,
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -163,6 +170,14 @@ fun SensorBoxPrimaryButton(label: String, onClick: () -> Unit, modifier: Modifie
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp,
+            )
+            Spacer(Modifier.width(10.dp))
+        }
         Text(label, style = MaterialTheme.typography.labelLarge)
     }
 }

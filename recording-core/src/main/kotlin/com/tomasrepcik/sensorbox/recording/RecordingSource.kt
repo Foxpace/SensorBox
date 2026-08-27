@@ -5,9 +5,7 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 interface RecordingSource {
     val type: RecordingSourceType
 
-    suspend fun prepare(spec: RecordingSourceSpec): AppResult<Unit>
-
-    suspend fun start(): AppResult<Unit>
+    suspend fun start(spec: RecordingSourceSpec): AppResult<Unit>
 
     suspend fun stop(): AppResult<Unit>
 }

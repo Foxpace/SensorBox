@@ -36,13 +36,7 @@ internal class ServiceController(
 
     val events: SharedFlow<RecordingEvent> = engine.events
 
-    suspend fun prepareAndCommit(): AppResult<Unit> {
-        val plan = config.toRecordingPlan(sessionId)
-        return when (val prepared = engine.prepare(plan)) {
-            is AppResult.Success -> engine.commit(sessionId)
-            is AppResult.Failure -> prepared
-        }
-    }
+    suspend fun start(): AppResult<Unit> = engine.start(config.toRecordingPlan(sessionId))
 
     suspend fun stop(reason: RecordingStopReason): AppResult<Unit> = engine.stop(sessionId, reason)
 
@@ -61,7 +55,6 @@ internal class ServiceController(
         return RecordingPlan(
             sessionId = sessionId,
             sources = specs,
-            startAtEpochMillis = startAtEpochMillis,
             durationMillis = durationMillis,
         )
     }

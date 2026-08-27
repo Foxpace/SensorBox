@@ -9,7 +9,7 @@ import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
 import javax.inject.Inject
 
 class PhoneWearMessageDispatcher @Inject constructor(
-    private val commandHandler: PhoneWearCommandPolicy,
+    private val commandHandler: PhoneWearCommandHandler,
     private val diagnosticLogger: DiagnosticLogger,
 ) {
     suspend fun dispatch(path: String, payload: ByteArray): AppResult<Unit> {
