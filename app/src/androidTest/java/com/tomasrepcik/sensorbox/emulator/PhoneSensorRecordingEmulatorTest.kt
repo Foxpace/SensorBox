@@ -1,92 +1,190 @@
 package com.tomasrepcik.sensorbox.emulator
 
 import android.content.Context
-import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorManager
-import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
-import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class PhoneSensorRecordingEmulatorTest {
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val measurementDirectory = File(context.filesDir, "SensorBox/$MEASUREMENT_NAME")
+    private val fixture = RecordingEmulatorFixture(context)
 
     @Before
-    fun clearPreviousMeasurement() {
-        measurementDirectory.deleteRecursively()
-    }
+    fun prepareDevice() = fixture.prepareDevice()
 
     @After
-    fun stopMeasurement() {
-        context.startService(stopIntent())
+    fun cleanUpDevice() = fixture.cleanUpDevice()
+
+    @Test
+    fun givenAWorkoutWithAnAnnotationWhenStoppedThenCsvAndSessionMetadataAreComplete() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_ANNOTATED_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER),
+                notes = listOf("Outdoor workout", "Phone in jacket pocket"),
+            ),
+        )
+            .waitFor(1_000)
+            .annotate("Reached the first checkpoint")
+            .waitFor(1_000)
+            .stop()
+            .assertRecorded()
+            .assertAnnotation("Reached the first checkpoint")
     }
 
     @Test
-    fun givenVirtualAccelerometerWhenValuesChangeThenCsvContainsSamples() {
-        assertTrue(hasAccelerometer())
-        ContextCompat.startForegroundService(context, recordingIntent())
-        Log.i(LOG_TAG, "READY_FOR_SENSOR_INJECTION")
-
-        Thread.sleep(RECORDING_WINDOW_MILLIS)
-        context.startService(stopIntent())
-
-        val rows = awaitRecordedRows()
-        assertEquals(EXPECTED_HEADER, rows.first())
-        assertTrue("Expected injected accelerometer samples, got $rows", rows.size >= MINIMUM_ROWS)
+    fun givenTwoMotionSensorsAtGameSpeedWhenStoppedThenBothCsvFilesContainValidSamples() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_MULTI_SENSOR_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER, GYROSCOPE),
+                samplingPeriod = SensorManager.SENSOR_DELAY_GAME,
+                useWakeLock = true,
+                notes = listOf("Short movement drill"),
+            ),
+        )
+            .waitFor(2_000)
+            .stop()
+            .assertRecorded()
     }
 
-    private fun hasAccelerometer(): Boolean = context.getSystemService(SensorManager::class.java)
-        .getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
-
-    private fun recordingIntent(): Intent = MeasurementIntentFactory(context, SystemEpochClock).create(
-        MeasurementLaunchRequest(
-            folderName = MEASUREMENT_NAME,
-            useInternalStorage = true,
-            sensorIds = setOf(Sensor.TYPE_ACCELEROMETER),
-            sensorSamplingPeriod = SensorManager.SENSOR_DELAY_NORMAL,
-            includesGps = false,
-            stopOnLowBattery = false,
-            useWakeLock = false,
-            gpsIntervalSeconds = 10,
-            gpsMinDistanceMeters = 20,
-        ),
-    )
-
-    private fun stopIntent(): Intent = Intent(context, MeasurementService::class.java).apply {
-        action = MeasurementService.ACTION_STOP
+    @Test
+    fun givenATimedRecordingWhenDurationExpiresThenSamplesAreFinalized() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_TIMED_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER),
+                samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST,
+                durationMillis = 4_000,
+                notes = listOf("Hands-free timed capture"),
+            ),
+        )
+            .awaitAutomaticStop()
+            .assertRecorded()
     }
 
-    private fun awaitRecordedRows(): List<String> {
-        val output = File(measurementDirectory, "accelerometer.csv")
-        repeat(FILE_WAIT_ATTEMPTS) {
-            val rows = output.takeIf(File::isFile)?.readLines().orEmpty()
-            if (rows.size >= MINIMUM_ROWS) return rows
-            Thread.sleep(FILE_WAIT_INTERVAL_MILLIS)
-        }
-        return output.takeIf(File::isFile)?.readLines().orEmpty()
+    @Test
+    fun givenARecordingWhenStoppedDirectlyThenFilesCloseWithSamples() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_CANCELLED_DELAYED_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER, GYROSCOPE),
+                notes = listOf("Short direct capture"),
+            ),
+        )
+            .waitFor(1_000)
+            .stop()
+            .assertRecorded()
+    }
+
+    @Test
+    fun givenGpsAndMotionWhenLocationsChangeThenBothSourceFilesAreComplete() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_GPS_RECORDING_TEST",
+                sessionId = "gps-session-from-phone",
+                sensors = setOf(ACCELEROMETER),
+                includesGps = true,
+                expectGpsSamples = true,
+                gpsIntervalSeconds = 1,
+                gpsMinDistanceMeters = 0,
+                notes = listOf("Walking route"),
+            ),
+        )
+            .provideLocations(
+                TestLocation(48.1486, 17.1077),
+                TestLocation(48.1491, 17.1082),
+                TestLocation(48.1498, 17.1090),
+            )
+            .stop()
+            .assertRecorded()
+    }
+
+    @Test
+    fun givenActivityRecognitionAndDuplicateAlarmsWhenStoppedThenOptionsAreNormalizedAndSaved() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_ACTIVITY_AND_ALARM_TEST",
+                sensors = emptySet(),
+                alarmOffsetsSeconds = listOf(-3, 0, 0, 1),
+                activityRecognition = true,
+                activityRecognitionPeriodSeconds = 1,
+                notes = listOf("Activity-only capture"),
+            ),
+        )
+            .waitFor(2_500)
+            .stop()
+            .assertRecorded()
+            .assertAlarmCount(2)
+    }
+
+    @Test
+    fun givenLowBatteryProtectionWhenBatteryDropsThenTheRecordingFinalizes() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_LOW_BATTERY_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER),
+                samplingPeriod = SensorManager.SENSOR_DELAY_UI,
+                stopOnLowBattery = true,
+                notes = listOf("Battery-protected capture"),
+            ),
+        )
+            .waitFor(1_000)
+            .dropBatteryTo(1)
+            .awaitAutomaticStop()
+            .assertRecorded()
+    }
+
+    @Test
+    fun givenSignificantMotionWhenStoppedThenThePreparedFileCloses() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_SIGNIFICANT_MOTION_FAILURE_TEST",
+                sensors = emptySet(),
+                significantMotion = true,
+                notes = listOf("One-shot movement trigger"),
+            ),
+        )
+            .waitFor(500)
+            .stop()
+            .assertRecorded()
+    }
+
+    @Test
+    fun givenExternalStorageWithoutAPersistedDirectoryThenInternalFilesAreNotCreated() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_MISSING_EXTERNAL_STORAGE_TEST",
+                sensors = setOf(ACCELEROMETER),
+                useInternalStorage = false,
+            ),
+        )
+            .assertStartRejected()
+    }
+
+    @Test
+    fun givenANegativeDurationAndNoSourcesWhenStoppedThenASessionOnlyRecordingIsFinalized() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_SESSION_ONLY_RECORDING_TEST",
+                sensors = emptySet(),
+                durationMillis = -5_000,
+                notes = listOf("Metadata-only session"),
+            ),
+        )
+            .waitFor(500)
+            .stop()
+            .assertRecorded()
     }
 
     private companion object {
-        const val LOG_TAG = "SensorBoxEmulatorTest"
-        const val MEASUREMENT_NAME = "PHONE_EMULATOR_SENSOR_TEST"
-        const val EXPECTED_HEADER = "t_sensor;t_unix;x;y;z;accuracy"
-        const val MINIMUM_ROWS = 2
-        const val RECORDING_WINDOW_MILLIS = 8_000L
-        const val FILE_WAIT_ATTEMPTS = 20
-        const val FILE_WAIT_INTERVAL_MILLIS = 250L
+        val ACCELEROMETER = RecordedSensor(Sensor.TYPE_ACCELEROMETER, "accelerometer.csv")
+        val GYROSCOPE = RecordedSensor(Sensor.TYPE_GYROSCOPE, "gyroscope.csv")
     }
 }

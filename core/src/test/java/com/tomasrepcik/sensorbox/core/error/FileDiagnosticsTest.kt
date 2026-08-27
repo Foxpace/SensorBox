@@ -52,7 +52,7 @@ class FileDiagnosticsTest {
         )
 
         val text = diagnostics.readText().getOrNull().orEmpty()
-        assertTrue(text.contains("sessionId=session-123"))
+        assertTrue(text.contains("\"sessionId\":\"session-123\""))
         assertFalse(text.contains("1.2,3.4,5.6"))
         assertFalse(text.contains("48.1,17.1"))
         assertFalse(text.contains("private note"))

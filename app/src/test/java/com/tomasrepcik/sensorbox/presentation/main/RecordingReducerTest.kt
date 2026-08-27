@@ -80,6 +80,20 @@ class RecordingReducerTest {
     }
 
     @Test
+    fun `Given a Wear sensor When its information is opened Then details retain the Wear source`() {
+        val givenState = RecordingStateFixtures.state()
+
+        val actual = RecordingReducer.reduce(
+            givenState,
+            RecordingIntent.OpenSensorDetails(21, RecordingSensorSource.WEAR),
+        )
+
+        assertEquals(RecordingEffect.Navigate(MainRoute.SENSOR_DETAILS), actual.effect)
+        assertEquals(21, actual.state.detailsSensorType)
+        assertEquals(RecordingSensorSource.WEAR, actual.state.detailsSensorSource)
+    }
+
+    @Test
     fun `Given measurement setup When returning Then sensor selection is shown`() {
         val givenState = RecordingStateFixtures.state(selectedSensorIds = setOf(1))
 

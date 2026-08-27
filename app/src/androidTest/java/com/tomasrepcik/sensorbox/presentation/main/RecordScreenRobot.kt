@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
 import com.tomasrepcik.sensorbox.ui.theme.SensorBoxTheme
 
@@ -12,6 +13,7 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
     fun givenRecordScreen(
         selected: Boolean = false,
         gpsSelected: Boolean = false,
+        wearConnected: Boolean = false,
         onIntent: (RecordingIntent) -> Unit = {},
     ) = apply {
         rule.setContent {
@@ -21,6 +23,12 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
                         sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture")),
                         selectedSensorIds = if (selected) setOf(1) else emptySet(),
                         includesGps = gpsSelected,
+                        isWearConnected = wearConnected,
+                        wearSensors = if (wearConnected) {
+                            listOf(SensorDescriptor(1, "Wear Accelerometer", "Fixture"))
+                        } else {
+                            emptyList()
+                        },
                         storagePath = "Fixture/SensorBox",
                     ),
                     onIntent = onIntent,
@@ -39,6 +47,11 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
 
     fun whenGpsIsTapped() = apply {
         rule.onNodeWithText("GPS").performClick()
+    }
+
+    fun whenWearAccelerometerInfoIsTapped() = apply {
+        rule.onNodeWithText("Wear Accelerometer").performScrollTo()
+        rule.onNodeWithContentDescription("Information about Wear Accelerometer").performClick()
     }
 
     fun whenContinueIsTapped() = apply {

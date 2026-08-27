@@ -59,6 +59,21 @@ class RecordScreenTest {
     }
 
     @Test
+    fun givenWearSensorWhenInfoIsTappedThenWearDetailsIntentIsSent() {
+        var actualIntent: RecordingIntent? = null
+        RecordScreenRobot(composeRule)
+            .givenRecordScreen(wearConnected = true) { actualIntent = it }
+            .whenWearAccelerometerInfoIsTapped()
+
+        composeRule.runOnIdle {
+            assertEquals(
+                RecordingIntent.OpenSensorDetails(1, RecordingSensorSource.WEAR),
+                actualIntent,
+            )
+        }
+    }
+
+    @Test
     fun givenOnlyGpsSelectedWhenContinueIsTappedThenSetupIntentIsSent() {
         var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)

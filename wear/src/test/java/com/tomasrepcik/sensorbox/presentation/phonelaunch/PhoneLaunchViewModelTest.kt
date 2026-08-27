@@ -6,6 +6,7 @@ import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUse
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearNode
+import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,6 +43,6 @@ class PhoneLaunchViewModelTest {
 
     private fun createViewModel(repository: FakeWearConnectionRepository) = PhoneLaunchViewModel(
         ObserveWearCapabilityUseCase(repository),
-        SendWearMessageUseCase(repository),
+        SendWearCommandUseCase(SendWearMessageUseCase(repository)),
     )
 }

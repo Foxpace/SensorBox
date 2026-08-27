@@ -15,12 +15,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Text
 import com.android.tools.screenshot.PreviewTest
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.DisplayPreferences
 import com.tomasrepcik.sensorbox.core.preferences.RecordingPreferences
 import com.tomasrepcik.sensorbox.domain.sensors.WearSensorDescriptor
 import com.tomasrepcik.sensorbox.ui.theme.WearSensorBoxTheme
-import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 
 @PreviewTest
 @ReadmeWearPreview
@@ -94,9 +94,24 @@ private fun WearReadmeFrame(state: WearDashboardState) {
 }
 
 private fun readmeWearSensors() = listOf(
-    WearSensorDescriptor(1, "Goldfish 3-axis Accelerometer", "Android"),
-    WearSensorDescriptor(4, "Goldfish 3-axis Gyroscope", "Android"),
-    WearSensorDescriptor(2, "Goldfish 3-axis Magnetic field sensor", "Android"),
+    readmeWearSensor(1, "Goldfish 3-axis Accelerometer"),
+    readmeWearSensor(4, "Goldfish 3-axis Gyroscope"),
+    readmeWearSensor(2, "Goldfish 3-axis Magnetic field sensor"),
+)
+
+private fun readmeWearSensor(type: Int, name: String) = WearSensorDescriptor(
+    type = type,
+    name = name,
+    vendor = "Android",
+    version = 1,
+    stringType = "android.sensor.fixture",
+    maximumRange = 20f,
+    resolution = 0.01f,
+    power = 0.1f,
+    minimumDelayMicros = 10_000,
+    maximumDelayMicros = 200_000,
+    reportingMode = 0,
+    isWakeUpSensor = false,
 )
 
 @Preview(

@@ -3,6 +3,10 @@ package com.tomasrepcik.sensorbox.emulator
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.CapabilityClient
+import com.google.android.gms.wearable.Wearable
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
@@ -20,26 +24,33 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class WearToPhoneSyncSenderEmulatorTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val scenario = WearSyncEmulatorFixture.scenario(
+        requireNotNull(
+            InstrumentationRegistry.getArguments().getString(WearSyncEmulatorFixture.SCENARIO_ARGUMENT),
+        ) { "Missing ${WearSyncEmulatorFixture.SCENARIO_ARGUMENT} instrumentation argument" },
+    )
 
     @Before
-    fun createSingleMeasurementFixture() {
+    fun createScenarioFixture() {
         val root = File(context.filesDir, WearSyncEmulatorFixture.APP_DIRECTORY)
         root.deleteRecursively()
-        val measurementDirectory = File(root, WearSyncEmulatorFixture.MEASUREMENT_NAME)
-        check(measurementDirectory.mkdirs())
-        File(measurementDirectory, WearSyncEmulatorFixture.FILE_NAME)
-            .writeText(WearSyncEmulatorFixture.CONTENT)
+        scenario.emptyMeasurementNames.forEach { File(root, it).mkdirs() }
+        scenario.files.forEach { fixture ->
+            File(root, fixture.measurementName).also(File::mkdirs)
+                .resolve(fixture.fileName)
+                .writeBytes(fixture.content)
+        }
     }
 
     @Test
-    fun givenPairedEmulatorsWhenWearSyncsThenOneCsvIsTransferred() = runBlocking {
+    fun givenPairedEmulatorsWhenWearSyncsThenEverySupportedFileIsTransferred() = runBlocking {
         val sync = SyncWearMeasurementsUseCase(
             context = context,
             connectionRepository = GooglePlayWearConnectionRepository(context),
             transferClient = GooglePlayWearFileTransferClient(context),
         )
 
-        assertEquals(1, syncWhenPhoneBecomesReachable(sync))
+        assertEquals(scenario.transferredFiles.size, syncWhenPhoneBecomesReachable(sync))
     }
 
     private suspend fun syncWhenPhoneBecomesReachable(sync: SyncWearMeasurementsUseCase): Int {
@@ -51,9 +62,18 @@ class WearToPhoneSyncSenderEmulatorTest {
             }
             delay(POLL_INTERVAL_MILLIS)
         }
-        val message = "Phone emulator did not become reachable: ${lastFailure?.code}"
+        val message = "Phone emulator did not become reachable: $lastFailure; ${connectionDiagnostics()}"
         throw AssertionError(message, lastFailure?.cause)
     }
+
+    private suspend fun connectionDiagnostics(): String = runCatching {
+        val nodes = Tasks.await(Wearable.getNodeClient(context).connectedNodes).joinToString { it.displayName }
+        val capabilities = Tasks.await(
+            Wearable.getCapabilityClient(context).getAllCapabilities(CapabilityClient.FILTER_ALL),
+        )
+            .mapValues { (_, info) -> info.nodes.map { it.displayName } }
+        "connectedNodes=[$nodes], capabilities=$capabilities"
+    }.getOrElse { "diagnostics failed: $it" }
 
     private companion object {
         const val POLL_INTERVAL_MILLIS = 1_000L
