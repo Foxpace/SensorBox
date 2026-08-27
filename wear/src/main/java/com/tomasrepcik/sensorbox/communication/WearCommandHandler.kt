@@ -3,203 +3,180 @@ package com.tomasrepcik.sensorbox.communication
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
-import com.tomasrepcik.sensorbox.domain.measurement.WearRecordingController
+import com.tomasrepcik.sensorbox.domain.measurement.WearRecordingControlUseCase
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearAcknowledgementOutcome
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSessionCommand
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 class WearCommandHandler @Inject constructor(
-    private val recordingController: WearRecordingController,
-    private val environment: WearCommandEnvironment,
+    private val recording: WearRecordingControlUseCase,
+    private val environment: WearRecordingRequirementsUseCase,
     private val sendCommand: SendWearCommandUseCase,
-    private val acknowledgementInbox: WearAcknowledgementInbox,
+    private val phoneResults: PhoneRecordingResultInbox,
 ) {
-    private val mutex = Mutex()
-    private val acknowledgements = mutableMapOf<AcknowledgementKey, WearCommand.Acknowledgement>()
-    private var preparedSession: PreparedSession? = null
+    private val completedResults = mutableMapOf<ResultKey, WearCommand.RecordingResult>()
     private var activeSessionId: String? = null
 
     suspend fun handle(command: WearCommand): AppResult<Unit> = when (command) {
-        is WearCommand.PrepareRecording -> sendAcknowledgement(prepare(command))
+        is WearCommand.StartRecording -> sendResult(start(command))
 
-        is WearCommand.CommitRecording -> sendAcknowledgement(commit(command))
+        is WearCommand.StopRecording -> sendResult(stop(command))
 
-        is WearCommand.AbortRecording -> sendAcknowledgement(abort(command))
+        WearCommand.RequestAvailableSensors -> sendAvailableSensors()
 
-        is WearCommand.StopRecording -> sendAcknowledgement(stop(command))
-
-        WearCommand.RequestSensorList -> sendSensorList()
-
-        is WearCommand.Acknowledgement -> {
-            acknowledgementInbox.publish(command)
+        is WearCommand.RecordingResult -> {
+            phoneResults.publish(command)
             AppResult.success(Unit)
         }
 
         WearCommand.LaunchPhone,
         WearCommand.SyncMeasurements,
-        is WearCommand.SensorList,
+        is WearCommand.AvailableSensors,
         -> AppResult.success(Unit)
     }
 
-    suspend fun onAutomaticStop(reason: com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason): AppResult<Unit> {
-        val sessionId = mutex.withLock {
-            activeSessionId?.also(::clearSession) ?: return AppResult.success(Unit)
-        }
+    suspend fun onAutomaticStop(reason: WearStopReason): AppResult<Unit> {
+        val sessionId = activeSessionId ?: return AppResult.success(Unit)
+        activeSessionId = null
         val command = WearCommand.StopRecording(sessionId, reason)
-        acknowledgementInbox.clear(sessionId, WearSessionCommand.STOP)
-        repeat(ATTEMPT_COUNT) {
-            if (sendCommand(PHONE_APP_CAPABILITY, PHONE_MESSAGE_PATH, command).isSuccess) {
-                val acknowledgement = withTimeoutOrNull(STOP_TIMEOUT_MILLIS / ATTEMPT_COUNT) {
-                    acknowledgementInbox.await(sessionId, WearSessionCommand.STOP)
-                }
-                if (acknowledgement != null) {
-                    return if (acknowledgement.outcome == WearAcknowledgementOutcome.SUCCEEDED) {
-                        AppResult.success(Unit)
-                    } else {
-                        AppResult.failure(
-                            AppError(
-                                acknowledgement.errorCode ?: AppErrorCode.UNKNOWN,
-                                "Propagate automatic Wear stop",
-                            ),
-                        )
+        phoneResults.clear(sessionId, WearRecordingAction.STOP)
+        var lastSendError: AppError? = null
+
+        repeat(ATTEMPT_COUNT) { retryCount ->
+            when (val sent = sendCommand(PHONE_APP_CAPABILITY, PHONE_MESSAGE_PATH, command)) {
+                is AppResult.Failure -> lastSendError = sent.error
+
+                is AppResult.Success -> {
+                    lastSendError = null
+                    val result = withTimeoutOrNull(RESULT_TIMEOUT_MILLIS / ATTEMPT_COUNT) {
+                        phoneResults.await(sessionId, WearRecordingAction.STOP)
                     }
+                    if (result != null) return result.toAppResult(retryCount)
                 }
             }
         }
-        return AppResult.failure(
+
+        return lastSendError?.let { error -> AppResult.failure(error) } ?: AppResult.failure(
             AppError(
                 code = AppErrorCode.TIMEOUT,
                 operation = "Propagate automatic Wear stop",
-                diagnosticMessage = "Phone stop acknowledgement timed out",
-                context = mapOf("sessionId" to sessionId, "retryCount" to RETRY_COUNT.toString()),
+                diagnosticMessage = "Phone stop result timed out",
+                context = mapOf(
+                    "sessionId" to sessionId,
+                    "retryCount" to RETRY_COUNT.toString(),
+                ),
                 isRetryable = true,
             ),
         )
     }
 
-    private suspend fun prepare(command: WearCommand.PrepareRecording): WearCommand.Acknowledgement = mutex.withLock {
-        cached(command.sessionId, WearSessionCommand.PREPARE)?.let { return@withLock it }
-        val result = validatePrepare(command)
-        if (result is AppResult.Success) {
-            preparedSession = PreparedSession(command.sessionId, command.request, result.value)
-        }
-        acknowledgement(
-            sessionId = command.sessionId,
-            command = WearSessionCommand.PREPARE,
-            result = result.map { Unit },
-            failureOutcome = WearAcknowledgementOutcome.REJECTED,
-        )
-    }
+    private suspend fun start(command: WearCommand.StartRecording): WearCommand.RecordingResult {
+        cached(command.sessionId, WearRecordingAction.START)?.let { return it }
 
-    private suspend fun validatePrepare(command: WearCommand.PrepareRecording): AppResult<AppPreferences> {
-        val occupiedSession = activeSessionId ?: preparedSession?.sessionId
-        if (occupiedSession != null && occupiedSession != command.sessionId) {
-            return AppResult.failure(AppError(AppErrorCode.CONFLICT, "Prepare Wear recording"))
-        }
-        return environment.prepare(command.request)
-    }
+        val result = when (val active = activeSessionId) {
+            command.sessionId -> AppResult.success(Unit)
 
-    private suspend fun commit(command: WearCommand.CommitRecording): WearCommand.Acknowledgement = mutex.withLock {
-        cached(command.sessionId, WearSessionCommand.COMMIT)?.let { return@withLock it }
-        val prepared = preparedSession
-        val result = if (activeSessionId == command.sessionId) {
-            AppResult.success(Unit)
-        } else if (prepared?.sessionId != command.sessionId) {
-            AppResult.failure(AppError(AppErrorCode.CONFLICT, "Commit unprepared Wear recording"))
-        } else {
-            recordingController.start(
-                sessionId = command.sessionId,
-                request = prepared.request,
-                preferences = prepared.preferences,
-                startAtEpochMillis = command.startAtEpochMillis,
-            ).onSuccess {
-                activeSessionId = command.sessionId
-                preparedSession = null
+            null -> when (val validation = environment.validate(command.request)) {
+                is AppResult.Failure -> validation
+
+                is AppResult.Success -> recording.start(
+                    sessionId = command.sessionId,
+                    request = command.request,
+                    preferences = validation.value,
+                ).onSuccess {
+                    activeSessionId = command.sessionId
+                }
             }
-        }
-        acknowledgement(command.sessionId, WearSessionCommand.COMMIT, result)
-    }
 
-    private suspend fun abort(command: WearCommand.AbortRecording): WearCommand.Acknowledgement = mutex.withLock {
-        cached(command.sessionId, WearSessionCommand.ABORT)?.let { return@withLock it }
-        val result = when {
-            activeSessionId == command.sessionId -> recordingController.stop(
-                command.sessionId,
-                com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason.PAIRED_ABORT,
+            else -> AppResult.failure(
+                AppError(
+                    code = AppErrorCode.CONFLICT,
+                    operation = "Start Wear recording",
+                    diagnosticMessage = "Another Wear recording is active",
+                    context = mapOf("activeSessionId" to active),
+                ),
             )
-
-            preparedSession?.sessionId == command.sessionId -> AppResult.success(Unit)
-
-            else -> AppResult.success(Unit)
         }
-        if (result.isSuccess) clearSession(command.sessionId)
-        acknowledgement(command.sessionId, WearSessionCommand.ABORT, result)
+
+        return remember(command.sessionId, WearRecordingAction.START, result)
     }
 
-    private suspend fun stop(command: WearCommand.StopRecording): WearCommand.Acknowledgement = mutex.withLock {
-        cached(command.sessionId, WearSessionCommand.STOP)?.let { return@withLock it }
-        val result = when {
-            activeSessionId == command.sessionId -> recordingController.stop(command.sessionId, command.reason)
-            preparedSession?.sessionId == command.sessionId -> AppResult.success(Unit)
-            else -> AppResult.success(Unit)
+    private fun stop(command: WearCommand.StopRecording): WearCommand.RecordingResult {
+        cached(command.sessionId, WearRecordingAction.STOP)?.let { return it }
+
+        val result = if (activeSessionId == command.sessionId) {
+            recording.stop(command.sessionId, command.reason).onSuccess {
+                activeSessionId = null
+            }
+        } else {
+            AppResult.success(Unit)
         }
-        if (result.isSuccess) clearSession(command.sessionId)
-        acknowledgement(command.sessionId, WearSessionCommand.STOP, result)
+
+        return remember(command.sessionId, WearRecordingAction.STOP, result)
     }
 
-    private fun acknowledgement(
-        sessionId: String,
-        command: WearSessionCommand,
-        result: AppResult<Unit>,
-        failureOutcome: WearAcknowledgementOutcome = WearAcknowledgementOutcome.FAILED,
-    ): WearCommand.Acknowledgement {
-        val acknowledgement = WearCommand.Acknowledgement(
-            sessionId = sessionId,
-            command = command,
-            outcome = if (result.isSuccess) WearAcknowledgementOutcome.SUCCEEDED else failureOutcome,
-            errorCode = result.errorOrNull()?.code,
-            failureCount = if (result.isFailure) 1 else 0,
-        )
-        acknowledgements[AcknowledgementKey(sessionId, command)] = acknowledgement
-        return acknowledgement
-    }
-
-    private fun cached(sessionId: String, command: WearSessionCommand): WearCommand.Acknowledgement? =
-        acknowledgements[AcknowledgementKey(sessionId, command)]
-
-    private fun clearSession(sessionId: String) {
-        if (preparedSession?.sessionId == sessionId) preparedSession = null
-        if (activeSessionId == sessionId) activeSessionId = null
-    }
-
-    private suspend fun sendSensorList(): AppResult<Unit> = sendCommand(
+    private suspend fun sendAvailableSensors(): AppResult<Unit> = sendCommand(
         PHONE_APP_CAPABILITY,
         PHONE_MESSAGE_PATH,
-        WearCommand.SensorList(environment.sensors()),
+        WearCommand.AvailableSensors(environment.availableSensors()),
     )
 
-    private suspend fun sendAcknowledgement(acknowledgement: WearCommand.Acknowledgement): AppResult<Unit> =
-        sendCommand(PHONE_APP_CAPABILITY, PHONE_MESSAGE_PATH, acknowledgement)
-
-    private data class PreparedSession(
-        val sessionId: String,
-        val request: WearRecordingRequest,
-        val preferences: AppPreferences,
+    private suspend fun sendResult(result: WearCommand.RecordingResult): AppResult<Unit> = sendCommand(
+        PHONE_APP_CAPABILITY,
+        PHONE_MESSAGE_PATH,
+        result,
     )
 
-    private data class AcknowledgementKey(val sessionId: String, val command: WearSessionCommand)
+    private fun remember(
+        sessionId: String,
+        action: WearRecordingAction,
+        result: AppResult<Unit>,
+    ): WearCommand.RecordingResult {
+        val error = result.errorOrNull()
+        return WearCommand.RecordingResult(
+            sessionId = sessionId,
+            action = action,
+            outcome = if (result.isSuccess) WearRecordingOutcome.SUCCEEDED else WearRecordingOutcome.FAILED,
+            errorCode = error?.code,
+            errorOperation = error?.operation,
+            errorMessage = error?.diagnosticMessage,
+            errorContext = error?.context.orEmpty(),
+            failureCount = if (result.isFailure) 1 else 0,
+        ).also { completedResults[ResultKey(sessionId, action)] = it }
+    }
+
+    private fun cached(sessionId: String, action: WearRecordingAction): WearCommand.RecordingResult? =
+        completedResults[ResultKey(sessionId, action)]
+
+    private fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult<Unit> =
+        if (outcome == WearRecordingOutcome.SUCCEEDED) {
+            AppResult.success(Unit)
+        } else {
+            AppResult.failure(
+                AppError(
+                    code = errorCode ?: AppErrorCode.UNKNOWN,
+                    operation = errorOperation ?: "Handle phone $action result",
+                    diagnosticMessage = errorMessage ?: "Phone $action failed",
+                    context = errorContext + mapOf(
+                        "source" to "phone",
+                        "sessionId" to sessionId,
+                        "retryCount" to retryCount.toString(),
+                        "failureCount" to failureCount.toString(),
+                    ),
+                ),
+            )
+        }
+
+    private data class ResultKey(val sessionId: String, val action: WearRecordingAction)
 
     private companion object {
-        const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val RESULT_TIMEOUT_MILLIS = 5_000L
         const val RETRY_COUNT = 2
         const val ATTEMPT_COUNT = RETRY_COUNT + 1
     }

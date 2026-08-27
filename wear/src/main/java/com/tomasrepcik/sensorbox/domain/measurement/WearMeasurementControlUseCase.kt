@@ -8,7 +8,6 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
-import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
 import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
@@ -17,13 +16,8 @@ import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-interface WearRecordingController {
-    fun start(
-        sessionId: String,
-        request: WearRecordingRequest,
-        preferences: AppPreferences,
-        startAtEpochMillis: Long,
-    ): AppResult<Unit>
+interface WearRecordingControlUseCase {
+    fun start(sessionId: String, request: WearRecordingRequest, preferences: AppPreferences): AppResult<Unit>
 
     fun stop(sessionId: String, reason: WearStopReason): AppResult<Unit>
 }
@@ -31,20 +25,17 @@ interface WearRecordingController {
 class WearMeasurementControlUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intentFactory: MeasurementIntentFactory,
-    private val clock: EpochClock,
-) : WearRecordingController {
+) : WearRecordingControlUseCase {
     override fun start(
         sessionId: String,
         request: WearRecordingRequest,
         preferences: AppPreferences,
-        startAtEpochMillis: Long,
     ): AppResult<Unit> = start(
         sessionId = sessionId,
         sensorIds = request.sensorIds.toSet(),
         includesGps = request.includesGps,
         preferences = preferences,
         folderName = request.folderName,
-        startAtEpochMillis = startAtEpochMillis,
         durationMillis = request.durationMillis,
     )
 
@@ -54,7 +45,6 @@ class WearMeasurementControlUseCase @Inject constructor(
         preferences: AppPreferences,
         sessionId: String = java.util.UUID.randomUUID().toString(),
         folderName: String = intentFactory.newFolderName(),
-        startAtEpochMillis: Long = clock.nowMillis(),
         durationMillis: Long = 0L,
     ): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Request Wear measurement start") {
         val request = MeasurementLaunchRequest(
@@ -68,7 +58,6 @@ class WearMeasurementControlUseCase @Inject constructor(
             useWakeLock = preferences.recording.useWakeLock,
             gpsIntervalSeconds = preferences.recording.gpsIntervalSeconds,
             gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
-            startAtEpochMillis = startAtEpochMillis,
             durationMillis = durationMillis,
         )
         ContextCompat.startForegroundService(context, intentFactory.create(request))

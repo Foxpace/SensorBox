@@ -6,16 +6,10 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class RecordingEngine(
     sources: List<RecordingSource>,
@@ -24,158 +18,77 @@ class RecordingEngine(
     private val delay: RecordingDelay,
 ) {
     private val sourceByType = sources.associateBy(RecordingSource::type)
-    private val mutex = Mutex()
-    private val mutableState = MutableStateFlow<RecordingSessionState>(RecordingSessionState.Idle)
     private val mutableEvents = MutableSharedFlow<RecordingEvent>(extraBufferCapacity = EVENT_BUFFER_SIZE)
-    private var activeSources: List<RecordingSource> = emptyList()
-    private var committingSessionId: RecordingSessionId? = null
-    private var durationJob: Job? = null
-    private var lastCompletedSessionId: RecordingSessionId? = null
+
+    private var activeRecording: ActiveRecording? = null
+    private var durationStop: Job? = null
+    private var lastStoppedSessionId: RecordingSessionId? = null
     private var lastStopResult: AppResult<Unit> = AppResult.success(Unit)
 
-    val state: StateFlow<RecordingSessionState> = mutableState.asStateFlow()
     val events: SharedFlow<RecordingEvent> = mutableEvents.asSharedFlow()
 
-    suspend fun prepare(plan: RecordingPlan): AppResult<Unit> = mutex.withLock {
-        if (mutableState.value !is RecordingSessionState.Idle) {
-            return@withLock conflict("Prepare recording", plan.sessionId)
-        }
-        val validation = validate(plan)
-        if (validation is AppResult.Failure) return@withLock reject(plan.sessionId, validation.error)
+    @Suppress("ReturnCount")
+    suspend fun start(plan: RecordingPlan): AppResult<Unit> {
+        if (activeRecording != null) return conflict("Start recording", plan.sessionId)
 
-        mutableState.value = RecordingSessionState.Preparing(plan)
-        val prepared = mutableListOf<RecordingSource>()
+        val validation = validate(plan)
+        if (validation is AppResult.Failure) return rejectStart(plan.sessionId, validation.error)
+
+        val recording = ActiveRecording(plan)
+        activeRecording = recording
+
         for (spec in plan.sources.sortedBy { it.type.ordinal }) {
             val source = checkNotNull(sourceByType[spec.type])
-            when (val result = source.prepare(spec)) {
-                is AppResult.Success -> prepared += source
+            recording.startedSources += source
 
-                is AppResult.Failure -> {
-                    val sourcesToClean = prepared + source
-                    activeSources = sourcesToClean
-                    return@withLock rejectWithCleanup(plan.sessionId, result.error, sourcesToClean)
-                }
-            }
+            val result = source.start(spec)
+            if (result is AppResult.Failure) return stopFailedStart(recording, result.error)
+            if (activeRecording !== recording) return AppResult.success(Unit)
         }
-        activeSources = prepared
-        mutableState.value = RecordingSessionState.Prepared(plan)
-        AppResult.success(Unit)
+
+        val startedAt = clock.epochMillis()
+        mutableEvents.tryEmit(RecordingEvent.RecordingStarted(plan.sessionId, startedAt))
+        scheduleDurationStop(plan)
+        return AppResult.success(Unit)
     }
 
-    suspend fun commit(sessionId: RecordingSessionId): AppResult<Unit> = when (val claim = claimCommit(sessionId)) {
-        is AppResult.Failure -> claim
-
-        is AppResult.Success -> claim.value?.let { plan ->
-            delay.pause((plan.startAtEpochMillis - clock.epochMillis()).coerceAtLeast(0L))
-            startPreparedSources(sessionId, plan)
-        } ?: AppResult.success(Unit)
-    }
-
-    private suspend fun claimCommit(sessionId: RecordingSessionId): AppResult<RecordingPlan?> = mutex.withLock {
-        when (val current = mutableState.value) {
-            is RecordingSessionState.Running -> if (current.plan.sessionId == sessionId) {
-                AppResult.success(null)
-            } else {
-                conflict("Commit recording", sessionId)
-            }
-
-            is RecordingSessionState.Prepared -> claimPreparedCommit(current, sessionId)
-
-            else -> conflict("Commit recording", sessionId)
+    suspend fun stop(sessionId: RecordingSessionId, reason: RecordingStopReason): AppResult<Unit> {
+        val recording = activeRecording
+        if (recording == null) {
+            return if (lastStoppedSessionId == sessionId) lastStopResult else conflict("Stop recording", sessionId)
         }
-    }
+        if (recording.plan.sessionId != sessionId) return conflict("Stop recording", sessionId)
 
-    private fun claimPreparedCommit(
-        current: RecordingSessionState.Prepared,
-        sessionId: RecordingSessionId,
-    ): AppResult<RecordingPlan?> = when {
-        current.plan.sessionId != sessionId -> conflict("Commit recording", sessionId)
+        activeRecording = null
+        durationStop?.cancel()
+        durationStop = null
 
-        committingSessionId == sessionId -> AppResult.success(null)
-
-        else -> {
-            committingSessionId = sessionId
-            AppResult.success(current.plan)
-        }
-    }
-
-    private suspend fun startPreparedSources(sessionId: RecordingSessionId, plan: RecordingPlan): AppResult<Unit> =
-        mutex.withLock {
-            val prepared = mutableState.value as? RecordingSessionState.Prepared
-            if (prepared?.plan?.sessionId != sessionId) {
-                return@withLock conflict("Commit recording", sessionId)
-            }
-
-            for (source in activeSources) {
-                when (val result = source.start()) {
-                    is AppResult.Success -> Unit
-
-                    is AppResult.Failure -> {
-                        committingSessionId = null
-                        return@withLock rejectWithCleanup(sessionId, result.error, activeSources)
-                    }
-                }
-            }
-            committingSessionId = null
-            val startedAt = clock.epochMillis()
-            mutableState.value = RecordingSessionState.Running(plan, startedAt)
-            mutableEvents.tryEmit(RecordingEvent.RecordingStarted(sessionId, startedAt))
-            scheduleDurationStop(plan)
-            AppResult.success(Unit)
-        }
-
-    suspend fun abort(sessionId: RecordingSessionId): AppResult<Unit> =
-        stop(sessionId, RecordingStopReason.PAIRED_ABORT)
-
-    suspend fun stop(sessionId: RecordingSessionId, reason: RecordingStopReason): AppResult<Unit> = mutex.withLock {
-        val current = mutableState.value
-        if (current is RecordingSessionState.Idle) {
-            return@withLock if (lastCompletedSessionId == sessionId) {
-                lastStopResult
-            } else {
-                conflict("Stop recording", sessionId)
-            }
-        }
-        if (current.sessionId() != sessionId) return@withLock conflict("Stop recording", sessionId)
-
-        mutableState.value = RecordingSessionState.Stopping(sessionId, reason)
-        val currentJob = currentCoroutineContext()[Job]
-        durationJob?.takeIf { it !== currentJob }?.cancel()
-        durationJob = null
-        committingSessionId = null
-        val results = activeSources.asReversed().map { it.stop() }
-        activeSources = emptyList()
-        val result = results.combineAppResults(AppErrorCode.MEASUREMENT, "Stop recording sources")
-        lastCompletedSessionId = sessionId
+        val stoppedSources = stopSources(recording.startedSources)
+        val result = stoppedSources.combineAppResults(AppErrorCode.MEASUREMENT, "Stop recording sources")
+        lastStoppedSessionId = sessionId
         lastStopResult = result
-        mutableState.value = RecordingSessionState.Idle
         mutableEvents.tryEmit(RecordingEvent.RecordingStopped(sessionId, reason, result))
-        result
+        return result
     }
 
-    private suspend fun rejectWithCleanup(
-        sessionId: RecordingSessionId,
-        startError: AppError,
-        sources: List<RecordingSource>,
-    ): AppResult<Unit> {
-        val cleanup = sources.asReversed().map { it.stop() }
-        activeSources = emptyList()
-        val result = (listOf(AppResult.failure(startError)) + cleanup).combineAppResults(
-            AppErrorCode.MEASUREMENT,
-            "Reject recording start",
-        )
-        return reject(sessionId, checkNotNull(result.errorOrNull()))
+    private suspend fun stopFailedStart(recording: ActiveRecording, startError: AppError): AppResult<Unit> {
+        if (activeRecording === recording) activeRecording = null
+        val stoppedSources = stopSources(recording.startedSources)
+        val result = (listOf(AppResult.failure(startError)) + stoppedSources)
+            .combineAppResults(AppErrorCode.MEASUREMENT, "Stop failed recording start")
+        return rejectStart(recording.plan.sessionId, checkNotNull(result.errorOrNull()))
     }
 
-    private fun reject(sessionId: RecordingSessionId, error: AppError): AppResult<Unit> {
-        committingSessionId = null
-        mutableState.value = RecordingSessionState.Idle
+    private suspend fun stopSources(sources: List<RecordingSource>): List<AppResult<Unit>> =
+        sources.asReversed().map { source -> source.stop() }
+
+    private fun rejectStart(sessionId: RecordingSessionId, error: AppError): AppResult<Unit> {
         mutableEvents.tryEmit(RecordingEvent.RecordingStartRejected(sessionId, error))
         return AppResult.failure(error)
     }
 
     private fun validate(plan: RecordingPlan): AppResult<Unit> {
-        val message = when {
+        val invalidReason = when {
             plan.sources.isEmpty() -> "Recording plan has no sources"
 
             plan.durationMillis < 0L -> "Recording duration is negative"
@@ -183,42 +96,39 @@ class RecordingEngine(
             plan.sources.map(RecordingSourceSpec::type).distinct().size != plan.sources.size ->
                 "Recording plan repeats a source type"
 
-            plan.sources.map(RecordingSourceSpec::type).any { it !in sourceByType } ->
-                "Recording source adapter is missing"
+            plan.sources.any { it.type !in sourceByType } -> "Recording source adapter is missing"
 
             else -> null
         }
-        return message?.let(::validationFailure) ?: AppResult.success(Unit)
+
+        return if (invalidReason == null) {
+            AppResult.success(Unit)
+        } else {
+            AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate recording plan", invalidReason))
+        }
     }
-
-    private fun validationFailure(message: String): AppResult<Unit> = AppResult.failure(
-        AppError(AppErrorCode.VALIDATION, "Validate recording plan", message),
-    )
-
-    private fun <T> conflict(operation: String, sessionId: RecordingSessionId): AppResult<T> = AppResult.failure(
-        AppError(
-            code = AppErrorCode.CONFLICT,
-            operation = operation,
-            diagnosticMessage = "$operation conflicts with the active session",
-            context = mapOf("sessionId" to sessionId.value),
-        ),
-    )
 
     private fun scheduleDurationStop(plan: RecordingPlan) {
         if (plan.durationMillis <= 0L) return
-        durationJob = scope.launch {
+        durationStop = scope.launch {
             delay.pause(plan.durationMillis)
             stop(plan.sessionId, RecordingStopReason.DURATION_EXPIRED)
         }
     }
 
-    private fun RecordingSessionState.sessionId(): RecordingSessionId? = when (this) {
-        RecordingSessionState.Idle -> null
-        is RecordingSessionState.Preparing -> plan.sessionId
-        is RecordingSessionState.Prepared -> plan.sessionId
-        is RecordingSessionState.Running -> plan.sessionId
-        is RecordingSessionState.Stopping -> sessionId
-    }
+    private fun <T> conflict(operation: String, sessionId: RecordingSessionId): AppResult<T> = AppResult.failure(
+        AppError(
+            code = AppErrorCode.CONFLICT,
+            operation = operation,
+            diagnosticMessage = "$operation conflicts with the active recording",
+            context = mapOf("sessionId" to sessionId.value),
+        ),
+    )
+
+    private data class ActiveRecording(
+        val plan: RecordingPlan,
+        val startedSources: MutableList<RecordingSource> = mutableListOf(),
+    )
 
     private companion object {
         const val EVENT_BUFFER_SIZE = 16

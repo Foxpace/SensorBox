@@ -36,7 +36,7 @@ class PhoneRecordingSessionObserver @Inject constructor(
     private suspend fun onStopped(event: MeasurementSessionEvent.Stopped) {
         event.result.errorOrNull()?.let { error -> diagnosticLogger.record(error.toDiagnosticEvent()) }
         val reason = event.reason.toAutomaticWearReason() ?: return
-        pairedRecordingCoordinator.onAutomaticLocalStop(event.sessionId, reason)
+        pairedRecordingCoordinator.onAutomaticPhoneStop(event.sessionId, reason)
     }
 
     private fun MeasurementStopReason.toAutomaticWearReason(): WearStopReason? = when (this) {

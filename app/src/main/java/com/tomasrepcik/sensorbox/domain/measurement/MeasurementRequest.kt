@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.domain.measurement
 
 import android.hardware.SensorManager
 import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
 
 data class MeasurementRequest(
     val sensorIds: Set<Int>,
@@ -14,7 +15,6 @@ data class MeasurementRequest(
     val wearSensorIds: Set<Int> = emptySet(),
     val wearIncludesGps: Boolean = false,
     val customName: String = "",
-    val delaySeconds: Int = 0,
     val durationSeconds: Int = 0,
     val notes: List<String> = emptyList(),
     val alarmOffsetsSeconds: List<Int> = emptyList(),
@@ -52,3 +52,12 @@ data class MeasurementRequest(
         )
     }
 }
+
+data class StartedPhoneRecording(val sessionId: String, val folderName: String, val durationMillis: Long)
+
+fun StartedPhoneRecording.toWearRecordingRequest(request: MeasurementRequest) = WearRecordingRequest(
+    folderName = folderName,
+    sensorIds = request.wearSensorIds.sorted(),
+    includesGps = request.wearIncludesGps,
+    durationMillis = durationMillis,
+)

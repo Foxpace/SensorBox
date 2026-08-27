@@ -1,6 +1,5 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers.measurements
 
-import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.SystemClock
@@ -18,7 +17,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Collects session metadata and writes it once when the recording is closed. */
-internal class ExtraInfoHandler(private val storage: MeasurementStorage, private val clock: EpochClock) {
+internal class ExtraInfoHandler(
+    private val storage: MeasurementStorage,
+    private val clock: EpochClock,
+    private val sensorManager: SensorManager,
+) {
     private var config: MeasurementConfig? = null
     private var startedAtMillis: Long = 0L
     private var startedAtNanos: Long = 0L
@@ -43,7 +46,7 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
         triggeredAlarms += timestampMillis
     }
 
-    fun write(context: Context): AppResult<Unit> {
+    fun write(): AppResult<Unit> {
         val active = config ?: return AppResult.success(Unit)
         if (written) return AppResult.success(Unit)
         written = true
@@ -56,7 +59,7 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
                 folder = active.folderName,
                 notes = active.notes,
                 annotations = annotations.toList(),
-                ranges = sensorRanges(context, active),
+                ranges = sensorRanges(active),
                 alarms = triggeredAlarms.toList(),
                 configuredAlarmOffsetsSeconds = active.alarmOffsetsSeconds.toList(),
                 durationMillis = active.durationMillis,
@@ -78,15 +81,14 @@ internal class ExtraInfoHandler(private val storage: MeasurementStorage, private
         }.withAppError(AppErrorCode.MEASUREMENT, "Write measurement metadata")
     }
 
-    private fun sensorRanges(context: Context, active: MeasurementConfig): List<SensorRange> {
-        val manager = context.getSystemService(SensorManager::class.java)
+    private fun sensorRanges(active: MeasurementConfig): List<SensorRange> {
         val rangeIds = if (active.significantMotion) {
             active.sensorIds + Sensor.TYPE_SIGNIFICANT_MOTION
         } else {
             active.sensorIds
         }
         return rangeIds.distinct().mapNotNull { type ->
-            manager.getDefaultSensor(type)?.let { sensor ->
+            sensorManager.getDefaultSensor(type)?.let { sensor ->
                 SensorRange(sensor = sensor.name, type = type, range = sensor.maximumRange)
             }
         }

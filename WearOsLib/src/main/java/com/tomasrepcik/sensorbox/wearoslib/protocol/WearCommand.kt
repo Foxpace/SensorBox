@@ -1,33 +1,43 @@
 package com.tomasrepcik.sensorbox.wearoslib.protocol
 
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface WearCommand {
+    @Serializable
     data object LaunchPhone : WearCommand
 
+    @Serializable
     data object SyncMeasurements : WearCommand
 
-    data object RequestSensorList : WearCommand
+    @Serializable
+    data object RequestAvailableSensors : WearCommand
 
-    data class SensorList(val sensors: List<WearSensorInfo>) : WearCommand
+    @Serializable
+    data class AvailableSensors(val sensors: List<WearSensorInfo>) : WearCommand
 
-    data class PrepareRecording(val sessionId: String, val request: WearRecordingRequest) : WearCommand
+    @Serializable
+    data class StartRecording(val sessionId: String, val request: WearRecordingRequest) : WearCommand
 
-    data class CommitRecording(val sessionId: String, val startAtEpochMillis: Long) : WearCommand
-
-    data class AbortRecording(val sessionId: String) : WearCommand
-
+    @Serializable
     data class StopRecording(val sessionId: String, val reason: WearStopReason) : WearCommand
 
-    data class Acknowledgement(
+    @Serializable
+    data class RecordingResult(
         val sessionId: String,
-        val command: WearSessionCommand,
-        val outcome: WearAcknowledgementOutcome,
+        val action: WearRecordingAction,
+        val outcome: WearRecordingOutcome,
+        @Serializable(with = AppErrorCodeNameSerializer::class)
         val errorCode: AppErrorCode? = null,
+        val errorOperation: String? = null,
+        val errorMessage: String? = null,
+        val errorContext: Map<String, String> = emptyMap(),
         val failureCount: Int = 0,
     ) : WearCommand
 }
 
+@Serializable
 data class WearRecordingRequest(
     val folderName: String,
     val sensorIds: List<Int>,
@@ -35,26 +45,53 @@ data class WearRecordingRequest(
     val durationMillis: Long = 0L,
 )
 
-enum class WearSessionCommand {
-    PREPARE,
-    COMMIT,
-    ABORT,
+@Serializable
+enum class WearRecordingAction {
+    START,
     STOP,
 }
 
-enum class WearAcknowledgementOutcome {
+@Serializable
+enum class WearRecordingOutcome {
     SUCCEEDED,
-    REJECTED,
     FAILED,
 }
 
+@Serializable
 enum class WearStopReason {
     USER_REQUEST,
     DURATION_EXPIRED,
     LOW_BATTERY,
     SOURCE_FAILURE,
-    PAIRED_ABORT,
     SERVICE_DESTROYED,
 }
 
-data class WearSensorInfo(val type: Int, val name: String, val vendor: String)
+@Serializable
+data class WearSensorInfo(
+    val type: Int,
+    val name: String,
+    val vendor: String,
+    val version: Int,
+    val stringType: String,
+    val maximumRange: Float,
+    val resolution: Float,
+    val power: Float,
+    val minimumDelayMicros: Int,
+    val maximumDelayMicros: Int,
+    val reportingMode: Int,
+    val isWakeUpSensor: Boolean,
+)
+
+fun WearCommand.recordingSessionId(): String? = when (this) {
+    is WearCommand.StartRecording -> sessionId
+
+    is WearCommand.StopRecording -> sessionId
+
+    is WearCommand.RecordingResult -> sessionId
+
+    WearCommand.LaunchPhone,
+    WearCommand.RequestAvailableSensors,
+    is WearCommand.AvailableSensors,
+    WearCommand.SyncMeasurements,
+    -> null
+}

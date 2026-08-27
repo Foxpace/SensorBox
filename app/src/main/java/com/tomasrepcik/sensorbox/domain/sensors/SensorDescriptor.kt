@@ -1,5 +1,7 @@
 package com.tomasrepcik.sensorbox.domain.sensors
 
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSensorInfo
+
 data class SensorDescriptor(
     val type: Int,
     val name: String,
@@ -22,3 +24,18 @@ enum class SensorReportingMode {
     SPECIAL_TRIGGER,
     UNKNOWN,
 }
+
+fun WearSensorInfo.toSensorDescriptor() = SensorDescriptor(
+    type = type,
+    name = name,
+    vendor = vendor,
+    version = version,
+    stringType = stringType,
+    maximumRange = maximumRange,
+    resolution = resolution,
+    power = power,
+    minimumDelayMicros = minimumDelayMicros,
+    maximumDelayMicros = maximumDelayMicros,
+    reportingMode = reportingMode.toSensorReportingMode(),
+    isWakeUpSensor = isWakeUpSensor,
+)

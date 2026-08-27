@@ -9,9 +9,13 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Instant
 
+@Serializable
 data class DiagnosticMetadata(
     val appVersion: String,
     val buildType: String,
@@ -37,7 +41,7 @@ class FileDiagnostics internal constructor(
     private var uncaughtHandlerInstalled = false
 
     override fun record(event: DiagnosticEvent) {
-        val entry = event.toDiagnosticEntry().take(MAX_ENTRY_CHARS)
+        val entry = JSON.encodeToString(event.toStoredEntry()) + "\n"
         synchronized(fileLock) {
             appendSafely(entry)
         }
@@ -96,29 +100,22 @@ class FileDiagnostics internal constructor(
         }
     }
 
-    private fun DiagnosticEvent.toDiagnosticEntry(): String = buildString {
-        val timestamp = ClockFormats.diagnosticTimestamp(clock.nowMillis())
-        append(timestamp).append(" | ").append(severity).append(" | ").append(code).append(" | ")
-            .append(operation.safeText()).appendLine()
-        append("message=").append(diagnosticMessage.safeText()).appendLine()
-        append("appVersion=").append(metadata.appVersion.safeText()).appendLine()
-        append("buildType=").append(metadata.buildType.safeText()).appendLine()
-        append("deviceModel=").append(metadata.deviceModel.safeText()).appendLine()
-        append("androidVersion=").append(metadata.androidVersion.safeText()).appendLine()
-        append("process=").append(metadata.processName.safeText()).appendLine()
-        context.filterKeys(SAFE_CONTEXT_KEYS::contains).toSortedMap().forEach { (key, value) ->
-            append(key).append('=').append(value.safeText()).appendLine()
-        }
-        cause?.let { error ->
-            append("exception=").append(error::class.java.name).appendLine()
-            error.stackTrace.take(MAX_STACK_FRAMES).forEach { frame ->
-                append("at ").append(frame.className).append('.').append(frame.methodName)
-                    .append('(').append(frame.fileName?.substringAfterLast('/')?.safeText() ?: "Unknown")
-                    .append(':').append(frame.lineNumber).appendLine(")")
-            }
-        }
-        appendLine(ENTRY_SEPARATOR)
-    }
+    private fun DiagnosticEvent.toStoredEntry() = StoredDiagnosticEntry(
+        timestamp = ClockFormats.diagnosticTimestamp(clock.nowMillis()),
+        severity = severity.name,
+        code = code.name,
+        operation = operation.safeText(),
+        message = diagnosticMessage.safeText(),
+        metadata = metadata,
+        context = context.filterKeys(SAFE_CONTEXT_KEYS::contains)
+            .mapValues { (_, value) -> value.safeText() }
+            .toSortedMap(),
+        exception = cause?.javaClass?.name,
+        stackTrace = cause?.stackTrace.orEmpty().take(MAX_STACK_FRAMES).map { frame ->
+            "${frame.className}.${frame.methodName}(" +
+                "${frame.fileName?.substringAfterLast('/')?.safeText() ?: "Unknown"}:${frame.lineNumber})"
+        },
+    )
 
     private fun String.safeText(): String = replace('\n', ' ').replace('\r', ' ').take(MAX_FIELD_CHARS)
 
@@ -162,10 +159,8 @@ class FileDiagnostics internal constructor(
     private companion object {
         const val DIRECTORY_NAME = "diagnostics"
         const val FILE_PREFIX = "sensorbox-diagnostics-"
-        const val FILE_SUFFIX = ".txt"
-        const val EXPORT_FILE_NAME = "sensorbox-diagnostics-export.txt"
-        const val ENTRY_SEPARATOR = "---"
-        const val MAX_ENTRY_CHARS = 32_000
+        const val FILE_SUFFIX = ".jsonl"
+        const val EXPORT_FILE_NAME = "sensorbox-diagnostics-export.jsonl"
         const val MAX_FIELD_CHARS = 512
         const val MAX_STACK_FRAMES = 80
         const val RETENTION_DAYS = 7
@@ -186,5 +181,19 @@ class FileDiagnostics internal constructor(
             "stopReason",
             "threadName",
         )
+        val JSON = Json { encodeDefaults = true }
     }
 }
+
+@Serializable
+private data class StoredDiagnosticEntry(
+    val timestamp: String,
+    val severity: String,
+    val code: String,
+    val operation: String,
+    val message: String,
+    val metadata: DiagnosticMetadata,
+    val context: Map<String, String>,
+    val exception: String? = null,
+    val stackTrace: List<String> = emptyList(),
+)

@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers
 
 import android.content.Context
-import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
@@ -31,16 +30,7 @@ internal class StorageHandler @Inject constructor(
 ) : MeasurementStorage {
     override fun createMeasurementDirectory(folderName: String, useInternalStorage: Boolean): AppResult<Unit> =
         if (useInternalStorage) {
-            val directory = internalMeasurementDirectory(folderName)
-            appResult(AppErrorCode.STORAGE, "Create internal measurement directory") {
-                directory.exists() || directory.mkdirs()
-            }.flatMap { created ->
-                if (created) {
-                    AppResult.success(Unit)
-                } else {
-                    AppResult.failure(AppError(AppErrorCode.STORAGE, "Create internal measurement directory"))
-                }
-            }
+            createInternalDirectory(folderName)
         } else {
             documentStorage.createMeasurementDirectory(folderName)
         }
@@ -50,25 +40,24 @@ internal class StorageHandler @Inject constructor(
         mimeType: String,
         fileName: String,
         useInternalStorage: Boolean,
-    ): AppResult<OutputStream> = if (useInternalStorage) {
-        appResult(AppErrorCode.STORAGE, "Prepare internal measurement directory") {
-            val directory = internalMeasurementDirectory(folderName)
-            directory to (directory.exists() || directory.mkdirs())
-        }.flatMap { (directory, ready) ->
-            if (!ready) {
-                AppResult.failure(AppError(AppErrorCode.STORAGE, "Create internal measurement directory"))
-            } else {
-                appResult(AppErrorCode.STORAGE, "Open internal measurement file") {
-                    FileOutputStream(File(directory, fileName))
-                }
+    ): AppResult<OutputStream> {
+        if (!useInternalStorage) {
+            return documentStorage.openMeasurementFile(folderName, mimeType, fileName)
+        }
+
+        return createInternalDirectory(folderName).flatMap {
+            appResult(AppErrorCode.STORAGE, "Open internal measurement file") {
+                FileOutputStream(File(internalMeasurementDirectory(folderName), fileName))
             }
         }
-    } else {
-        documentStorage.openMeasurementFile(
-            measurementName = folderName,
-            mimeType = mimeType,
-            fileName = fileName,
-        )
+    }
+
+    private fun createInternalDirectory(folderName: String): AppResult<Unit> = appResult(
+        AppErrorCode.STORAGE,
+        "Create internal measurement directory",
+    ) {
+        val directory = internalMeasurementDirectory(folderName)
+        check(directory.exists() || directory.mkdirs()) { "Internal measurement directory could not be created" }
     }
 
     private fun internalMeasurementDirectory(folderName: String): File {

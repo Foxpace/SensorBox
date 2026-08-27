@@ -1,6 +1,5 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers.measurements
 
-import android.content.Context
 import android.location.Location
 import com.google.android.gms.location.LocationAvailability
 import com.tomasrepcik.sensorbox.core.error.AppError
@@ -84,7 +83,7 @@ internal class GPSMeasurement(
      * @param context
      */
 
-    fun start(context: Context): AppResult<Unit> = gpsHandler.addCallback(context, this)
+    fun start(): AppResult<Unit> = gpsHandler.addCallback(this)
         .withAppError(AppErrorCode.MEASUREMENT, "Start GPS")
 
     /**

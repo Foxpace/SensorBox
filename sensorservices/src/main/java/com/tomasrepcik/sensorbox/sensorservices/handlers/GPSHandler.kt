@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
 import android.os.Looper
 import android.util.Log
@@ -11,7 +10,6 @@ import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
@@ -20,43 +18,28 @@ import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.flatMap
 
 @SuppressLint("MissingPermission")
-class GPSHandler : LocationCallback() {
+class GPSHandler(private val locationClient: FusedLocationProviderClient? = null) : LocationCallback() {
 
     private var callback: OnLocationChangedCallback? = null
     private lateinit var request: LocationRequest
-    private lateinit var locationClient: FusedLocationProviderClient
 
     private var locationAvailability: LocationAvailability? = null
     private var lastLocation: Location? = null
 
     private var registered: Boolean = false
-    private var firstInit: Boolean = false
     private var intervalSeconds: Int = DEFAULT_INTERVAL_SECONDS
     private var minDistanceMeters: Int = DEFAULT_DISTANCE_METERS
     private val tag = "GPS_location"
-
-    /**
-     * creation of the request and locationClient
-     *
-     * @param context
-     */
-    private fun firstInit(context: Context) {
-        request = createRequest()
-        locationClient = LocationServices.getFusedLocationProviderClient(context)
-        firstInit = true
-    }
 
     /**
      * calls for last known location and registers location callback
      *
      * @param context
      */
-    private fun initialize(context: Context) {
-        if (!firstInit) {
-            firstInit(context)
-        }
+    private fun initialize(client: FusedLocationProviderClient) {
+        request = createRequest()
 
-        locationClient.lastLocation.addOnSuccessListener { location: Location? ->
+        client.lastLocation.addOnSuccessListener { location: Location? ->
             if (location == null) {
                 callback?.onLastLocationSuccess(null)
             } else {
@@ -68,7 +51,7 @@ class GPSHandler : LocationCallback() {
             callback?.onLastLocationSuccess(null)
         }
 
-        locationClient.requestLocationUpdates(request, this, Looper.getMainLooper()).addOnFailureListener { error ->
+        client.requestLocationUpdates(request, this, Looper.getMainLooper()).addOnFailureListener { error ->
             AppError.from(AppErrorCode.MEASUREMENT, "Request GPS updates", error)
         }
         registered = true
@@ -100,10 +83,10 @@ class GPSHandler : LocationCallback() {
     fun gpsOff(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Stop GPS updates") {
         if (registered) {
             Log.i(tag, "Logging off location")
-            locationClient.flushLocations().addOnFailureListener { error ->
+            locationClient?.flushLocations()?.addOnFailureListener { error ->
                 AppError.from(AppErrorCode.MEASUREMENT, "Flush GPS updates", error)
             }
-            locationClient.removeLocationUpdates(this).addOnFailureListener { error ->
+            locationClient?.removeLocationUpdates(this)?.addOnFailureListener { error ->
                 AppError.from(AppErrorCode.MEASUREMENT, "Remove GPS updates", error)
             }
         }
@@ -135,11 +118,12 @@ class GPSHandler : LocationCallback() {
      * @param gpsCallback - this object will get access to location and updates, previous is forgotten
      *
      */
-    fun addCallback(context: Context, gpsCallback: OnLocationChangedCallback): AppResult<Unit> =
+    fun addCallback(gpsCallback: OnLocationChangedCallback): AppResult<Unit> =
         (if (registered) gpsOff() else AppResult.success(Unit)).flatMap {
             appResult(AppErrorCode.MEASUREMENT, "Register GPS callback") {
+                val client = checkNotNull(locationClient) { "GPS client is unavailable" }
                 callback = gpsCallback
-                initialize(context)
+                initialize(client)
                 gpsCallback.onLocationChanged(lastLocation)
             }
         }

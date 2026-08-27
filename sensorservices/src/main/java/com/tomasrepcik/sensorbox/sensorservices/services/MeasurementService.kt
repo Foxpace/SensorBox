@@ -1,27 +1,19 @@
 package com.tomasrepcik.sensorbox.sensorservices.services
 
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-import android.os.Build
 import android.os.IBinder
-import android.os.PowerManager
 import android.os.SystemClock
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
 import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.recording.RecordingEvent
 import com.tomasrepcik.sensorbox.recording.RecordingStopReason
-import com.tomasrepcik.sensorbox.sensorservices.handlers.StorageHandler
 import com.tomasrepcik.sensorbox.sensorservices.serviceController.MeasurementConfig
 import com.tomasrepcik.sensorbox.sensorservices.serviceController.ServiceController
+import com.tomasrepcik.sensorbox.sensorservices.serviceController.ServiceControllerFactory
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementStopReason
@@ -31,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -42,10 +33,7 @@ class MeasurementService : Service() {
     lateinit var sessionStore: MeasurementSessionStore
 
     @Inject
-    internal lateinit var storageHandler: StorageHandler
-
-    @Inject
-    lateinit var diagnosticLogger: DiagnosticLogger
+    internal lateinit var controllerFactory: ServiceControllerFactory
 
     @Inject
     lateinit var epochClock: EpochClock
@@ -54,15 +42,14 @@ class MeasurementService : Service() {
     private var controller: ServiceController? = null
     private var activeConfig: MeasurementConfig? = null
     private var eventJob: Job? = null
-    private var wakeLock: PowerManager.WakeLock? = null
-    private var batteryReceiverRegistered = false
-    private var alarmJobs: List<Job> = emptyList()
     private var isFinishing = false
-
-    private val lowBatteryReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_BATTERY_LOW) requestStop(RecordingStopReason.LOW_BATTERY)
-        }
+    private val hostResources by lazy {
+        MeasurementHostResources(
+            service = this,
+            scope = serviceScope,
+            requestStop = ::requestStop,
+            playAlarm = { controller?.playAlarm() },
+        )
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -83,24 +70,16 @@ class MeasurementService : Service() {
 
     private fun startRecordingHost(intent: Intent) {
         appResult(AppErrorCode.MEASUREMENT, "Start recording foreground host") {
-            val config = MeasurementConfig.from(intent, epochClock)
+            val config = MeasurementConfig.from(intent)
             require(config.sessionId.isNotBlank()) { "Recording session ID is missing" }
             activeConfig = config
             isFinishing = false
-            promoteToForeground(config)
-            configureRuntimeResources(config)
-            val serviceController = ServiceController(
-                context = this,
-                config = config,
-                scope = serviceScope,
-                storage = storageHandler,
-                diagnosticLogger = diagnosticLogger,
-                clock = epochClock,
-            )
+            hostResources.start(config)
+            val serviceController = controllerFactory.create(this, config, serviceScope)
             controller = serviceController
             observeEngine(serviceController)
             serviceScope.launch {
-                val result = serviceController.prepareAndCommit()
+                val result = serviceController.start()
                 if (result.isFailure && !isFinishing) {
                     finishRecording(MeasurementStopReason.SOURCE_FAILURE, result)
                 }
@@ -147,7 +126,7 @@ class MeasurementService : Service() {
                 includesGps = config.includesGps,
             ),
         )
-        scheduleAlarms(config)
+        hostResources.scheduleAlarms(config.alarmOffsetsSeconds)
     }
 
     private fun requestStop(reason: RecordingStopReason) {
@@ -173,78 +152,19 @@ class MeasurementService : Service() {
 
     private fun finishHost(): AppResult<Unit> {
         val results = mutableListOf<AppResult<*>>()
-        results += releaseRuntimeResources()
+        results += hostResources.release()
         activeConfig = null
         controller = null
         results += appResult(AppErrorCode.MEASUREMENT, "Publish idle measurement state") {
             sessionStore.markIdle()
         }
         results += appResult(AppErrorCode.MEASUREMENT, "Remove measurement notification") {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            hostResources.removeNotification()
         }
         results += appResult(AppErrorCode.MEASUREMENT, "Stop measurement service instance") {
             stopSelf()
         }
         return results.combineAppResults(AppErrorCode.MEASUREMENT, "Finish recording host resources")
-    }
-
-    private fun scheduleAlarms(config: MeasurementConfig) {
-        alarmJobs = config.alarmOffsetsSeconds.distinct().sorted().map { seconds ->
-            serviceScope.launch {
-                delay(seconds * 1_000L)
-                controller?.playAlarm()
-            }
-        }
-    }
-
-    private fun promoteToForeground(config: MeasurementConfig) {
-        val notification = Notify.createRecordingNotification(this)
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(NOTIFICATION_ID, notification, foregroundTypes(config))
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-    }
-
-    private fun foregroundTypes(config: MeasurementConfig): Int = if (config.includesGps) {
-        FOREGROUND_SERVICE_TYPE_HEALTH or FOREGROUND_SERVICE_TYPE_LOCATION
-    } else {
-        FOREGROUND_SERVICE_TYPE_HEALTH
-    }
-
-    private fun configureRuntimeResources(config: MeasurementConfig) {
-        if (config.useWakeLock) acquireWakeLock()
-        if (config.stopOnLowBattery) registerLowBatteryReceiver()
-    }
-
-    private fun acquireWakeLock() {
-        val powerManager = getSystemService(PowerManager::class.java)
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply { acquire() }
-    }
-
-    private fun registerLowBatteryReceiver() {
-        val filter = IntentFilter(Intent.ACTION_BATTERY_LOW)
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(lowBatteryReceiver, filter, RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(lowBatteryReceiver, filter)
-        }
-        batteryReceiverRegistered = true
-    }
-
-    private fun releaseRuntimeResources(): AppResult<Unit> {
-        alarmJobs.forEach(Job::cancel)
-        alarmJobs = emptyList()
-        val results = mutableListOf<AppResult<*>>()
-        results += appResult(AppErrorCode.MEASUREMENT, "Release measurement wake lock") {
-            wakeLock?.takeIf(PowerManager.WakeLock::isHeld)?.release()
-            wakeLock = null
-        }
-        results += appResult(AppErrorCode.MEASUREMENT, "Unregister low battery receiver") {
-            if (batteryReceiverRegistered) unregisterReceiver(lowBatteryReceiver)
-            batteryReceiverRegistered = false
-        }
-        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Release recording host resources")
     }
 
     override fun onDestroy() {
@@ -254,7 +174,7 @@ class MeasurementService : Service() {
             val cleanup = runBlocking(Dispatchers.IO) {
                 controller?.stop(RecordingStopReason.PLATFORM_DESTROYED) ?: AppResult.success(Unit)
             }
-            val resources = releaseRuntimeResources()
+            val resources = hostResources.release()
             sessionStore.markIdle()
             sessionStore.publishStopped(
                 config.sessionId,
@@ -271,16 +191,10 @@ class MeasurementService : Service() {
     }
 
     private fun RecordingStopReason.toMeasurementReason(): MeasurementStopReason = when (this) {
-        RecordingStopReason.USER_REQUEST,
-        RecordingStopReason.PAIRED_ABORT,
-        -> MeasurementStopReason.USER_REQUEST
-
+        RecordingStopReason.USER_REQUEST -> MeasurementStopReason.USER_REQUEST
         RecordingStopReason.DURATION_EXPIRED -> MeasurementStopReason.DURATION_EXPIRED
-
         RecordingStopReason.LOW_BATTERY -> MeasurementStopReason.LOW_BATTERY
-
         RecordingStopReason.SOURCE_FAILURE -> MeasurementStopReason.SOURCE_FAILURE
-
         RecordingStopReason.PLATFORM_DESTROYED -> MeasurementStopReason.SERVICE_DESTROYED
     }
 
@@ -295,7 +209,6 @@ class MeasurementService : Service() {
         const val USE_WAKE_LOCK = "USE_WAKE_LOCK"
         const val GPS_INTERVAL_SECONDS = "GPS_INTERVAL_SECONDS"
         const val GPS_DISTANCE_METERS = "GPS_DISTANCE_METERS"
-        const val START_AT_EPOCH_MILLIS = "START_AT_EPOCH_MILLIS"
         const val DURATION_MILLIS = "DURATION_MILLIS"
         const val NOTES = "NOTES"
         const val ALARM_OFFSETS_SECONDS = "ALARM_OFFSETS_SECONDS"
@@ -306,8 +219,5 @@ class MeasurementService : Service() {
         const val ANNOTATION_TIME = "ANNOTATION_TIME"
         const val ANNOTATION_TEXT = "ANNOTATION_TEXT"
         const val ACTION_STOP = "com.tomasrepcik.sensorbox.action.STOP_MEASUREMENT"
-
-        private const val NOTIFICATION_ID = 729
-        private const val WAKE_LOCK_TAG = "SensorBox::Measurement"
     }
 }

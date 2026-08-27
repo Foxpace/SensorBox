@@ -23,7 +23,6 @@ class MeasurementIntentFactory @Inject constructor(
         putExtra(MeasurementService.USE_WAKE_LOCK, request.useWakeLock)
         putExtra(MeasurementService.GPS_INTERVAL_SECONDS, request.gpsIntervalSeconds)
         putExtra(MeasurementService.GPS_DISTANCE_METERS, request.gpsMinDistanceMeters)
-        putExtra(MeasurementService.START_AT_EPOCH_MILLIS, request.startAtEpochMillis)
         putExtra(MeasurementService.DURATION_MILLIS, request.durationMillis)
         putStringArrayListExtra(MeasurementService.NOTES, ArrayList(request.notes))
         putExtra(MeasurementService.ALARM_OFFSETS_SECONDS, request.alarmOffsetsSeconds.toIntArray())
