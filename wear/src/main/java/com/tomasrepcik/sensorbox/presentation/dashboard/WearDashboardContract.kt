@@ -3,6 +3,7 @@ package com.tomasrepcik.sensorbox.presentation.dashboard
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.domain.sensors.WearSensorDescriptor
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
 
 enum class WearRoute { MENU, RECORD, LIVE, SETTINGS, ACTIVE }
 
@@ -59,6 +60,15 @@ object WearDashboardReducer {
         else -> state
     }
 
+    fun measurementSessionChanged(state: WearDashboardState, session: MeasurementSessionState) = when {
+        session is MeasurementSessionState.Running -> state.copy(route = WearRoute.ACTIVE)
+
+        session is MeasurementSessionState.Idle && state.route == WearRoute.ACTIVE ->
+            state.copy(route = WearRoute.MENU)
+
+        else -> state
+    }
+
     private fun WearDashboardState.selectLiveSensor(sensorType: Int) = copy(
         route = WearRoute.LIVE,
         liveSensorType = sensorType,
@@ -77,6 +87,7 @@ object WearDashboardReducer {
     private fun WearMenuDestination.toRoute(): WearRoute = when (this) {
         WearMenuDestination.RECORD -> WearRoute.RECORD
         WearMenuDestination.LIVE_SENSOR -> WearRoute.LIVE
+        WearMenuDestination.SYNC -> WearRoute.SETTINGS
         WearMenuDestination.SETTINGS -> WearRoute.SETTINGS
         else -> WearRoute.MENU
     }

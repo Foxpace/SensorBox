@@ -38,10 +38,12 @@ fun SensorBoxApp(
     mainState: MainState,
     onboardingState: OnboardingState,
     recordingState: RecordingState,
+    measurementBrowserState: MeasurementBrowserState,
     settingsState: SettingsState,
     onNavigate: (MainRoute) -> Unit,
     onOnboardingIntent: (OnboardingIntent) -> Unit,
     onRecordingIntent: (RecordingIntent) -> Unit,
+    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
 ) {
     if (!mainState.hasLoadedPreferences) {
@@ -53,10 +55,12 @@ fun SensorBoxApp(
         mainState = mainState,
         onboardingState = onboardingState,
         recordingState = recordingState,
+        measurementBrowserState = measurementBrowserState,
         settingsState = settingsState,
         onNavigate = onNavigate,
         onOnboardingIntent = onOnboardingIntent,
         onRecordingIntent = onRecordingIntent,
+        onMeasurementBrowserIntent = onMeasurementBrowserIntent,
         onSettingsIntent = onSettingsIntent,
     )
 }
@@ -66,10 +70,12 @@ private fun SensorBoxNavHost(
     mainState: MainState,
     onboardingState: OnboardingState,
     recordingState: RecordingState,
+    measurementBrowserState: MeasurementBrowserState,
     settingsState: SettingsState,
     onNavigate: (MainRoute) -> Unit,
     onOnboardingIntent: (OnboardingIntent) -> Unit,
     onRecordingIntent: (RecordingIntent) -> Unit,
+    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
 ) {
     val backStack = rememberNavBackStack(mainState.route)
@@ -89,9 +95,11 @@ private fun SensorBoxNavHost(
                     route = route,
                     onboardingState = onboardingState,
                     recordingState = recordingState,
+                    measurementBrowserState = measurementBrowserState,
                     settingsState = settingsState,
                     onOnboardingIntent = onOnboardingIntent,
                     onRecordingIntent = onRecordingIntent,
+                    onMeasurementBrowserIntent = onMeasurementBrowserIntent,
                     onSettingsIntent = onSettingsIntent,
                     onBack = navigateBack,
                 )
@@ -135,6 +143,9 @@ private fun MainRoute.isRootDestination() = when (this) {
     MainRoute.SENSOR_DETAILS,
     MainRoute.SENSOR_PREVIEW,
     MainRoute.SETUP,
+    MainRoute.MEASUREMENTS,
+    MainRoute.MEASUREMENT_DETAILS,
+    MainRoute.MEASUREMENT_FILE,
     MainRoute.SETTINGS,
     MainRoute.DIAGNOSTICS,
     MainRoute.LICENSES,
@@ -147,9 +158,11 @@ private fun RouteContent(
     route: MainRoute,
     onboardingState: OnboardingState,
     recordingState: RecordingState,
+    measurementBrowserState: MeasurementBrowserState,
     settingsState: SettingsState,
     onOnboardingIntent: (OnboardingIntent) -> Unit,
     onRecordingIntent: (RecordingIntent) -> Unit,
+    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -182,6 +195,11 @@ private fun RouteContent(
             )
         }
 
+        MainRoute.MEASUREMENTS,
+        MainRoute.MEASUREMENT_DETAILS,
+        MainRoute.MEASUREMENT_FILE,
+        -> MeasurementBrowserRoute(route, measurementBrowserState, onMeasurementBrowserIntent, onBack)
+
         MainRoute.LICENSES -> FullScreen { modifier ->
             OpenSourceLicensesScreen(onBack = onBack, modifier = modifier)
         }
@@ -209,6 +227,23 @@ private fun RouteContent(
         }
 
         MainRoute.PRIVACY -> FullScreen { modifier -> PrivacyScreen(onBack, modifier) }
+    }
+}
+
+@Composable
+private fun MeasurementBrowserRoute(
+    route: MainRoute,
+    state: MeasurementBrowserState,
+    onIntent: (MeasurementBrowserIntent) -> Unit,
+    onBack: () -> Unit,
+) {
+    FullScreen { modifier ->
+        when (route) {
+            MainRoute.MEASUREMENTS -> MeasurementsScreen(state, onIntent, onBack, modifier)
+            MainRoute.MEASUREMENT_DETAILS -> MeasurementDetailsScreen(state, onIntent, onBack, modifier)
+            MainRoute.MEASUREMENT_FILE -> MeasurementFileScreen(state, onIntent, onBack, modifier)
+            else -> error("Not a measurement archive route")
+        }
     }
 }
 

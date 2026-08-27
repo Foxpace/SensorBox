@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -29,9 +28,11 @@ fun MeasurementSetupScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = { onIntent(RecordingIntent.ReturnToSensorSelection) },
 ) {
-    Box(modifier.fillMaxSize()) {
-        MeasurementSetupContent(state, onIntent, onBack)
-        MeasurementSetupActionBar(state, onIntent, Modifier.align(Alignment.BottomCenter))
+    Column(modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) {
+            MeasurementSetupContent(state, onIntent, onBack)
+        }
+        MeasurementSetupActionBar(state, onIntent)
     }
 }
 
@@ -40,7 +41,7 @@ private fun MeasurementSetupContent(state: RecordingState, onIntent: (RecordingI
     SensorBoxBackScreen(
         title = stringResource(R.string.measurement_setup),
         onBack = onBack,
-        bottomPadding = 104.dp,
+        bottomPadding = 24.dp,
         itemSpacing = 0.dp,
     ) {
         item { SensorBoxSettingsSection(stringResource(R.string.setup_storage_category)) }
@@ -244,16 +245,25 @@ private fun MeasurementSetupActionBar(
     modifier: Modifier = Modifier,
 ) {
     val sourceCount = setupSourceCount(state)
-    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background,
+        shadowElevation = 8.dp,
+    ) {
         Box(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
             contentAlignment = Alignment.Center,
         ) {
             SensorBoxPrimaryButton(
-                label = stringResource(R.string.start_measurement),
+                label = state.startCountdownSeconds?.let { seconds ->
+                    pluralStringResource(R.plurals.starting_in_seconds, seconds, seconds)
+                } ?: stringResource(
+                    if (state.isStarting) R.string.starting_recording else R.string.start_measurement,
+                ),
                 onClick = { onIntent(RecordingIntent.StartMeasurement) },
-                modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
-                enabled = state.storagePath != null && sourceCount > 0,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.storagePath != null && sourceCount > 0 && !state.isStarting,
+                loading = state.isStarting,
             )
         }
     }

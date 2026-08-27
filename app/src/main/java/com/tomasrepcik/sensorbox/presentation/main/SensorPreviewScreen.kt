@@ -50,6 +50,14 @@ import kotlin.math.max
 
 @Composable
 fun SensorPreviewScreen(state: RecordingState, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    if (state.detailsSensorSource == RecordingSensorSource.WEAR) {
+        SensorBoxBackScreen(
+            title = stringResource(R.string.sensor_unavailable),
+            onBack = onBack,
+            modifier = modifier,
+        ) {}
+        return
+    }
     val sensor = state.detailsSensorType?.let { type -> state.sensors.firstOrNull { it.type == type } }
     val title = when {
         state.detailsSensorType == null -> stringResource(R.string.gps)

@@ -6,6 +6,7 @@ import com.tomasrepcik.sensorbox.R
 
 enum class WearMenuDestination(@StringRes val labelResource: Int, @DrawableRes val iconResource: Int) {
     RECORD(R.string.activity_record, R.drawable.ic_record),
+    SYNC(R.string.sync_recordings, R.drawable.ic_sync),
     LIVE_SENSOR(R.string.activity_view_sensor, R.drawable.ic_live),
     PHONE_INFO(R.string.activity_info_phone, R.drawable.ic_phone),
     SETTINGS(R.string.activity_settings, R.drawable.ic_settings),
