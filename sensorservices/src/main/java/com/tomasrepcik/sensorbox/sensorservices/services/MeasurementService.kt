@@ -11,7 +11,7 @@ import com.tomasrepcik.sensorbox.core.error.combineAppResults
 import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.recording.RecordingEvent
 import com.tomasrepcik.sensorbox.recording.RecordingStopReason
-import com.tomasrepcik.sensorbox.sensorservices.serviceController.MeasurementConfig
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 import com.tomasrepcik.sensorbox.sensorservices.serviceController.ServiceController
 import com.tomasrepcik.sensorbox.sensorservices.serviceController.ServiceControllerFactory
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
@@ -40,7 +40,7 @@ class MeasurementService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var controller: ServiceController? = null
-    private var activeConfig: MeasurementConfig? = null
+    private var activeRequest: MeasurementLaunchRequest? = null
     private var eventJob: Job? = null
     private var isFinishing = false
     private val hostResources by lazy {
@@ -63,25 +63,28 @@ class MeasurementService : Service() {
                 intent.getStringExtra(ANNOTATION_TEXT).orEmpty(),
             )
 
-            else -> intent?.takeIf { activeConfig == null }?.let(::startRecordingHost)
+            else -> intent?.takeIf { activeRequest == null }?.let(::startRecordingHost)
         }
         return START_NOT_STICKY
     }
 
     private fun startRecordingHost(intent: Intent) {
         appResult(AppErrorCode.MEASUREMENT, "Start recording foreground host") {
-            val config = MeasurementConfig.from(intent)
-            require(config.sessionId.isNotBlank()) { "Recording session ID is missing" }
-            activeConfig = config
+            val request = MeasurementLaunchRequest.from(intent)
+            require(request.sessionId.isNotBlank()) { "Recording session ID is missing" }
+            activeRequest = request
             isFinishing = false
-            hostResources.start(config)
-            val serviceController = controllerFactory.create(this, config, serviceScope)
+            hostResources.start(request)
+            val serviceController = controllerFactory.create(this, request, serviceScope)
             controller = serviceController
             observeEngine(serviceController)
             serviceScope.launch {
                 val result = serviceController.start()
-                if (result.isFailure && !isFinishing) {
-                    finishRecording(MeasurementStopReason.SOURCE_FAILURE, result)
+                if (result.isFailure) {
+                    finishRecording(
+                        MeasurementStopReason.SOURCE_FAILURE,
+                        result,
+                    )
                 }
             }
         }.onFailure { error ->
@@ -101,11 +104,6 @@ class MeasurementService : Service() {
                 when (event) {
                     is RecordingEvent.RecordingStarted -> onRecordingStarted(event)
 
-                    is RecordingEvent.RecordingStartRejected -> finishRecording(
-                        MeasurementStopReason.SOURCE_FAILURE,
-                        AppResult.failure(event.error),
-                    )
-
                     is RecordingEvent.RecordingStopped -> finishRecording(
                         event.reason.toMeasurementReason(),
                         event.result,
@@ -116,32 +114,31 @@ class MeasurementService : Service() {
     }
 
     private fun onRecordingStarted(event: RecordingEvent.RecordingStarted) {
-        val config = activeConfig ?: return
+        val request = activeRequest ?: return
         sessionStore.markRunning(
             MeasurementSessionState.Running(
                 sessionId = event.sessionId.value,
-                folderName = config.folderName,
+                folderName = request.folderName,
                 startedAtElapsedRealtime = SystemClock.elapsedRealtime(),
-                sensorIds = config.sensorIds.toList(),
-                includesGps = config.includesGps,
+                sensorIds = request.sensorIds.toList(),
+                includesGps = request.includesGps,
             ),
         )
-        hostResources.scheduleAlarms(config.alarmOffsetsSeconds)
+        hostResources.scheduleAlarms(request.alarmOffsetsSeconds)
     }
 
     private fun requestStop(reason: RecordingStopReason) {
         if (isFinishing) return
         sessionStore.markStopping()
         serviceScope.launch {
-            val result = controller?.stop(reason) ?: AppResult.success(Unit)
-            if (result.isFailure && !isFinishing) finishRecording(reason.toMeasurementReason(), result)
+            controller?.stop(reason)
         }
     }
 
     private suspend fun finishRecording(reason: MeasurementStopReason, engineResult: AppResult<Unit>) {
         if (isFinishing) return
         isFinishing = true
-        val sessionId = activeConfig?.sessionId.orEmpty()
+        val sessionId = activeRequest?.sessionId.orEmpty()
         val hostResult = finishHost()
         val result = listOf(engineResult, hostResult)
             .combineAppResults(AppErrorCode.MEASUREMENT, "Finish recording foreground host")
@@ -153,7 +150,7 @@ class MeasurementService : Service() {
     private fun finishHost(): AppResult<Unit> {
         val results = mutableListOf<AppResult<*>>()
         results += hostResources.release()
-        activeConfig = null
+        activeRequest = null
         controller = null
         results += appResult(AppErrorCode.MEASUREMENT, "Publish idle measurement state") {
             sessionStore.markIdle()
@@ -168,8 +165,8 @@ class MeasurementService : Service() {
     }
 
     override fun onDestroy() {
-        val config = activeConfig
-        if (config != null && !isFinishing) {
+        val request = activeRequest
+        if (request != null && !isFinishing) {
             isFinishing = true
             val cleanup = runBlocking(Dispatchers.IO) {
                 controller?.stop(RecordingStopReason.PLATFORM_DESTROYED) ?: AppResult.success(Unit)
@@ -177,7 +174,7 @@ class MeasurementService : Service() {
             val resources = hostResources.release()
             sessionStore.markIdle()
             sessionStore.publishStopped(
-                config.sessionId,
+                request.sessionId,
                 MeasurementStopReason.SERVICE_DESTROYED,
                 listOf(cleanup, resources).combineAppResults(
                     AppErrorCode.MEASUREMENT,

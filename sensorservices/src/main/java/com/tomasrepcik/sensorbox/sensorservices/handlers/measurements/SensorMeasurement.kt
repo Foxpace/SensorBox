@@ -7,28 +7,37 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.core.error.withAppError
-import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
+import com.tomasrepcik.sensorbox.sensorservices.types.SensorFileStats
 import com.tomasrepcik.sensorbox.sensorservices.types.SensorHolder
 import com.tomasrepcik.sensorbox.sensorservices.types.SensorSpec
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 internal class SensorMeasurement(
     private val storage: MeasurementStorage,
     private val diagnosticLogger: DiagnosticLogger,
-    private val clock: EpochClock,
     private val sensorManager: SensorManager? = null,
+    private val onStopped: (List<SensorFileStats>) -> Unit = {},
 ) {
     private val holders = mutableListOf<SensorHolder>()
-    private var samplingPeriod = SensorManager.SENSOR_DELAY_FASTEST
+    private val mutableFailures = MutableSharedFlow<AppError>(replay = 1)
 
-    fun prepare(
+    val failures: Flow<AppError> = mutableFailures.asSharedFlow()
+
+    fun start(
         folderName: String,
         useInternalStorage: Boolean,
         sensorTypes: Set<Int>,
         samplingPeriod: Int,
-    ): AppResult<Unit> {
-        this.samplingPeriod = samplingPeriod
+    ): AppResult<Unit> = openFiles(folderName, useInternalStorage, sensorTypes).flatMap {
+        registerSensors(samplingPeriod)
+    }
+
+    private fun openFiles(folderName: String, useInternalStorage: Boolean, sensorTypes: Set<Int>): AppResult<Unit> {
         for (sensorType in sensorTypes.sorted()) {
             val holderResult = createHolder(folderName, useInternalStorage, sensorType)
             if (holderResult.isFailure) {
@@ -51,14 +60,16 @@ internal class SensorMeasurement(
             mimeType = "text/csv",
             fileName = spec.fileName,
             useInternalStorage = useInternalStorage,
-        ).map { SensorHolder(spec, it, diagnosticLogger, clock) }
+        ).map { output ->
+            SensorHolder(spec, output, diagnosticLogger) { error -> mutableFailures.tryEmit(error) }
+        }
     }
 
-    fun start(): AppResult<Unit> {
+    private fun registerSensors(samplingPeriod: Int): AppResult<Unit> {
         val sensorManager = sensorManager
             ?: return AppResult.failure(AppError(AppErrorCode.MEASUREMENT, "Access sensor manager"))
         for (holder in holders) {
-            val registration = registerHolder(sensorManager, holder)
+            val registration = registerHolder(sensorManager, holder, samplingPeriod)
             if (registration.isFailure) {
                 return registration.withAppError(AppErrorCode.MEASUREMENT, "Start sensors")
             }
@@ -66,7 +77,11 @@ internal class SensorMeasurement(
         return AppResult.success(Unit)
     }
 
-    private fun registerHolder(sensorManager: SensorManager, holder: SensorHolder): AppResult<Unit> {
+    private fun registerHolder(
+        sensorManager: SensorManager,
+        holder: SensorHolder,
+        samplingPeriod: Int,
+    ): AppResult<Unit> {
         val sensor = sensorManager.getDefaultSensor(holder.spec.type)
             ?: return AppResult.failure(AppError(AppErrorCode.MEASUREMENT, "Find sensor ${holder.spec.type}"))
         val registration = appResult(AppErrorCode.MEASUREMENT, "Register sensor ${holder.spec.type}") {
@@ -82,15 +97,13 @@ internal class SensorMeasurement(
         }
     }
 
-    private fun pause(): AppResult<Unit> = appResult(
-        AppErrorCode.MEASUREMENT,
-        "Pause sensors",
-    ) {
+    private fun pause(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Pause sensors") {
         sensorManager?.let { manager -> holders.forEach(manager::unregisterListener) }
     }
 
     private suspend fun save(): AppResult<Unit> {
         val results = holders.map { it.close() }
+        onStopped(holders.map(SensorHolder::stats))
         holders.clear()
         return results.combineAppResults(AppErrorCode.MEASUREMENT, "Save sensors")
     }

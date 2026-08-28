@@ -1,28 +1,30 @@
 package com.tomasrepcik.sensorbox.sensorservices.serviceController
 
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.recording.RecordingSource
 import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
 import com.tomasrepcik.sensorbox.recording.RecordingSourceType
+import com.tomasrepcik.sensorbox.recording.RecordingStopContext
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SensorMeasurement
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 
 internal class SensorRecordingSource(
-    private val config: MeasurementConfig,
+    private val request: MeasurementLaunchRequest,
     private val measurement: SensorMeasurement,
 ) : RecordingSource {
     override val type = RecordingSourceType.SENSOR
+    override val failures = measurement.failures
 
     override suspend fun start(spec: RecordingSourceSpec): AppResult<Unit> = if (spec is RecordingSourceSpec.Sensors) {
-        measurement.prepare(
-            folderName = config.folderName,
-            useInternalStorage = config.useInternalStorage,
+        measurement.start(
+            folderName = request.folderName,
+            useInternalStorage = request.useInternalStorage,
             sensorTypes = spec.sensorTypes,
             samplingPeriod = spec.samplingPeriod,
-        ).flatMap { measurement.start() }
+        )
     } else {
         invalidSpec(type)
     }
 
-    override suspend fun stop(): AppResult<Unit> = measurement.stop()
+    override suspend fun stop(context: RecordingStopContext): AppResult<Unit> = measurement.stop()
 }

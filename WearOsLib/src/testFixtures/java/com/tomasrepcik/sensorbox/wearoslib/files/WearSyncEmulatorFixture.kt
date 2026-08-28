@@ -34,7 +34,7 @@ object WearSyncEmulatorFixture {
                 textFile(
                     measurement = "EMULATOR_SINGLE_CSV",
                     name = "accelerometer.csv",
-                    text = "t_sensor;t_unix;x;y;z;accuracy\n123;456;1.0;2.0;3.0;3\n",
+                    text = "t_sensor;x;y;z;accuracy\n123;1.0;2.0;3.0;3\n",
                 ),
             ),
         ),

@@ -11,7 +11,6 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
@@ -21,117 +20,71 @@ import com.tomasrepcik.sensorbox.core.error.flatMap
 class GPSHandler(private val locationClient: FusedLocationProviderClient? = null) : LocationCallback() {
 
     private var callback: OnLocationChangedCallback? = null
-    private lateinit var request: LocationRequest
-
-    private var locationAvailability: LocationAvailability? = null
     private var lastLocation: Location? = null
 
-    private var registered: Boolean = false
-    private var intervalSeconds: Int = DEFAULT_INTERVAL_SECONDS
-    private var minDistanceMeters: Int = DEFAULT_DISTANCE_METERS
-    private val tag = "GPS_location"
-
-    /**
-     * calls for last known location and registers location callback
-     *
-     * @param context
-     */
-    private fun initialize(client: FusedLocationProviderClient) {
-        request = createRequest()
-
+    private fun initialize(client: FusedLocationProviderClient, intervalSeconds: Int, minDistanceMeters: Int) {
         client.lastLocation.addOnSuccessListener { location: Location? ->
-            if (location == null) {
-                callback?.onLastLocationSuccess(null)
-            } else {
-                lastLocation = location
-                callback?.onLastLocationSuccess(location)
-            }
+            lastLocation = location
+            callback?.onLastLocationSuccess(location)
         }.addOnFailureListener { error ->
-            AppError.from(AppErrorCode.MEASUREMENT, "Read last GPS location", error)
+            Log.e(TAG, "Cannot read last GPS location", error)
             callback?.onLastLocationSuccess(null)
         }
 
+        val request = createRequest(intervalSeconds, minDistanceMeters)
         client.requestLocationUpdates(request, this, Looper.getMainLooper()).addOnFailureListener { error ->
-            AppError.from(AppErrorCode.MEASUREMENT, "Request GPS updates", error)
+            Log.e(TAG, "Cannot request GPS updates", error)
         }
-        registered = true
     }
 
-    /**
-     * saves last location and is passed if the new callback registers
-     *
-     * @param locationResult
-     */
     override fun onLocationResult(locationResult: LocationResult) {
-        super.onLocationResult(locationResult)
-        if (locationResult.locations.isNotEmpty()) {
-            lastLocation = locationResult.lastLocation
-            if (lastLocation != null) {
-                callback?.onLocationChanged(lastLocation)
-            }
-        }
+        val location = locationResult.lastLocation ?: return
+        lastLocation = location
+        callback?.onLocationChanged(location)
     }
 
-    /** Reports provider availability changes to the active measurement. */
     override fun onLocationAvailability(locationAvailability: LocationAvailability) {
-        super.onLocationAvailability(locationAvailability)
-        this.locationAvailability = locationAvailability
         callback?.onAvailabilityChanged(locationAvailability)
     }
 
-    /** Stops location updates for the active measurement. */
     fun gpsOff(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Stop GPS updates") {
-        if (registered) {
-            Log.i(tag, "Logging off location")
+        if (callback != null) {
             locationClient?.flushLocations()?.addOnFailureListener { error ->
-                AppError.from(AppErrorCode.MEASUREMENT, "Flush GPS updates", error)
+                Log.e(TAG, "Cannot flush GPS updates", error)
             }
             locationClient?.removeLocationUpdates(this)?.addOnFailureListener { error ->
-                AppError.from(AppErrorCode.MEASUREMENT, "Remove GPS updates", error)
+                Log.e(TAG, "Cannot remove GPS updates", error)
             }
         }
-        registered = false
+        callback = null
     }
 
-    /** Creates a request from the immutable measurement configuration. */
-    private fun createRequest(): LocationRequest {
-        val builder = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            intervalSeconds * 1000L,
-        )
-        builder.setMinUpdateDistanceMeters(minDistanceMeters.toFloat())
-        builder.setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
-        builder.setWaitForAccurateLocation(true)
-        Log.i("GPS", "location request created")
-        return builder.build()
-    }
+    private fun createRequest(intervalSeconds: Int, minDistanceMeters: Int): LocationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        intervalSeconds.coerceIn(1, MAX_INTERVAL_SECONDS) * 1_000L,
+    )
+        .setMinUpdateDistanceMeters(minDistanceMeters.coerceIn(0, MAX_DISTANCE_METERS).toFloat())
+        .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+        .setWaitForAccurateLocation(true)
+        .build()
 
-    fun configure(intervalSeconds: Int, minDistanceMeters: Int) {
-        this.intervalSeconds = intervalSeconds.coerceIn(1, MAX_INTERVAL_SECONDS)
-        this.minDistanceMeters = minDistanceMeters.coerceIn(0, MAX_DISTANCE_METERS)
-    }
-
-    /**
-     * adding callback to pass location
-     *
-     * @param context
-     * @param gpsCallback - this object will get access to location and updates, previous is forgotten
-     *
-     */
-    fun addCallback(gpsCallback: OnLocationChangedCallback): AppResult<Unit> =
-        (if (registered) gpsOff() else AppResult.success(Unit)).flatMap {
-            appResult(AppErrorCode.MEASUREMENT, "Register GPS callback") {
-                val client = checkNotNull(locationClient) { "GPS client is unavailable" }
-                callback = gpsCallback
-                initialize(client)
-                gpsCallback.onLocationChanged(lastLocation)
-            }
+    fun addCallback(
+        gpsCallback: OnLocationChangedCallback,
+        intervalSeconds: Int = DEFAULT_INTERVAL_SECONDS,
+        minDistanceMeters: Int = DEFAULT_DISTANCE_METERS,
+    ): AppResult<Unit> = (if (callback != null) gpsOff() else AppResult.success(Unit)).flatMap {
+        appResult(AppErrorCode.MEASUREMENT, "Register GPS callback") {
+            val client = checkNotNull(locationClient) { "GPS client is unavailable" }
+            callback = gpsCallback
+            initialize(client, intervalSeconds, minDistanceMeters)
+            gpsCallback.onLocationChanged(lastLocation)
         }
+    }
 
     interface OnLocationChangedCallback {
         fun onLocationChanged(location: Location?)
-        fun onLastLocationSuccess(location: Location?)
-        fun onAvailabilityChanged(locationAvailability: LocationAvailability?)
+        fun onLastLocationSuccess(location: Location?) = Unit
+        fun onAvailabilityChanged(locationAvailability: LocationAvailability?) = Unit
     }
 
     private companion object {
@@ -139,5 +92,6 @@ class GPSHandler(private val locationClient: FusedLocationProviderClient? = null
         const val DEFAULT_DISTANCE_METERS = 20
         const val MAX_INTERVAL_SECONDS = 3_600
         const val MAX_DISTANCE_METERS = 10_000
+        const val TAG = "SensorBox GPS"
     }
 }

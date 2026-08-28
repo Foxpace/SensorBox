@@ -25,6 +25,6 @@ class SensorSpecTest {
     }
 
     private companion object {
-        const val METADATA_COLUMNS = 3
+        const val METADATA_COLUMNS = 2
     }
 }

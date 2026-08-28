@@ -3,6 +3,7 @@ package com.tomasrepcik.sensorbox.sensorservices.handlers.measurements
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.SystemClock
+import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
@@ -10,8 +11,10 @@ import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.core.error.withAppError
 import com.tomasrepcik.sensorbox.core.time.ClockFormats
 import com.tomasrepcik.sensorbox.core.time.EpochClock
+import com.tomasrepcik.sensorbox.recording.RecordingStopContext
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
-import com.tomasrepcik.sensorbox.sensorservices.serviceController.MeasurementConfig
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.types.SensorFileStats
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -22,20 +25,21 @@ internal class ExtraInfoHandler(
     private val clock: EpochClock,
     private val sensorManager: SensorManager,
 ) {
-    private var config: MeasurementConfig? = null
+    private var request: MeasurementLaunchRequest? = null
     private var startedAtMillis: Long = 0L
     private var startedAtNanos: Long = 0L
+    private var sensorStats: List<SensorFileStats> = emptyList()
     private val annotations = mutableListOf<MeasurementAnnotation>()
     private val triggeredAlarms = mutableListOf<Long>()
-    private var written = false
 
-    fun start(config: MeasurementConfig) {
-        this.config = config
-        startedAtMillis = clock.nowMillis()
-        startedAtNanos = SystemClock.elapsedRealtimeNanos()
+    fun start(request: MeasurementLaunchRequest) {
+        this.request = request
+        val startedAt = capturePhoneTime()
+        startedAtMillis = startedAt.unixMillis
+        startedAtNanos = startedAt.elapsedRealtimeNanos
         annotations.clear()
         triggeredAlarms.clear()
-        written = false
+        sensorStats = emptyList()
     }
 
     fun annotate(timestampMillis: Long, text: String) {
@@ -46,14 +50,20 @@ internal class ExtraInfoHandler(
         triggeredAlarms += timestampMillis
     }
 
-    fun write(): AppResult<Unit> {
-        val active = config ?: return AppResult.success(Unit)
-        if (written) return AppResult.success(Unit)
-        written = true
+    fun recordSensorStats(stats: List<SensorFileStats>) {
+        sensorStats = stats
+    }
+
+    fun write(context: RecordingStopContext): AppResult<Unit> {
+        val active = request ?: return AppResult.success(Unit)
+        request = null
+        val endedAt = capturePhoneTime()
         val metadataResult = appResult(AppErrorCode.MEASUREMENT, "Build measurement metadata") {
             MeasurementMetadata(
                 millis = startedAtMillis,
                 nanos = startedAtNanos,
+                endedAtMillis = endedAt.unixMillis,
+                endedAtNanos = endedAt.elapsedRealtimeNanos,
                 type = RECORDING_TYPE,
                 date = ClockFormats.metadataTimestamp(startedAtMillis),
                 folder = active.folderName,
@@ -63,6 +73,14 @@ internal class ExtraInfoHandler(
                 alarms = triggeredAlarms.toList(),
                 configuredAlarmOffsetsSeconds = active.alarmOffsetsSeconds.toList(),
                 durationMillis = active.durationMillis,
+                actualDurationMillis = ((endedAt.elapsedRealtimeNanos - startedAtNanos) / NANOS_PER_MILLISECOND)
+                    .coerceAtLeast(0L),
+                stopReason = context.reason.name,
+                failureOperation = context.failure?.operation,
+                failureMessage = context.failure?.diagnosticMessage,
+                failures = context.failures.map(AppError::toMeasurementFailure),
+                wakeLockEnabled = active.requiresWakeLock,
+                sensorFiles = sensorStats,
                 activityRecognition = active.activityRecognition,
                 significantMotion = active.significantMotion,
             )
@@ -81,7 +99,7 @@ internal class ExtraInfoHandler(
         }.withAppError(AppErrorCode.MEASUREMENT, "Write measurement metadata")
     }
 
-    private fun sensorRanges(active: MeasurementConfig): List<SensorRange> {
+    private fun sensorRanges(active: MeasurementLaunchRequest): List<SensorRange> {
         val rangeIds = if (active.significantMotion) {
             active.sensorIds + Sensor.TYPE_SIGNIFICANT_MOTION
         } else {
@@ -94,21 +112,36 @@ internal class ExtraInfoHandler(
         }
     }
 
+    private fun capturePhoneTime(): PhoneTime {
+        val before = SystemClock.elapsedRealtimeNanos()
+        val unixMillis = clock.nowMillis()
+        val after = SystemClock.elapsedRealtimeNanos()
+        return PhoneTime(
+            unixMillis = unixMillis,
+            elapsedRealtimeNanos = before + (after - before) / 2,
+        )
+    }
+
     private companion object {
         const val EXTRA_FILE = "extra.json"
         const val RECORDING_TYPE = "RECORDING"
+        const val NANOS_PER_MILLISECOND = 1_000_000L
         val JSON = Json {
             prettyPrint = true
             prettyPrintIndent = "  "
             encodeDefaults = true
         }
     }
+
+    private data class PhoneTime(val unixMillis: Long, val elapsedRealtimeNanos: Long)
 }
 
 @Serializable
 internal data class MeasurementMetadata(
     val millis: Long,
     val nanos: Long,
+    val endedAtMillis: Long,
+    val endedAtNanos: Long,
     val type: String,
     val date: String,
     val folder: String,
@@ -118,6 +151,13 @@ internal data class MeasurementMetadata(
     val alarms: List<Long>,
     val configuredAlarmOffsetsSeconds: List<Int>,
     val durationMillis: Long,
+    val actualDurationMillis: Long,
+    val stopReason: String,
+    val failureOperation: String?,
+    val failureMessage: String?,
+    val failures: List<MeasurementFailure>,
+    val wakeLockEnabled: Boolean,
+    val sensorFiles: List<SensorFileStats>,
     val activityRecognition: Boolean,
     val significantMotion: Boolean,
 )
@@ -127,3 +167,20 @@ internal data class MeasurementAnnotation(val timestamp: Long, val annotation: S
 
 @Serializable
 internal data class SensorRange(val sensor: String, val type: Int, val range: Float)
+
+@Serializable
+internal data class MeasurementFailure(
+    val code: String,
+    val operation: String,
+    val message: String,
+    val cause: String?,
+    val context: Map<String, String>,
+)
+
+private fun AppError.toMeasurementFailure() = MeasurementFailure(
+    code = code.name,
+    operation = operation,
+    message = diagnosticMessage,
+    cause = cause?.let { error -> "${error::class.java.simpleName}: ${error.message.orEmpty()}" },
+    context = context,
+)

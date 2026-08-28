@@ -27,8 +27,19 @@ object Notify {
             .setSmallIcon(R.drawable.ic_graph)
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_SERVICE)
+            .setContentIntent(createOpenAppAction(context))
             .addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopAction)
             .build()
+    }
+
+    private fun createOpenAppAction(context: Context): PendingIntent? {
+        val openAppIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+        return PendingIntent.getActivity(
+            context,
+            OPEN_APP_REQUEST_CODE,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun createChannel(context: Context) {
@@ -42,5 +53,6 @@ object Notify {
     }
 
     private const val CHANNEL_ID = "measurement"
+    private const val OPEN_APP_REQUEST_CODE = 10
     private const val STOP_REQUEST_CODE = 20
 }

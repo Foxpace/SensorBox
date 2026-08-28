@@ -21,6 +21,9 @@ import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
+import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.error.suspendAppResult
+import kotlinx.coroutines.tasks.await
 
 internal data class ActivityUpdate(val elapsedRealtimeMillis: Long, val confidences: List<Int>)
 
@@ -31,14 +34,13 @@ internal data class ActivityTransitionSample(
 )
 
 internal interface ActivityRecognitionPlatform {
-    fun prepare(
+    suspend fun start(
+        periodSeconds: Int,
         onUpdate: (ActivityUpdate) -> Unit,
         onTransitions: (List<ActivityTransitionSample>) -> Unit,
     ): AppResult<Unit>
 
-    fun start(periodSeconds: Int): AppResult<Unit>
-
-    fun stop(): AppResult<Unit>
+    suspend fun stop(): AppResult<Unit>
 }
 
 internal class AndroidActivityRecognitionPlatform(private val context: Context) : ActivityRecognitionPlatform {
@@ -76,7 +78,30 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
         }
     }
 
-    override fun prepare(
+    @SuppressLint("MissingPermission")
+    override suspend fun start(
+        periodSeconds: Int,
+        onUpdate: (ActivityUpdate) -> Unit,
+        onTransitions: (List<ActivityTransitionSample>) -> Unit,
+    ): AppResult<Unit> {
+        if (!hasPermission()) {
+            return AppResult.failure(AppError(AppErrorCode.PERMISSION, "Start activity recognition"))
+        }
+        val prepared = prepareResources(onUpdate, onTransitions)
+        if (prepared.isFailure) return prepared
+        return suspendAppResult(AppErrorCode.MEASUREMENT, "Start activity recognition") {
+            val activeClient = checkNotNull(client) { "Activity recognition client is missing" }
+            val updates = checkNotNull(updatesPendingIntent) { "Activity update request is missing" }
+            val transitions = checkNotNull(transitionsPendingIntent) { "Activity transition request is missing" }
+            activeClient.requestActivityUpdates(periodSeconds.coerceAtLeast(1) * 1_000L, updates).await()
+            activeClient.requestActivityTransitionUpdates(
+                ActivityTransitionRequest(ACTIVITY_TRANSITIONS),
+                transitions,
+            ).await()
+        }
+    }
+
+    private fun prepareResources(
         onUpdate: (ActivityUpdate) -> Unit,
         onTransitions: (List<ActivityTransitionSample>) -> Unit,
     ): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Initialize activity recognition resources") {
@@ -101,33 +126,28 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
     }
 
     @SuppressLint("MissingPermission")
-    override fun start(periodSeconds: Int): AppResult<Unit> {
-        if (!hasPermission()) {
-            return AppResult.failure(AppError(AppErrorCode.PERMISSION, "Start activity recognition"))
-        }
-        return appResult(AppErrorCode.MEASUREMENT, "Start activity recognition") {
-            updatesPendingIntent?.let { pendingIntent ->
-                client?.requestActivityUpdates(periodSeconds.coerceAtLeast(1) * 1_000L, pendingIntent)
-            }
-            transitionsPendingIntent?.let { pendingIntent ->
-                client?.requestActivityTransitionUpdates(ActivityTransitionRequest(ACTIVITY_TRANSITIONS), pendingIntent)
+    override suspend fun stop(): AppResult<Unit> {
+        val results = mutableListOf<AppResult<*>>()
+        updatesPendingIntent?.let { pendingIntent ->
+            results += suspendAppResult(AppErrorCode.MEASUREMENT, "Remove activity updates") {
+                client?.removeActivityUpdates(pendingIntent)?.await()
             }
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    override fun stop(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Pause activity recognition") {
-        if (hasPermission()) {
-            updatesPendingIntent?.let { client?.removeActivityUpdates(it) }
-            transitionsPendingIntent?.let { client?.removeActivityTransitionUpdates(it) }
+        transitionsPendingIntent?.let { pendingIntent ->
+            results += suspendAppResult(AppErrorCode.MEASUREMENT, "Remove activity transitions") {
+                client?.removeActivityTransitionUpdates(pendingIntent)?.await()
+            }
         }
-        if (receiverRegistered) context.unregisterReceiver(receiver)
-        receiverRegistered = false
-        client = null
-        updatesPendingIntent = null
-        transitionsPendingIntent = null
-        updateCallback = null
-        transitionCallback = null
+        results += appResult(AppErrorCode.MEASUREMENT, "Release activity recognition resources") {
+            if (receiverRegistered) context.unregisterReceiver(receiver)
+            receiverRegistered = false
+            client = null
+            updatesPendingIntent = null
+            transitionsPendingIntent = null
+            updateCallback = null
+            transitionCallback = null
+        }
+        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Pause activity recognition")
     }
 
     private fun hasPermission(): Boolean = Build.VERSION.SDK_INT < 29 ||

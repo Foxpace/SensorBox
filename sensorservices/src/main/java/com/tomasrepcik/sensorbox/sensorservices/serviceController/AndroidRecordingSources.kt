@@ -13,39 +13,45 @@ import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.AndroidAct
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.GPSMeasurement
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SensorMeasurement
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SignificantMotion
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 
 internal class AndroidRecordingSources(
     context: Context,
-    config: MeasurementConfig,
+    request: MeasurementLaunchRequest,
     storage: MeasurementStorage,
     diagnosticLogger: DiagnosticLogger,
     clock: EpochClock,
 ) {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
-    private val artifacts = SessionArtifacts(config, storage, clock, sensorManager)
+    private val session = SessionRecordingSource(request, storage, clock, sensorManager)
 
     val sources: List<RecordingSource> = listOf(
-        SessionRecordingSource(artifacts),
+        session,
         SensorRecordingSource(
-            config,
-            SensorMeasurement(storage, diagnosticLogger, clock, sensorManager),
+            request,
+            SensorMeasurement(
+                storage = storage,
+                diagnosticLogger = diagnosticLogger,
+                sensorManager = sensorManager,
+                onStopped = session::recordSensorStats,
+            ),
         ),
         GpsRecordingSource(
-            config,
+            request,
             GPSMeasurement(GPSHandler(LocationServices.getFusedLocationProviderClient(context)), storage, clock),
         ),
         ActivityRecordingSource(
-            config,
+            request,
             storage,
             AndroidActivityRecognitionPlatform(context.applicationContext),
         ),
         SignificantMotionRecordingSource(
-            config,
-            SignificantMotion(storage, clock, sensorManager),
+            request,
+            SignificantMotion(storage, sensorManager),
         ),
     )
 
-    fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = artifacts.annotate(timestampMillis, text)
+    fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = session.annotate(timestampMillis, text)
 
-    fun playAlarm(): AppResult<Unit> = artifacts.playAlarm()
+    fun playAlarm(): AppResult<Unit> = session.playAlarm()
 }

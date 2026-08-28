@@ -2,9 +2,9 @@ package com.tomasrepcik.sensorbox.communication
 
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionEvent
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
 import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementStopReason
+import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementStopped
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,13 +27,11 @@ class WearRecordingSessionObserver @Inject constructor(
     fun start() {
         if (!started.compareAndSet(false, true)) return
         scope.launch {
-            sessionStore.events.collect { event ->
-                if (event is MeasurementSessionEvent.Stopped) onStopped(event)
-            }
+            sessionStore.events.collect(::onStopped)
         }
     }
 
-    private suspend fun onStopped(event: MeasurementSessionEvent.Stopped) {
+    private suspend fun onStopped(event: MeasurementStopped) {
         event.result.errorOrNull()?.let { error -> diagnosticLogger.record(error.toDiagnosticEvent()) }
         val reason = event.reason.toAutomaticWearReason() ?: return
         commandHandler.onAutomaticStop(reason).onFailure { error ->

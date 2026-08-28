@@ -5,22 +5,33 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
-import com.tomasrepcik.sensorbox.core.error.flatMap
 import com.tomasrepcik.sensorbox.core.error.withAppError
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.io.OutputStream
 
 /** Records periodic activity-recognition confidence values. */
 internal class ActivityRecognitionMeasurement(
-    private val periodSeconds: Int,
     private val storage: MeasurementStorage,
     private val platform: ActivityRecognitionPlatform,
 ) {
     private var updatesOutput: OutputStream? = null
     private var transitionsOutput: OutputStream? = null
     private var writeFailure: AppError? = null
+    private val mutableFailures = MutableSharedFlow<AppError>(replay = 1)
 
-    fun prepare(folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
+    val failures: Flow<AppError> = mutableFailures.asSharedFlow()
+
+    suspend fun start(folderName: String, useInternalStorage: Boolean, periodSeconds: Int): AppResult<Unit> {
+        val opened = openOutputs(folderName, useInternalStorage)
+        if (opened.isFailure) return opened
+        return platform.start(periodSeconds, ::writeActivityUpdate, ::writeActivityTransitions)
+            .withAppError(AppErrorCode.MEASUREMENT, "Start activity recognition")
+    }
+
+    private fun openOutputs(folderName: String, useInternalStorage: Boolean): AppResult<Unit> {
         val updatesResult = storage.openMeasurementFile(
             folderName = folderName,
             mimeType = "text/csv",
@@ -51,14 +62,8 @@ internal class ActivityRecognitionMeasurement(
             updates.write(UPDATES_HEADER.toByteArray())
             transitions.write(TRANSITIONS_HEADER.toByteArray())
         }
-        return headers.flatMap {
-            platform.prepare(::writeActivityUpdate, ::writeActivityTransitions)
-        }
-            .withAppError(AppErrorCode.MEASUREMENT, "Initialize activity recognition")
+        return headers.withAppError(AppErrorCode.MEASUREMENT, "Initialize activity recognition")
     }
-
-    fun start(): AppResult<Unit> = platform.start(periodSeconds)
-        .withAppError(AppErrorCode.MEASUREMENT, "Start activity recognition")
 
     suspend fun stop(): AppResult<Unit> {
         val results = listOf(platform.stop(), save())
@@ -96,7 +101,10 @@ internal class ActivityRecognitionMeasurement(
 
     private inline fun recordWriteFailure(operation: String, block: () -> Unit) {
         if (writeFailure != null) return
-        appResult(AppErrorCode.STORAGE, operation, block).onFailure { writeFailure = it }
+        appResult(AppErrorCode.STORAGE, operation, block).onFailure { error ->
+            writeFailure = error
+            mutableFailures.tryEmit(error)
+        }
     }
 
     private companion object {

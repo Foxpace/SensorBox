@@ -15,11 +15,11 @@ import java.io.OutputStream
 
 class MeasurementPreparationTest {
     @Test
-    fun `Given first sensor file failure When sensors prepare Then later sensor files are not opened`() {
+    fun `Given first sensor file failure When sensors start Then later sensor files are not opened`() {
         val storage = FailingMeasurementStorage()
-        val measurement = SensorMeasurement(storage, DiagnosticLogger { }, EpochClock { 1L })
+        val measurement = SensorMeasurement(storage, DiagnosticLogger { })
 
-        val result = measurement.prepare(
+        val result = measurement.start(
             folderName = "session",
             useInternalStorage = true,
             sensorTypes = setOf(Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE),
@@ -31,11 +31,11 @@ class MeasurementPreparationTest {
     }
 
     @Test
-    fun `Given GPS file failure When GPS prepares Then no output work follows`() {
+    fun `Given GPS file failure When GPS starts Then no output work follows`() {
         val storage = FailingMeasurementStorage()
         val measurement = GPSMeasurement(GPSHandler(), storage, EpochClock { 1L })
 
-        val result = measurement.prepare(
+        val result = measurement.start(
             folderName = "session",
             useInternalStorage = true,
             intervalSeconds = 10,

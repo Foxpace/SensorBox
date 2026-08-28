@@ -1,15 +1,12 @@
 package com.tomasrepcik.sensorbox.recording
 
-import java.util.UUID
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppResult
 
 @JvmInline
 value class RecordingSessionId(val value: String) {
     init {
         require(value.isNotBlank())
-    }
-
-    companion object {
-        fun create(): RecordingSessionId = RecordingSessionId(UUID.randomUUID().toString())
     }
 }
 
@@ -59,20 +56,21 @@ enum class RecordingStopReason {
     PLATFORM_DESTROYED,
 }
 
+data class RecordingStopContext(val reason: RecordingStopReason, val failures: List<AppError> = emptyList()) {
+    val failure: AppError?
+        get() = failures.firstOrNull()
+
+    fun withFailure(failure: AppError): RecordingStopContext = copy(failures = failures + failure)
+}
+
 sealed interface RecordingEvent {
     val sessionId: RecordingSessionId
 
-    data class RecordingStarted(override val sessionId: RecordingSessionId, val startedAtEpochMillis: Long) :
-        RecordingEvent
-
-    data class RecordingStartRejected(
-        override val sessionId: RecordingSessionId,
-        val error: com.tomasrepcik.sensorbox.core.error.AppError,
-    ) : RecordingEvent
+    data class RecordingStarted(override val sessionId: RecordingSessionId) : RecordingEvent
 
     data class RecordingStopped(
         override val sessionId: RecordingSessionId,
         val reason: RecordingStopReason,
-        val result: com.tomasrepcik.sensorbox.core.error.AppResult<Unit>,
+        val result: AppResult<Unit>,
     ) : RecordingEvent
 }

@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.play.services.location)
     implementation(libs.coroutines.core)
+    implementation(libs.coroutines.play.services)
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
