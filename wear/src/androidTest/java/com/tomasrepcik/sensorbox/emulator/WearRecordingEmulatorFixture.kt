@@ -20,8 +20,8 @@ import java.io.File
 internal data class WearRecordedSensor(
     val type: Int,
     val fileName: String,
-    val header: String = "t_sensor;t_unix;x;y;z;accuracy",
-    val columnCount: Int = 6,
+    val header: String = "t_sensor;x;y;z;accuracy",
+    val columnCount: Int = 5,
 )
 
 internal data class WearRecordingScenario(
@@ -244,6 +244,8 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
 
         private fun assertSessionMetadata() {
             assertEquals(scenario.name, metadata.getString("folder"))
+            assertTrue(metadata.getLong("millis") >= scheduledStartMillis - TIMESTAMP_TOLERANCE_MILLIS)
+            assertTrue(metadata.getLong("nanos") > 0L)
             assertEquals(scenario.durationMillis.coerceAtLeast(0), metadata.getLong("durationMillis"))
             val recordedTypes = metadata.getJSONArray("ranges").let { ranges ->
                 buildSet {
@@ -285,13 +287,7 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
                 columns
             }
             val sensorTimestamps = samples.map { it[0].toLong() }
-            val unixTimestamps = samples.map { it[1].toLong() }
             assertEquals(sensorTimestamps.sorted(), sensorTimestamps)
-            assertEquals(unixTimestamps.sorted(), unixTimestamps)
-            assertTrue(
-                "A Wear sample was written before recording started: $unixTimestamps",
-                unixTimestamps.all { it >= scheduledStartMillis - TIMESTAMP_TOLERANCE_MILLIS },
-            )
         }
     }
 

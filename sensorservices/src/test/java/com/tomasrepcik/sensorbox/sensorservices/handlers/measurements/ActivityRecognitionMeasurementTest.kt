@@ -4,6 +4,7 @@ import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,34 +13,44 @@ import java.io.OutputStream
 
 class ActivityRecognitionMeasurementTest {
     @Test
-    fun `Given fake storage and platform When activity measurement runs Then lifecycle has no Android types`() {
-        val storage = FakeMeasurementStorage()
-        val platform = FakeActivityRecognitionPlatform()
-        val measurement = ActivityRecognitionMeasurement(15, storage, platform)
+    fun `Given fake storage and platform When activity measurement runs Then lifecycle has no Android types`() =
+        runBlocking {
+            val storage = FakeMeasurementStorage()
+            val platform = FakeActivityRecognitionPlatform()
+            val measurement = ActivityRecognitionMeasurement(storage, platform)
 
-        assertTrue(measurement.prepare("session", useInternalStorage = true).isSuccess)
-        assertTrue(measurement.start().isSuccess)
-        platform.emitUpdate(ActivityUpdate(123L, listOf(1, 2, 3, 4, 5, 6, 7, 8)))
-        platform.emitTransitions(listOf(ActivityTransitionSample(456L, 2, 1)))
-        val stopped = kotlinx.coroutines.runBlocking { measurement.stop() }
+            assertTrue(
+                measurement.start(
+                    folderName = "session",
+                    useInternalStorage = true,
+                    periodSeconds = 15,
+                ).isSuccess,
+            )
+            platform.emitUpdate(ActivityUpdate(123L, listOf(1, 2, 3, 4, 5, 6, 7, 8)))
+            platform.emitTransitions(listOf(ActivityTransitionSample(456L, 2, 1)))
+            val stopped = measurement.stop()
 
-        assertTrue(stopped.isSuccess)
-        assertEquals(15, platform.startedPeriodSeconds)
-        assertEquals(1, platform.stopCalls)
-        assertTrue(storage.text("activity_updates.csv").contains("123;1;2;3;4;5;6;7;8"))
-        assertTrue(storage.text("activity_transitions.csv").contains("456;2;1"))
-    }
+            assertTrue(stopped.isSuccess)
+            assertEquals(15, platform.startedPeriodSeconds)
+            assertEquals(1, platform.stopCalls)
+            assertTrue(storage.text("activity_updates.csv").contains("123;1;2;3;4;5;6;7;8"))
+            assertTrue(storage.text("activity_transitions.csv").contains("456;2;1"))
+        }
 
     @Test
-    fun `Given transition storage failure When prepared Then platform initialization does not run`() {
+    fun `Given transition storage failure When started Then platform initialization does not run`() = runBlocking {
         val storage = FakeMeasurementStorage(failOnCall = 2)
         val platform = FakeActivityRecognitionPlatform()
-        val measurement = ActivityRecognitionMeasurement(15, storage, platform)
+        val measurement = ActivityRecognitionMeasurement(storage, platform)
 
-        val result = measurement.prepare("session", useInternalStorage = false)
+        val result = measurement.start(
+            folderName = "session",
+            useInternalStorage = false,
+            periodSeconds = 15,
+        )
 
         assertTrue(result.isFailure)
-        assertEquals(0, platform.prepareCalls)
+        assertEquals(0, platform.startCalls)
         assertEquals(2, storage.openCalls)
     }
 
@@ -68,7 +79,7 @@ class ActivityRecognitionMeasurementTest {
     }
 
     private class FakeActivityRecognitionPlatform : ActivityRecognitionPlatform {
-        var prepareCalls = 0
+        var startCalls = 0
             private set
         var stopCalls = 0
             private set
@@ -77,22 +88,19 @@ class ActivityRecognitionMeasurementTest {
         private var updateCallback: ((ActivityUpdate) -> Unit)? = null
         private var transitionCallback: ((List<ActivityTransitionSample>) -> Unit)? = null
 
-        override fun prepare(
+        override suspend fun start(
+            periodSeconds: Int,
             onUpdate: (ActivityUpdate) -> Unit,
             onTransitions: (List<ActivityTransitionSample>) -> Unit,
         ): AppResult<Unit> {
-            prepareCalls += 1
+            startCalls += 1
+            startedPeriodSeconds = periodSeconds
             updateCallback = onUpdate
             transitionCallback = onTransitions
             return AppResult.success(Unit)
         }
 
-        override fun start(periodSeconds: Int): AppResult<Unit> {
-            startedPeriodSeconds = periodSeconds
-            return AppResult.success(Unit)
-        }
-
-        override fun stop(): AppResult<Unit> {
+        override suspend fun stop(): AppResult<Unit> {
             stopCalls += 1
             return AppResult.success(Unit)
         }

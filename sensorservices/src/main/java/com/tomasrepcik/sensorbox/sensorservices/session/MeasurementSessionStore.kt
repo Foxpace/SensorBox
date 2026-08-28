@@ -12,9 +12,9 @@ import javax.inject.Singleton
 @Singleton
 class MeasurementSessionStore @Inject constructor() {
     private val mutableState = MutableStateFlow<MeasurementSessionState>(MeasurementSessionState.Idle)
-    private val mutableEvents = MutableSharedFlow<MeasurementSessionEvent>(extraBufferCapacity = EVENT_BUFFER_SIZE)
+    private val mutableEvents = MutableSharedFlow<MeasurementStopped>(extraBufferCapacity = EVENT_BUFFER_SIZE)
     val state: StateFlow<MeasurementSessionState> = mutableState.asStateFlow()
-    val events: SharedFlow<MeasurementSessionEvent> = mutableEvents
+    val events: SharedFlow<MeasurementStopped> = mutableEvents
 
     fun markRunning(state: MeasurementSessionState.Running) {
         mutableState.value = state
@@ -29,7 +29,7 @@ class MeasurementSessionStore @Inject constructor() {
     }
 
     fun publishStopped(sessionId: String, reason: MeasurementStopReason, result: AppResult<Unit>) {
-        mutableEvents.tryEmit(MeasurementSessionEvent.Stopped(sessionId, reason, result))
+        mutableEvents.tryEmit(MeasurementStopped(sessionId, reason, result))
     }
 
     private companion object {
@@ -45,7 +45,4 @@ enum class MeasurementStopReason {
     SERVICE_DESTROYED,
 }
 
-sealed interface MeasurementSessionEvent {
-    data class Stopped(val sessionId: String, val reason: MeasurementStopReason, val result: AppResult<Unit>) :
-        MeasurementSessionEvent
-}
+data class MeasurementStopped(val sessionId: String, val reason: MeasurementStopReason, val result: AppResult<Unit>)

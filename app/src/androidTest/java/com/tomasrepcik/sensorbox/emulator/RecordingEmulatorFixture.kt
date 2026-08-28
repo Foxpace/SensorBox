@@ -23,8 +23,8 @@ import java.io.File
 internal data class RecordedSensor(
     val type: Int,
     val fileName: String,
-    val header: String = "t_sensor;t_unix;x;y;z;accuracy",
-    val columnCount: Int = 6,
+    val header: String = "t_sensor;x;y;z;accuracy",
+    val columnCount: Int = 5,
 )
 
 internal data class RecordingScenario(
@@ -345,6 +345,8 @@ internal class RecordingEmulatorFixture(private val context: Context) {
 
         private fun assertSessionMetadata() {
             assertEquals(scenario.name, metadata.getString("folder"))
+            assertTrue(metadata.getLong("millis") >= scheduledStartMillis - TIMESTAMP_TOLERANCE_MILLIS)
+            assertTrue(metadata.getLong("nanos") > 0L)
             assertEquals(scenario.notes, metadata.getJSONArray("notes").toStringList())
             assertEquals(scenario.durationMillis.coerceAtLeast(0), metadata.getLong("durationMillis"))
             assertEquals(
@@ -408,13 +410,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
                 columns
             }
             val sensorTimestamps = samples.map { it[0].toLong() }
-            val unixTimestamps = samples.map { it[1].toLong() }
             assertEquals(sensorTimestamps.sorted(), sensorTimestamps)
-            assertEquals(unixTimestamps.sorted(), unixTimestamps)
-            assertTrue(
-                "A sample was written before recording started: $unixTimestamps",
-                unixTimestamps.all { it >= scheduledStartMillis - TIMESTAMP_TOLERANCE_MILLIS },
-            )
         }
     }
 
@@ -434,7 +430,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
         const val ACTIVITY_TRANSITIONS_FILE = "activity_transitions.csv"
         const val ACTIVITY_TRANSITIONS_HEADER = "t_nanos;activity;enter_exit"
         const val SIGNIFICANT_MOTION_FILE = "significant_motion.csv"
-        const val SIGNIFICANT_HEADER = "t_unix;event"
+        const val SIGNIFICANT_HEADER = "t_sensor;event"
         const val MINIMUM_ROWS = 2
         const val TIMESTAMP_TOLERANCE_MILLIS = 250L
         const val FILE_WAIT_ATTEMPTS = 40

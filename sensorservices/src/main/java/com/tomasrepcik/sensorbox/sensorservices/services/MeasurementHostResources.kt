@@ -14,7 +14,7 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
 import com.tomasrepcik.sensorbox.recording.RecordingStopReason
-import com.tomasrepcik.sensorbox.sensorservices.serviceController.MeasurementConfig
+import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -36,10 +36,10 @@ internal class MeasurementHostResources(
         }
     }
 
-    fun start(config: MeasurementConfig) {
-        promoteToForeground(config)
-        if (config.useWakeLock) acquireWakeLock()
-        if (config.stopOnLowBattery) registerLowBatteryReceiver()
+    fun start(request: MeasurementLaunchRequest) {
+        promoteToForeground(request)
+        if (request.requiresWakeLock) acquireWakeLock()
+        if (request.stopOnLowBattery) registerLowBatteryReceiver()
     }
 
     fun scheduleAlarms(offsetsSeconds: List<Int>) {
@@ -62,16 +62,16 @@ internal class MeasurementHostResources(
         service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
     }
 
-    private fun promoteToForeground(config: MeasurementConfig) {
+    private fun promoteToForeground(request: MeasurementLaunchRequest) {
         val notification = Notify.createRecordingNotification(service)
         if (Build.VERSION.SDK_INT >= 34) {
-            service.startForeground(NOTIFICATION_ID, notification, foregroundTypes(config))
+            service.startForeground(NOTIFICATION_ID, notification, foregroundTypes(request))
         } else {
             service.startForeground(NOTIFICATION_ID, notification)
         }
     }
 
-    private fun foregroundTypes(config: MeasurementConfig): Int = if (config.includesGps) {
+    private fun foregroundTypes(request: MeasurementLaunchRequest): Int = if (request.includesGps) {
         FOREGROUND_SERVICE_TYPE_HEALTH or FOREGROUND_SERVICE_TYPE_LOCATION
     } else {
         FOREGROUND_SERVICE_TYPE_HEALTH

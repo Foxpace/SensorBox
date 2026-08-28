@@ -261,12 +261,13 @@ internal fun rememberGpsDetails(
     DisposableEffect(gpsHandler, hasPermission, intervalSeconds, minimumDistanceMeters) {
         var active = true
         if (hasPermission) {
-            gpsHandler.configure(intervalSeconds, minimumDistanceMeters)
             gpsHandler.addCallback(
                 GpsDetailsCallback(
                     onLocation = { if (active && it != null) location = it },
                     onAvailability = { if (active) isAvailable = it },
                 ),
+                intervalSeconds = intervalSeconds,
+                minDistanceMeters = minimumDistanceMeters,
             )
         }
         onDispose {

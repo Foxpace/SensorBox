@@ -62,12 +62,16 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
     override suspend fun loadMeasurementFile(measurementId: String, fileId: String): AppResult<MeasurementFileContent> =
         withContext(Dispatchers.IO) {
             suspendAppResult(AppErrorCode.STORAGE, "Read measurement file") {
-                val document = measurementDirectory(measurementId).findFile(fileId)
+                val directory = measurementDirectory(measurementId)
+                val document = directory.findFile(fileId)
                     ?.takeIf(DocumentFile::isFile)
                     ?: error("Measurement file is unavailable")
                 when {
                     document.name.equals(GPS_FILE, ignoreCase = true) -> parseGpsCoordinates(document)
-                    document.name.orEmpty().endsWith(CSV_EXTENSION, ignoreCase = true) -> parseSensorSeries(document)
+
+                    document.name.orEmpty().endsWith(CSV_EXTENSION, ignoreCase = true) ->
+                        parseSensorSeries(document, readSensorTimeAnchor(directory))
+
                     else -> parseTextFile(document)
                 }
             }
@@ -88,11 +92,7 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         ?: throw IllegalArgumentException("Measurement does not exist")
 
     private fun createMeasurementSummary(directory: DocumentFile): MeasurementSummary {
-        val metadata = directory.findFile(METADATA_FILE)
-            ?.takeIf(DocumentFile::isFile)
-            ?.let(::readDocumentText)
-            .orEmpty()
-        val json = metadata.takeIf(String::isNotBlank)?.let(::parseMetadataObject)
+        val json = readMetadata(directory)
         return MeasurementSummary(
             id = checkNotNull(directory.name),
             name = directory.name.orEmpty(),
@@ -137,7 +137,10 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         }
     }
 
-    private fun parseSensorSeries(document: DocumentFile): MeasurementFileContent.SensorSeries {
+    private fun parseSensorSeries(
+        document: DocumentFile,
+        anchor: SensorTimeAnchor?,
+    ): MeasurementFileContent.SensorSeries {
         var columns = emptyList<String>()
         val samples = mutableListOf<SensorSeriesSample>()
         var totalSamples = 0
@@ -145,13 +148,21 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
             val iterator = lines.iterator()
             if (!iterator.hasNext()) return@useLines
             val header = iterator.next().split(DELIMITER)
-            val timestampIndex = header.indexOf("t_unix").takeIf { it >= 0 } ?: 0
+            val unixTimestampIndex = header.indexOf("t_unix").takeIf { it >= 0 }
+            val sensorTimestampIndex = header.indexOf("t_sensor").takeIf { it >= 0 }
+            val timestampIndex = unixTimestampIndex ?: sensorTimestampIndex ?: 0
             val valueIndexes = header.indices.filter { index ->
                 index != timestampIndex && header[index] !in NON_VALUE_COLUMNS
             }
             columns = valueIndexes.map(header::get)
             while (iterator.hasNext()) {
-                parseSensorSample(iterator.next(), timestampIndex, valueIndexes)?.let { sample ->
+                parseSensorSample(
+                    line = iterator.next(),
+                    timestampIndex = timestampIndex,
+                    valueIndexes = valueIndexes,
+                    sensorTimestamp = sensorTimestampIndex != null,
+                    anchor = anchor,
+                )?.let { sample ->
                     totalSamples += 1
                     retainBounded(samples, sample, totalSamples, MAX_CHART_SAMPLES)
                 }
@@ -160,12 +171,41 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         return MeasurementFileContent.SensorSeries(columns, samples, totalSamples > samples.size)
     }
 
-    private fun parseSensorSample(line: String, timestampIndex: Int, valueIndexes: List<Int>): SensorSeriesSample? {
+    private fun parseSensorSample(
+        line: String,
+        timestampIndex: Int,
+        valueIndexes: List<Int>,
+        sensorTimestamp: Boolean,
+        anchor: SensorTimeAnchor?,
+    ): SensorSeriesSample? {
         val fields = line.split(DELIMITER)
-        val timestamp = fields.getOrNull(timestampIndex)?.toLongOrNull() ?: return null
+        val rawTimestamp = fields.getOrNull(timestampIndex)?.toLongOrNull() ?: return null
+        val timestamp = if (sensorTimestamp) {
+            anchor?.unixMillis?.plus((rawTimestamp - anchor.elapsedRealtimeNanos) / NANOS_PER_MILLISECOND)
+                ?: rawTimestamp / NANOS_PER_MILLISECOND
+        } else {
+            rawTimestamp
+        }
         val values = valueIndexes.mapNotNull { fields.getOrNull(it)?.toDoubleOrNull() }
         return values.takeIf { it.size == valueIndexes.size }?.let { SensorSeriesSample(timestamp, it) }
     }
+
+    private fun readSensorTimeAnchor(directory: DocumentFile): SensorTimeAnchor? {
+        val json = readMetadata(directory)
+        val unixMillis = json?.get("millis")?.asPrimitive()?.longOrNull
+        val elapsedRealtimeNanos = json?.get("nanos")?.asPrimitive()?.longOrNull
+        return if (unixMillis != null && elapsedRealtimeNanos != null) {
+            SensorTimeAnchor(unixMillis, elapsedRealtimeNanos)
+        } else {
+            null
+        }
+    }
+
+    private fun readMetadata(directory: DocumentFile): JsonObject? = directory.findFile(METADATA_FILE)
+        ?.takeIf(DocumentFile::isFile)
+        ?.let(::readDocumentText)
+        ?.takeIf(String::isNotBlank)
+        ?.let(::parseMetadataObject)
 
     private fun parseGpsCoordinates(document: DocumentFile): MeasurementFileContent.GpsCoordinates {
         val coordinates = mutableListOf<GpsCoordinate>()
@@ -245,7 +285,10 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         const val MAX_TEXT_CHARACTERS = 100_000
         const val TEXT_BUFFER_SIZE = 4_096
         const val SAMPLE_REPLACEMENT_INTERVAL = 100
+        const val NANOS_PER_MILLISECOND = 1_000_000L
         val NON_VALUE_COLUMNS = setOf("t_sensor", "accuracy", "provider")
         val JSON = Json { ignoreUnknownKeys = true }
     }
+
+    private data class SensorTimeAnchor(val unixMillis: Long, val elapsedRealtimeNanos: Long)
 }
