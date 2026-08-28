@@ -28,17 +28,17 @@ class RecordingEngine(
     val events: SharedFlow<RecordingEvent> = mutableEvents.asSharedFlow()
 
     @Suppress("ReturnCount")
-    suspend fun start(plan: RecordingPlan): AppResult<Unit> {
-        if (activeRecording != null) return conflict("Start recording", plan.sessionId)
+    suspend fun start(request: RecordingRequest): AppResult<Unit> {
+        if (activeRecording != null) return conflict("Start recording", request.sessionId)
 
-        val validation = validate(plan)
+        val validation = validate(request)
         if (validation is AppResult.Failure) return validation
 
-        val recording = ActiveRecording(plan)
+        val recording = ActiveRecording(request)
         lastStopResult = null
         activeRecording = recording
 
-        for (spec in plan.sources.sortedBy { it.type.ordinal }) {
+        for (spec in request.sources.sortedBy { it.type.ordinal }) {
             val source = checkNotNull(sourceByType[spec.type])
             recording.startedSources += source
 
@@ -47,7 +47,7 @@ class RecordingEngine(
             if (activeRecording !== recording) return AppResult.success(Unit)
         }
 
-        mutableEvents.tryEmit(RecordingEvent.RecordingStarted(plan.sessionId))
+        mutableEvents.tryEmit(RecordingEvent.RecordingStarted(request.sessionId))
         scheduleDurationStop(recording)
         observeSourceFailures(recording)
         return AppResult.success(Unit)
@@ -68,11 +68,11 @@ class RecordingEngine(
             context.failures.forEach { add(AppResult.failure(it)) }
             addAll(stoppedSources)
         }
-        val result = results.combineAppResults(AppErrorCode.MEASUREMENT, "Stop recording sources")
+        val result = results.combineAppResults(AppErrorCode.RECORDING, "Stop recording sources")
         lastStopResult = result
         mutableEvents.tryEmit(
             RecordingEvent.RecordingStopped(
-                sessionId = recording.plan.sessionId,
+                sessionId = recording.request.sessionId,
                 reason = context.reason,
                 result = result,
             ),
@@ -88,7 +88,7 @@ class RecordingEngine(
             RecordingStopContext(RecordingStopReason.SOURCE_FAILURE, listOf(startError)),
         )
         val result = (listOf(AppResult.failure(startError)) + stoppedSources)
-            .combineAppResults(AppErrorCode.MEASUREMENT, "Stop failed recording start")
+            .combineAppResults(AppErrorCode.RECORDING, "Stop failed recording start")
         return result
     }
 
@@ -121,16 +121,16 @@ class RecordingEngine(
         }
     }
 
-    private fun validate(plan: RecordingPlan): AppResult<Unit> {
+    private fun validate(request: RecordingRequest): AppResult<Unit> {
         val invalidReason = when {
-            plan.sources.isEmpty() -> "Recording plan has no sources"
+            request.sources.isEmpty() -> "Recording request has no sources"
 
-            plan.durationMillis < 0L -> "Recording duration is negative"
+            request.durationMillis < 0L -> "Recording duration is negative"
 
-            plan.sources.map(RecordingSourceSpec::type).distinct().size != plan.sources.size ->
-                "Recording plan repeats a source type"
+            request.sources.map(RecordingSourceSpec::type).distinct().size != request.sources.size ->
+                "Recording request repeats a source type"
 
-            plan.sources.any { it.type !in sourceByType } -> "Recording source adapter is missing"
+            request.sources.any { it.type !in sourceByType } -> "Recording source adapter is missing"
 
             else -> null
         }
@@ -138,15 +138,15 @@ class RecordingEngine(
         return if (invalidReason == null) {
             AppResult.success(Unit)
         } else {
-            AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate recording plan", invalidReason))
+            AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate recording request", invalidReason))
         }
     }
 
     private fun scheduleDurationStop(recording: ActiveRecording) {
-        val plan = recording.plan
-        if (plan.durationMillis <= 0L) return
+        val request = recording.request
+        if (request.durationMillis <= 0L) return
         recording.durationStop = scope.launch {
-            waitFor(plan.durationMillis)
+            waitFor(request.durationMillis)
             stop(RecordingStopReason.DURATION_EXPIRED)
         }
     }
@@ -162,7 +162,7 @@ class RecordingEngine(
         )
 
     private class ActiveRecording(
-        val plan: RecordingPlan,
+        val request: RecordingRequest,
         val startedSources: MutableList<RecordingSource> = mutableListOf(),
         var durationStop: Job? = null,
         var failureMonitor: Job? = null,

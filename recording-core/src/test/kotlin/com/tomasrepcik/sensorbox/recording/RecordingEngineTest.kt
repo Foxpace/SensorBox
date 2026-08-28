@@ -35,13 +35,13 @@ class RecordingEngineTest {
             FakeSource(RecordingSourceType.GPS, calls),
             FakeSource(RecordingSourceType.SENSOR, calls),
         )
-        val plan = plan(
+        val request = request(
             RecordingSourceSpec.Gps(10, 20),
             RecordingSourceSpec.Sensors(setOf(1), 0),
         )
 
         // When
-        val result = engine.start(plan)
+        val result = engine.start(request)
 
         // Then
         assertTrue(result.isSuccess)
@@ -56,13 +56,13 @@ class RecordingEngineTest {
             FakeSource(RecordingSourceType.GPS, calls, startFails = true),
             FakeSource(RecordingSourceType.SENSOR, calls),
         )
-        val plan = plan(
+        val request = request(
             RecordingSourceSpec.Sensors(setOf(1), 0),
             RecordingSourceSpec.Gps(10, 20),
         )
 
         // When
-        val result = engine.start(plan)
+        val result = engine.start(request)
 
         // Then
         assertTrue(result.isFailure)
@@ -80,11 +80,11 @@ class RecordingEngineTest {
             FakeSource(RecordingSourceType.GPS, calls, stopFails = true),
             FakeSource(RecordingSourceType.SENSOR, calls, stopFails = true),
         )
-        val plan = plan(
+        val request = request(
             RecordingSourceSpec.Sensors(setOf(1), 0),
             RecordingSourceSpec.Gps(10, 20),
         )
-        engine.start(plan)
+        engine.start(request)
 
         // When
         val result = engine.stop(RecordingStopReason.USER_REQUEST)
@@ -99,14 +99,14 @@ class RecordingEngineTest {
     fun `Given runtime and stop failures When session stops Then session receives every failure`() = runTest {
         // Given
         val calls = mutableListOf<String>()
-        val session = FakeSource(RecordingSourceType.SESSION, calls)
+        val session = FakeSource(RecordingSourceType.SESSION_METADATA, calls)
         val sensor = FakeSource(RecordingSourceType.SENSOR, calls, stopFails = true)
         val engine = RecordingEngine(
             sources = listOf(session, sensor),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
         )
-        engine.start(plan(RecordingSourceSpec.Session, RecordingSourceSpec.Sensors(setOf(1), 0)))
+        engine.start(request(RecordingSourceSpec.SessionMetadata, RecordingSourceSpec.Sensors(setOf(1), 0)))
 
         // When
         sensor.reportFailure()
@@ -124,8 +124,8 @@ class RecordingEngineTest {
         // Given
         val calls = mutableListOf<String>()
         val engine = engine(FakeSource(RecordingSourceType.SENSOR, calls))
-        val plan = plan(RecordingSourceSpec.Sensors(setOf(1), 0))
-        engine.start(plan)
+        val request = request(RecordingSourceSpec.Sensors(setOf(1), 0))
+        engine.start(request)
 
         // When
         val first = engine.stop(RecordingStopReason.USER_REQUEST)
@@ -145,10 +145,10 @@ class RecordingEngineTest {
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
         )
-        val plan = plan(RecordingSourceSpec.Sensors(setOf(1), 0), durationMillis = 500L)
+        val request = request(RecordingSourceSpec.Sensors(setOf(1), 0), durationMillis = 500L)
 
         // When
-        engine.start(plan)
+        engine.start(request)
         advanceTimeBy(500L)
         runCurrent()
 
@@ -166,8 +166,8 @@ class RecordingEngineTest {
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
         )
-        val plan = plan(RecordingSourceSpec.Sensors(setOf(1), 0))
-        engine.start(plan)
+        val request = request(RecordingSourceSpec.Sensors(setOf(1), 0))
+        engine.start(request)
 
         // When
         source.reportFailure()
@@ -184,7 +184,7 @@ class RecordingEngineTest {
         waitFor = { },
     )
 
-    private fun plan(vararg sources: RecordingSourceSpec, durationMillis: Long = 0L) = RecordingPlan(
+    private fun request(vararg sources: RecordingSourceSpec, durationMillis: Long = 0L) = RecordingRequest(
         sessionId = RecordingSessionId("session"),
         sources = sources.toList(),
         durationMillis = durationMillis,
@@ -214,10 +214,10 @@ private class FakeSource(
     }
 
     fun reportFailure() {
-        mutableFailures.tryEmit(AppError(AppErrorCode.MEASUREMENT, "Record $type"))
+        mutableFailures.tryEmit(AppError(AppErrorCode.RECORDING, "Record $type"))
     }
 
     private fun failure(operation: String): AppResult<Unit> = AppResult.failure(
-        AppError(AppErrorCode.MEASUREMENT, operation),
+        AppError(AppErrorCode.RECORDING, operation),
     )
 }

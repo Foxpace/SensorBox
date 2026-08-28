@@ -31,15 +31,15 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.format.ValueFormats
-import com.tomasrepcik.sensorbox.domain.sensors.WearSensorDescriptor
+import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorDescriptor
 import com.tomasrepcik.sensorbox.presentation.WearCheckboxRow
 import com.tomasrepcik.sensorbox.presentation.WearListScreen
 import com.tomasrepcik.sensorbox.presentation.WearNavigationRow
 import com.tomasrepcik.sensorbox.presentation.WearPageTitle
-import com.tomasrepcik.sensorbox.presentation.WearPrimaryAction
-import com.tomasrepcik.sensorbox.presentation.WearPrimaryEdgeAction
+import com.tomasrepcik.sensorbox.presentation.WearPrimaryButton
+import com.tomasrepcik.sensorbox.presentation.WearPrimaryEdgeButton
 import com.tomasrepcik.sensorbox.presentation.WearRadioRow
-import com.tomasrepcik.sensorbox.presentation.WearSecondaryAction
+import com.tomasrepcik.sensorbox.presentation.WearSecondaryButton
 import com.tomasrepcik.sensorbox.presentation.WearSectionTitle
 import com.tomasrepcik.sensorbox.presentation.WearSwitchRow
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuScreen
@@ -65,10 +65,10 @@ private fun WearRecordScreen(state: WearDashboardState, accept: (WearDashboardIn
     val selectedCount = state.selectedSensorIds.size + if (state.includesGps) 1 else 0
     WearListScreen(
         edgeButton = {
-            WearPrimaryEdgeAction(
+            WearPrimaryEdgeButton(
                 label = pluralStringResource(R.plurals.start_source_count, selectedCount, selectedCount),
                 enabled = selectedCount > 0,
-                onClick = { accept(WearDashboardIntent.StartMeasurement) },
+                onClick = { accept(WearDashboardIntent.StartRecording) },
             )
         },
     ) { transformation ->
@@ -97,7 +97,7 @@ private fun WearRecordScreen(state: WearDashboardState, accept: (WearDashboardIn
         state.message?.let { message ->
             item { WearSectionTitle(wearMessageText(message), transformation) }
         }
-        item { WearBackAction(transformation, accept) }
+        item { WearBackButton(transformation, accept) }
     }
 }
 
@@ -150,7 +150,7 @@ private fun WearLiveScreen(
 }
 
 @Composable
-private fun WearSensorPicker(sensors: List<WearSensorDescriptor>, accept: (WearDashboardIntent) -> Unit) {
+private fun WearSensorPicker(sensors: List<WatchSensorDescriptor>, accept: (WearDashboardIntent) -> Unit) {
     WearListScreen { transformation ->
         item { WearPageTitle(stringResource(R.string.live_values), transformation) }
         sensors.forEach { sensor ->
@@ -163,7 +163,7 @@ private fun WearSensorPicker(sensors: List<WearSensorDescriptor>, accept: (WearD
                 ) { accept(WearDashboardIntent.ObserveSensor(sensor.type)) }
             }
         }
-        item { WearBackAction(transformation, accept) }
+        item { WearBackButton(transformation, accept) }
     }
 }
 
@@ -174,7 +174,7 @@ private fun WearSettingsScreen(state: WearDashboardState, accept: (WearDashboard
         preferenceItems(state, transformation, accept)
         item { WearSectionTitle(stringResource(R.string.transfer), transformation) }
         item {
-            WearPrimaryAction(
+            WearPrimaryButton(
                 label = stringResource(if (state.isSyncing) R.string.syncing else R.string.sync_recordings),
                 transformation = transformation,
                 enabled = !state.isSyncing,
@@ -190,7 +190,7 @@ private fun WearSettingsScreen(state: WearDashboardState, accept: (WearDashboard
         state.message?.let { message ->
             item { WearSectionTitle(wearMessageText(message), transformation) }
         }
-        item { WearBackAction(transformation, accept) }
+        item { WearBackButton(transformation, accept) }
     }
 }
 
@@ -218,7 +218,7 @@ private fun TransformingLazyColumnScope.preferenceItems(
     item {
         WearSwitchRow(
             label = stringResource(R.string.stop_on_low_battery),
-            checked = state.preferences.recording.restrictMeasurementOnLowBattery,
+            checked = state.preferences.recording.stopRecordingOnLowBattery,
             transformation = transformation,
             onCheckedChange = { accept(WearDashboardIntent.ToggleBatteryRestriction) },
         )
@@ -274,7 +274,7 @@ private fun WearActiveScreen(state: WearDashboardState, accept: (WearDashboardIn
                 )
                 Spacer(Modifier.height(22.dp))
                 Button(
-                    onClick = { accept(WearDashboardIntent.StopMeasurement) },
+                    onClick = { accept(WearDashboardIntent.StopRecording) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
@@ -289,11 +289,11 @@ private fun WearActiveScreen(state: WearDashboardState, accept: (WearDashboardIn
 }
 
 @Composable
-private fun TransformingLazyColumnItemScope.WearBackAction(
+private fun TransformingLazyColumnItemScope.WearBackButton(
     transformation: TransformationSpec,
     accept: (WearDashboardIntent) -> Unit,
 ) {
-    WearSecondaryAction(stringResource(R.string.back), transformation) {
+    WearSecondaryButton(stringResource(R.string.back), transformation) {
         accept(WearDashboardIntent.Back)
     }
 }

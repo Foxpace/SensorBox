@@ -57,6 +57,7 @@ internal object AppErrorCodeNameSerializer : KSerializer<AppErrorCode> {
 
     override fun deserialize(decoder: Decoder): AppErrorCode {
         val name = decoder.decodeString()
+        if (name == "MEASUREMENT") return AppErrorCode.RECORDING
         return AppErrorCode.entries.firstOrNull { it.name == name }
             ?: error("Unknown application error code")
     }

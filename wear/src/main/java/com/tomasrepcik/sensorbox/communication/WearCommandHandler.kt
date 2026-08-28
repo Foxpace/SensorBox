@@ -3,19 +3,19 @@ package com.tomasrepcik.sensorbox.communication
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.domain.measurement.WearRecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.WatchRecordingControlUseCase
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.PHONE_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 class WearCommandHandler @Inject constructor(
-    private val recording: WearRecordingControlUseCase,
+    private val recording: WatchRecordingControlUseCase,
     private val environment: WearRecordingRequirementsUseCase,
     private val sendCommand: SendWearCommandUseCase,
     private val phoneResults: PhoneRecordingResultInbox,
@@ -45,7 +45,7 @@ class WearCommandHandler @Inject constructor(
         val sessionId = activeSessionId ?: return AppResult.success(Unit)
         activeSessionId = null
         val command = WearCommand.StopRecording(sessionId, reason)
-        phoneResults.clear(sessionId, WearRecordingAction.STOP)
+        phoneResults.clear(sessionId, WearRecordingOperation.STOP)
         var lastSendError: AppError? = null
 
         repeat(ATTEMPT_COUNT) { retryCount ->
@@ -55,7 +55,7 @@ class WearCommandHandler @Inject constructor(
                 is AppResult.Success -> {
                     lastSendError = null
                     val result = withTimeoutOrNull(RESULT_TIMEOUT_MILLIS / ATTEMPT_COUNT) {
-                        phoneResults.await(sessionId, WearRecordingAction.STOP)
+                        phoneResults.await(sessionId, WearRecordingOperation.STOP)
                     }
                     if (result != null) return result.toAppResult(retryCount)
                 }
@@ -77,7 +77,7 @@ class WearCommandHandler @Inject constructor(
     }
 
     private suspend fun start(command: WearCommand.StartRecording): WearCommand.RecordingResult {
-        cached(command.sessionId, WearRecordingAction.START)?.let { return it }
+        cached(command.sessionId, WearRecordingOperation.START)?.let { return it }
 
         val result = when (val active = activeSessionId) {
             command.sessionId -> AppResult.success(Unit)
@@ -97,18 +97,18 @@ class WearCommandHandler @Inject constructor(
             else -> AppResult.failure(
                 AppError(
                     code = AppErrorCode.CONFLICT,
-                    operation = "Start Wear recording",
-                    diagnosticMessage = "Another Wear recording is active",
+                    operation = "Start watch recording",
+                    diagnosticMessage = "Another watch recording is active",
                     context = mapOf("activeSessionId" to active),
                 ),
             )
         }
 
-        return remember(command.sessionId, WearRecordingAction.START, result)
+        return remember(command.sessionId, WearRecordingOperation.START, result)
     }
 
     private fun stop(command: WearCommand.StopRecording): WearCommand.RecordingResult {
-        cached(command.sessionId, WearRecordingAction.STOP)?.let { return it }
+        cached(command.sessionId, WearRecordingOperation.STOP)?.let { return it }
 
         val result = if (activeSessionId == command.sessionId) {
             recording.stop(command.sessionId, command.reason).onSuccess {
@@ -118,7 +118,7 @@ class WearCommandHandler @Inject constructor(
             AppResult.success(Unit)
         }
 
-        return remember(command.sessionId, WearRecordingAction.STOP, result)
+        return remember(command.sessionId, WearRecordingOperation.STOP, result)
     }
 
     private suspend fun sendAvailableSensors(): AppResult<Unit> = sendCommand(
@@ -135,24 +135,24 @@ class WearCommandHandler @Inject constructor(
 
     private fun remember(
         sessionId: String,
-        action: WearRecordingAction,
+        operation: WearRecordingOperation,
         result: AppResult<Unit>,
     ): WearCommand.RecordingResult {
         val error = result.errorOrNull()
         return WearCommand.RecordingResult(
             sessionId = sessionId,
-            action = action,
+            operation = operation,
             outcome = if (result.isSuccess) WearRecordingOutcome.SUCCEEDED else WearRecordingOutcome.FAILED,
             errorCode = error?.code,
             errorOperation = error?.operation,
             errorMessage = error?.diagnosticMessage,
             errorContext = error?.context.orEmpty(),
             failureCount = if (result.isFailure) 1 else 0,
-        ).also { completedResults[ResultKey(sessionId, action)] = it }
+        ).also { completedResults[ResultKey(sessionId, operation)] = it }
     }
 
-    private fun cached(sessionId: String, action: WearRecordingAction): WearCommand.RecordingResult? =
-        completedResults[ResultKey(sessionId, action)]
+    private fun cached(sessionId: String, operation: WearRecordingOperation): WearCommand.RecordingResult? =
+        completedResults[ResultKey(sessionId, operation)]
 
     private fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult<Unit> =
         if (outcome == WearRecordingOutcome.SUCCEEDED) {
@@ -161,8 +161,8 @@ class WearCommandHandler @Inject constructor(
             AppResult.failure(
                 AppError(
                     code = errorCode ?: AppErrorCode.UNKNOWN,
-                    operation = errorOperation ?: "Handle phone $action result",
-                    diagnosticMessage = errorMessage ?: "Phone $action failed",
+                    operation = errorOperation ?: "Handle phone $operation result",
+                    diagnosticMessage = errorMessage ?: "Phone $operation failed",
                     context = errorContext + mapOf(
                         "source" to "phone",
                         "sessionId" to sessionId,
@@ -173,7 +173,7 @@ class WearCommandHandler @Inject constructor(
             )
         }
 
-    private data class ResultKey(val sessionId: String, val action: WearRecordingAction)
+    private data class ResultKey(val sessionId: String, val operation: WearRecordingOperation)
 
     private companion object {
         const val RESULT_TIMEOUT_MILLIS = 5_000L

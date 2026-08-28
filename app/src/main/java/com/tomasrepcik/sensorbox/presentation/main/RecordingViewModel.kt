@@ -8,15 +8,15 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.domain.measurement.DocumentStorageGateway
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementPermissionsUseCase
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
-import com.tomasrepcik.sensorbox.domain.measurement.RecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
+import com.tomasrepcik.sensorbox.domain.recording.RecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingPermissionsUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
 import com.tomasrepcik.sensorbox.domain.sensors.AvailableSensorsUseCase
-import com.tomasrepcik.sensorbox.domain.sensors.WearSensorCatalogStore
+import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorCatalogStore
 import com.tomasrepcik.sensorbox.domain.sensors.toSensorDescriptor
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
@@ -42,13 +42,13 @@ import javax.inject.Inject
 class RecordingViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
     private val availableSensors: AvailableSensorsUseCase,
-    private val storage: DocumentStorageGateway,
-    private val permissions: MeasurementPermissionsUseCase,
+    private val recordingArchive: RecordingArchiveRepository,
+    private val permissions: RecordingPermissionsUseCase,
     private val recording: RecordingControlUseCase,
-    private val sessionStore: MeasurementSessionStore,
-    private val observeWearCapability: ObserveWearCapabilityUseCase,
-    private val sendWearCommand: SendWearCommandUseCase,
-    private val wearSensorCatalog: WearSensorCatalogStore,
+    private val sessionStore: RecordingSessionStore,
+    private val observeWatchCapability: ObserveWearCapabilityUseCase,
+    private val sendWatchCommand: SendWearCommandUseCase,
+    private val watchSensorCatalog: WatchSensorCatalogStore,
     private val elapsedRealtimeClock: ElapsedRealtimeClock,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(initialState())
@@ -61,16 +61,16 @@ class RecordingViewModel @Inject constructor(
 
     init {
         observePreferences()
-        observeMeasurementSession()
-        observeWearConnection()
-        observeWearSensors()
+        observeRecordingSession()
+        observeWatchConnection()
+        observeWatchSensors()
     }
 
     fun accept(intent: RecordingIntent) {
         when (intent) {
-            RecordingIntent.StartMeasurement -> startMeasurement()
+            RecordingIntent.StartRecording -> startRecording()
 
-            RecordingIntent.StopMeasurement -> stopMeasurement()
+            RecordingIntent.StopRecording -> stopRecording()
 
             is RecordingIntent.AddAnnotation -> recording.annotate(intent.text).showFailure()
 
@@ -78,8 +78,8 @@ class RecordingViewModel @Inject constructor(
                 AppPreferencesIntent.SetSensorSamplingPeriod(intent.index),
             )
 
-            is RecordingIntent.SetLowBatteryRestriction -> updatePreference(
-                AppPreferencesIntent.SetLowBatteryRestriction(intent.enabled),
+            is RecordingIntent.SetStopOnLowBattery -> updatePreference(
+                AppPreferencesIntent.SetStopOnLowBattery(intent.enabled),
             )
 
             is RecordingIntent.SetWakeLock -> updatePreference(AppPreferencesIntent.SetWakeLock(intent.enabled))
@@ -96,22 +96,22 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    fun handleStorageResult(resultIntent: Intent?) {
-        val persisted = resultIntent?.let(storage::persist) ?: AppResult.failure(
-            AppError(AppErrorCode.STORAGE, "Select recording storage directory"),
+    fun handleRecordingArchiveResult(resultIntent: Intent?) {
+        val persisted = resultIntent?.let(recordingArchive::select) ?: AppResult.failure(
+            AppError(AppErrorCode.STORAGE, "Select recording archive"),
         )
         mutableState.value = state.value.copy(
-            storagePath = storage.displayPath().getOrNull(),
-            message = if (persisted.isSuccess) RecordingMessage.NONE else RecordingMessage.STORAGE_REQUIRED,
+            recordingArchivePath = recordingArchive.path().getOrNull(),
+            message = if (persisted.isSuccess) RecordingMessage.NONE else RecordingMessage.RECORDING_ARCHIVE_REQUIRED,
             errorCode = persisted.errorOrNull()?.code,
         )
     }
 
     fun handlePermissionResult() {
-        val request = state.value.toMeasurementRequest()
+        val request = state.value.toRecordingSetup()
         val missing = permissions.missingPermissions(request)
         if (missing.isEmpty()) {
-            startMeasurement()
+            startRecording()
         } else {
             showMessage(RecordingMessage.PERMISSION_REQUIRED, AppErrorCode.PERMISSION)
         }
@@ -119,7 +119,7 @@ class RecordingViewModel @Inject constructor(
 
     private fun initialState() = RecordingState(
         sensors = availableSensors(),
-        storagePath = storage.displayPath().getOrNull(),
+        recordingArchivePath = recordingArchive.path().getOrNull(),
     )
 
     private fun observePreferences() {
@@ -134,7 +134,7 @@ class RecordingViewModel @Inject constructor(
                     },
                     onFailure = { error ->
                         mutableState.value = state.value.copy(
-                            message = RecordingMessage.MEASUREMENT_FAILED,
+                            message = RecordingMessage.RECORDING_FAILED,
                             errorCode = error.code,
                         )
                     },
@@ -143,7 +143,7 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    private fun observeMeasurementSession() {
+    private fun observeRecordingSession() {
         viewModelScope.launch {
             sessionStore.state.collect { session ->
                 onSessionChanged(session)
@@ -151,10 +151,10 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    private fun onSessionChanged(session: MeasurementSessionState) {
+    private fun onSessionChanged(session: RecordingSessionState) {
         elapsedJob?.cancel()
-        mutableState.value = RecordingReducer.measurementSessionChanged(state.value, session)
-        if (session is MeasurementSessionState.Running) startElapsedTicker(session.startedAtElapsedRealtime)
+        mutableState.value = RecordingReducer.recordingSessionChanged(state.value, session)
+        if (session is RecordingSessionState.Running) startElapsedTicker(session.startedAtElapsedRealtime)
     }
 
     private fun startElapsedTicker(startedAt: Long) {
@@ -167,35 +167,35 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    private fun observeWearConnection() {
+    private fun observeWatchConnection() {
         viewModelScope.launch {
-            observeWearCapability(WEAR_APP_CAPABILITY)
+            observeWatchCapability(WEAR_APP_CAPABILITY)
                 .catch { error ->
                     AppError.from(AppErrorCode.CONNECTIVITY, "Observe Wear connection", error)
                     emit(WearConnection.Disconnected)
                 }
                 .collect { connection ->
                     if (connection is WearConnection.Connected) {
-                        sendWearCommand(
+                        sendWatchCommand(
                             WEAR_APP_CAPABILITY,
                             WEAR_MESSAGE_PATH,
                             WearCommand.RequestAvailableSensors,
                         )
                     } else {
-                        wearSensorCatalog.clear()
+                        watchSensorCatalog.clear()
                     }
                 }
         }
     }
 
-    private fun observeWearSensors() {
+    private fun observeWatchSensors() {
         viewModelScope.launch {
-            combine(wearSensorCatalog.sensors, wearSensorCatalog.isAvailable) { sensors, isAvailable ->
+            combine(watchSensorCatalog.sensors, watchSensorCatalog.isAvailable) { sensors, isAvailable ->
                 sensors to isAvailable
             }.collect { (sensors, isAvailable) ->
                 mutableState.value = state.value.copy(
-                    isWearConnected = isAvailable,
-                    wearSensors = sensors.map { sensor -> sensor.toSensorDescriptor() },
+                    isWatchConnected = isAvailable,
+                    watchSensors = sensors.map { sensor -> sensor.toSensorDescriptor() },
                 )
             }
         }
@@ -208,16 +208,16 @@ class RecordingViewModel @Inject constructor(
     }
 
     @Suppress("ReturnCount")
-    private fun startMeasurement() {
+    private fun startRecording() {
         if (state.value.isStarting) return
-        val request = state.value.toMeasurementRequest()
+        val request = state.value.toRecordingSetup()
         if (!request.hasAnySource()) {
             showMessage(RecordingMessage.PICK_AT_LEAST_ONE_SOURCE, AppErrorCode.VALIDATION)
             return
         }
-        if (storage.hasStorage().getOrNull() != true) {
-            reduce(RecordingIntent.ChooseStorage)
-            showMessage(RecordingMessage.STORAGE_REQUIRED, AppErrorCode.STORAGE)
+        if (recordingArchive.isSelected().getOrNull() != true) {
+            reduce(RecordingIntent.ChooseRecordingArchive)
+            showMessage(RecordingMessage.RECORDING_ARCHIVE_REQUIRED, AppErrorCode.STORAGE)
             return
         }
         requestMissingPermissions(request)?.let {
@@ -225,21 +225,21 @@ class RecordingViewModel @Inject constructor(
             mutableState.value = state.value.copy(errorCode = AppErrorCode.PERMISSION)
             return
         }
-        startForegroundMeasurement(request, state.value.startDelaySeconds)
+        startRecordingAfterDelay(request, state.value.startDelaySeconds)
     }
 
-    private fun requestMissingPermissions(request: MeasurementRequest): Set<String>? {
+    private fun requestMissingPermissions(request: RecordingSetup): Set<String>? {
         val missingPermissions = permissions.missingPermissions(request)
         return missingPermissions.takeIf(Set<String>::isNotEmpty)
     }
 
-    private fun startForegroundMeasurement(request: MeasurementRequest, countdownSeconds: Int) {
-        mutableState.value = RecordingReducer.measurementStartRequested(state.value, countdownSeconds)
+    private fun startRecordingAfterDelay(request: RecordingSetup, countdownSeconds: Int) {
+        mutableState.value = RecordingReducer.recordingStartRequested(state.value, countdownSeconds)
         startJob = viewModelScope.launch {
             waitForStartCountdown(countdownSeconds)
             val result = recording.start(request)
             if (result.isFailure) {
-                mutableState.value = RecordingReducer.measurementStartFailed(state.value)
+                mutableState.value = RecordingReducer.recordingStartFailed(state.value)
                 showFailure(result.errorOrNull())
             }
         }
@@ -247,17 +247,17 @@ class RecordingViewModel @Inject constructor(
 
     private suspend fun waitForStartCountdown(seconds: Int) {
         for (remaining in seconds downTo 1) {
-            mutableState.value = RecordingReducer.measurementCountdownChanged(state.value, remaining)
+            mutableState.value = RecordingReducer.recordingCountdownChanged(state.value, remaining)
             delay(1_000L)
         }
-        mutableState.value = RecordingReducer.measurementCountdownChanged(state.value, null)
+        mutableState.value = RecordingReducer.recordingCountdownChanged(state.value, null)
     }
 
-    private fun stopMeasurement() {
-        if (state.value.isStarting && state.value.session is MeasurementSessionState.Idle) {
+    private fun stopRecording() {
+        if (state.value.isStarting && state.value.session is RecordingSessionState.Idle) {
             startJob?.cancel()
             startJob = null
-            mutableState.value = RecordingReducer.measurementStartFailed(state.value)
+            mutableState.value = RecordingReducer.recordingStartFailed(state.value)
             return
         }
         viewModelScope.launch {
@@ -285,17 +285,17 @@ class RecordingViewModel @Inject constructor(
     private fun showFailure(error: AppError?) {
         mutableState.value = state.value.copy(
             message = when {
-                error?.code == AppErrorCode.PERMISSION && error.context["source"] == "wear" ->
-                    RecordingMessage.WEAR_PERMISSION_REQUIRED
+                error?.code == AppErrorCode.PERMISSION && error.context["source"] == "watch" ->
+                    RecordingMessage.WATCH_PERMISSION_REQUIRED
 
                 error?.code == AppErrorCode.PERMISSION -> RecordingMessage.PERMISSION_REQUIRED
 
-                else -> RecordingMessage.MEASUREMENT_FAILED
+                else -> RecordingMessage.RECORDING_FAILED
             },
             errorCode = error?.code ?: AppErrorCode.UNKNOWN,
         )
     }
 
-    private fun MeasurementRequest.hasAnySource(): Boolean = sensorIds.isNotEmpty() || includesGps ||
-        wearSensorIds.isNotEmpty() || wearIncludesGps || activityRecognition || significantMotion
+    private fun RecordingSetup.hasAnySource(): Boolean = sensorIds.isNotEmpty() || includesGps ||
+        watchSensorIds.isNotEmpty() || watchIncludesGps || activityRecognition || significantMotion
 }

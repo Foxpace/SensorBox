@@ -6,18 +6,18 @@ import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.recording.RecordingEngine
 import com.tomasrepcik.sensorbox.recording.RecordingEvent
-import com.tomasrepcik.sensorbox.recording.RecordingPlan
 import com.tomasrepcik.sensorbox.recording.RecordingSessionId
 import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
 import com.tomasrepcik.sensorbox.recording.RecordingStopReason
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharedFlow
+import com.tomasrepcik.sensorbox.recording.RecordingRequest as EngineRecordingRequest
 
 internal class ServiceController(
     context: Context,
-    private val request: MeasurementLaunchRequest,
+    private val request: RecordingRequest,
     scope: CoroutineScope,
     storage: MeasurementStorage,
     diagnosticLogger: DiagnosticLogger,
@@ -32,7 +32,7 @@ internal class ServiceController(
 
     val events: SharedFlow<RecordingEvent> = engine.events
 
-    suspend fun start(): AppResult<Unit> = engine.start(request.toRecordingPlan(sessionId))
+    suspend fun start(): AppResult<Unit> = engine.start(request.toEngineRequest(sessionId))
 
     suspend fun stop(reason: RecordingStopReason): AppResult<Unit> = engine.stop(reason)
 
@@ -40,15 +40,15 @@ internal class ServiceController(
 
     fun playAlarm(): AppResult<Unit> = androidSources.playAlarm()
 
-    private fun MeasurementLaunchRequest.toRecordingPlan(sessionId: RecordingSessionId): RecordingPlan {
+    private fun RecordingRequest.toEngineRequest(sessionId: RecordingSessionId): EngineRecordingRequest {
         val specs = buildList {
-            add(RecordingSourceSpec.Session)
+            add(RecordingSourceSpec.SessionMetadata)
             if (sensorIds.isNotEmpty()) add(RecordingSourceSpec.Sensors(sensorIds, sensorSamplingPeriod))
             if (includesGps) add(RecordingSourceSpec.Gps(gpsIntervalSeconds, gpsMinDistanceMeters))
             if (activityRecognition) add(RecordingSourceSpec.ActivityRecognition(activityRecognitionPeriodSeconds))
             if (significantMotion) add(RecordingSourceSpec.SignificantMotion)
         }
-        return RecordingPlan(
+        return EngineRecordingRequest(
             sessionId = sessionId,
             sources = specs,
             durationMillis = durationMillis,

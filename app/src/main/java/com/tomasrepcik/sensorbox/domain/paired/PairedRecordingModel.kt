@@ -3,12 +3,12 @@ package com.tomasrepcik.sensorbox.domain.paired
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
-import com.tomasrepcik.sensorbox.domain.measurement.StartedPhoneRecording
-import com.tomasrepcik.sensorbox.domain.measurement.toWearRecordingRequest
+import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
+import com.tomasrepcik.sensorbox.domain.recording.StartedPhoneRecording
+import com.tomasrepcik.sensorbox.domain.recording.toWatchRecordingRequest
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 
 internal sealed interface PairedRecordingState {
@@ -30,11 +30,11 @@ internal fun PairedRecordingState.activeRecording(): ActivePairedRecording? = wh
     PairedRecordingState.Idle -> null
 }
 
-internal fun MeasurementRequest.includesWatchRecording(): Boolean = wearSensorIds.isNotEmpty() || wearIncludesGps
+internal fun RecordingSetup.includesWatchRecording(): Boolean = watchSensorIds.isNotEmpty() || watchIncludesGps
 
-internal fun StartedPhoneRecording.toWatchStartCommand(request: MeasurementRequest) = WearCommand.StartRecording(
+internal fun StartedPhoneRecording.toWatchStartCommand(request: RecordingSetup) = WearCommand.StartRecording(
     sessionId = sessionId,
-    request = toWearRecordingRequest(request),
+    request = toWatchRecordingRequest(request),
 )
 
 internal fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult<Unit> =
@@ -44,10 +44,10 @@ internal fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult
         AppResult.failure(
             AppError(
                 code = errorCode ?: AppErrorCode.UNKNOWN,
-                operation = errorOperation ?: "Handle Wear $action result",
-                diagnosticMessage = errorMessage ?: "Wear $action failed",
+                operation = errorOperation ?: "Handle watch $operation result",
+                diagnosticMessage = errorMessage ?: "Watch $operation failed",
                 context = errorContext + mapOf(
-                    "source" to "wear",
+                    "source" to "watch",
                     "sessionId" to sessionId,
                     "retryCount" to retryCount.toString(),
                     "failureCount" to failureCount.toString(),
@@ -57,4 +57,4 @@ internal fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult
         )
     }
 
-internal fun WearRecordingAction.timeoutOperation(): String = "Await Wear $name result"
+internal fun WearRecordingOperation.timeoutOperation(): String = "Await watch $name result"

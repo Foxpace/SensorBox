@@ -9,8 +9,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.RecordingPreferences
 import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
-import com.tomasrepcik.sensorbox.domain.measurement.WearMeasurementControlUseCase
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
+import com.tomasrepcik.sensorbox.domain.recording.DefaultWatchRecordingControlUseCase
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingIntentFactory
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,15 +46,15 @@ internal data class WearTestLocation(
 internal class WearRecordingEmulatorFixture(private val context: Context) {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val sensorManager = context.getSystemService(SensorManager::class.java)
-    private val controller = WearMeasurementControlUseCase(
+    private val controller = DefaultWatchRecordingControlUseCase(
         context = context,
-        intentFactory = MeasurementIntentFactory(context, SystemEpochClock),
+        intentFactory = RecordingIntentFactory(context, SystemEpochClock),
     )
     private var mockGpsActive = false
 
     fun prepareDevice() {
         assumeTrue(
-            "Wear recording scenarios require Wear OS",
+            "watch recording scenarios require Wear OS",
             context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH),
         )
         grantRuntimePermissions()
@@ -86,7 +86,7 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
                 gpsIntervalSeconds = scenario.gpsIntervalSeconds,
                 gpsMinDistanceMeters = scenario.gpsMinDistanceMeters,
                 sensorSamplingPeriod = scenario.samplingIndex,
-                restrictMeasurementOnLowBattery = scenario.stopOnLowBattery,
+                stopRecordingOnLowBattery = scenario.stopOnLowBattery,
                 useWakeLock = scenario.useWakeLock,
             ),
         )
@@ -184,7 +184,7 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
             output.takeIf { it.isFile && it.length() > 0L }?.let { return JSONObject(it.readText()) }
             Thread.sleep(FILE_WAIT_INTERVAL_MILLIS)
         }
-        assertTrue("Wear recording did not finalize $output", output.isFile)
+        assertTrue("watch recording did not finalize $output", output.isFile)
         return JSONObject(output.readText())
     }
 

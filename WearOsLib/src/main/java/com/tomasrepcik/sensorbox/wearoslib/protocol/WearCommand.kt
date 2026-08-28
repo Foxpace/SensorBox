@@ -1,6 +1,7 @@
 package com.tomasrepcik.sensorbox.wearoslib.protocol
 
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,7 +27,8 @@ sealed interface WearCommand {
     @Serializable
     data class RecordingResult(
         val sessionId: String,
-        val action: WearRecordingAction,
+        @SerialName("action")
+        val operation: WearRecordingOperation,
         val outcome: WearRecordingOutcome,
         @Serializable(with = AppErrorCodeNameSerializer::class)
         val errorCode: AppErrorCode? = null,
@@ -46,7 +48,7 @@ data class WearRecordingRequest(
 )
 
 @Serializable
-enum class WearRecordingAction {
+enum class WearRecordingOperation {
     START,
     STOP,
 }

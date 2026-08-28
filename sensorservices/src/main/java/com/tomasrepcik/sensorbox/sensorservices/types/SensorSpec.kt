@@ -32,7 +32,7 @@ enum class SensorSpec(val type: Int, val axisCount: Int, val fileName: String, v
     STEP_COUNTER(Sensor.TYPE_STEP_COUNTER, 1, "step_counter.csv", "t_sensor;steps;accuracy\n"),
     STEP_DETECTOR(Sensor.TYPE_STEP_DETECTOR, 1, "step_detector.csv", "t_sensor;step;accuracy\n"),
 
-    // Kept discoverable in the sensor catalogue, but recorded by SignificantMotion's trigger listener.
+    // Kept discoverable in the sensor catalogue, but recorded by SignificantMotionRecording's trigger listener.
     SIGNIFICANT_MOTION(
         Sensor.TYPE_SIGNIFICANT_MOTION,
         1,

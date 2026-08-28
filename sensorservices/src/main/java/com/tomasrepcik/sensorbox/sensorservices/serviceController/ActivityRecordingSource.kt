@@ -6,22 +6,22 @@ import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
 import com.tomasrepcik.sensorbox.recording.RecordingSourceType
 import com.tomasrepcik.sensorbox.recording.RecordingStopContext
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
-import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.ActivityRecognitionMeasurement
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.ActivityRecognitionPlatform
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.ActivityRecognitionRecording
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
 
 internal class ActivityRecordingSource(
-    private val request: MeasurementLaunchRequest,
+    private val request: RecordingRequest,
     private val storage: MeasurementStorage,
     private val platform: ActivityRecognitionPlatform,
 ) : RecordingSource {
-    private val measurement = ActivityRecognitionMeasurement(storage, platform)
+    private val recording = ActivityRecognitionRecording(storage, platform)
     override val type = RecordingSourceType.ACTIVITY_RECOGNITION
-    override val failures = measurement.failures
+    override val failures = recording.failures
 
     override suspend fun start(spec: RecordingSourceSpec): AppResult<Unit> =
         if (spec is RecordingSourceSpec.ActivityRecognition) {
-            measurement.start(
+            recording.start(
                 folderName = request.folderName,
                 useInternalStorage = request.useInternalStorage,
                 periodSeconds = spec.periodSeconds,
@@ -30,5 +30,5 @@ internal class ActivityRecordingSource(
             invalidSpec(type)
         }
 
-    override suspend fun stop(context: RecordingStopContext): AppResult<Unit> = measurement.stop()
+    override suspend fun stop(context: RecordingStopContext): AppResult<Unit> = recording.stop()
 }

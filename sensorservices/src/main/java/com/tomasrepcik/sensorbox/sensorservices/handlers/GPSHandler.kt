@@ -47,7 +47,7 @@ class GPSHandler(private val locationClient: FusedLocationProviderClient? = null
         callback?.onAvailabilityChanged(locationAvailability)
     }
 
-    fun gpsOff(): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Stop GPS updates") {
+    fun gpsOff(): AppResult<Unit> = appResult(AppErrorCode.RECORDING, "Stop GPS updates") {
         if (callback != null) {
             locationClient?.flushLocations()?.addOnFailureListener { error ->
                 Log.e(TAG, "Cannot flush GPS updates", error)
@@ -73,7 +73,7 @@ class GPSHandler(private val locationClient: FusedLocationProviderClient? = null
         intervalSeconds: Int = DEFAULT_INTERVAL_SECONDS,
         minDistanceMeters: Int = DEFAULT_DISTANCE_METERS,
     ): AppResult<Unit> = (if (callback != null) gpsOff() else AppResult.success(Unit)).flatMap {
-        appResult(AppErrorCode.MEASUREMENT, "Register GPS callback") {
+        appResult(AppErrorCode.RECORDING, "Register GPS callback") {
             val client = checkNotNull(locationClient) { "GPS client is unavailable" }
             callback = gpsCallback
             initialize(client, intervalSeconds, minDistanceMeters)

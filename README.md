@@ -6,9 +6,9 @@ This is the hard-cut Android 17 generation of the project. It does not retain th
 
 ## Screenshots
 
-| Sensor selection | Measurement setup |
+| Sensor selection | Recording setup |
 |:---:|:---:|
-| <img src="docs/images/sensorbox-phone-record.png" alt="SensorBox source selection" width="280"> | <img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox measurement setup" width="280"> |
+| <img src="docs/images/sensorbox-phone-record.png" alt="SensorBox source selection" width="280"> | <img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox recording setup" width="280"> |
 
 | Wear dashboard | Wear live-sensor picker |
 |:---:|:---:|
@@ -20,11 +20,11 @@ This is the hard-cut Android 17 generation of the project. It does not retain th
 |:---:|:---:|:---:|
 | <img src="docs/images/sensorbox-intro-welcome.png" alt="SensorBox welcome introduction" width="220"> | <img src="docs/images/sensorbox-intro-privacy.png" alt="SensorBox local-data introduction" width="220"> | <img src="docs/images/sensorbox-intro-policy.png" alt="SensorBox privacy and terms introduction" width="220"> |
 
-| Android lifecycle | Battery optimization | Recording folder |
+| Android lifecycle | Battery optimization | Recording archive |
 |:---:|:---:|:---:|
 | <img src="docs/images/sensorbox-intro-lifecycle.png" alt="SensorBox Android lifecycle introduction" width="220"> | <img src="docs/images/sensorbox-intro-battery.png" alt="SensorBox battery optimization introduction" width="220"> | <img src="docs/images/sensorbox-intro-storage.png" alt="SensorBox recording-folder introduction" width="220"> |
 
-The introduction uses tintable vector illustrations that follow the app theme. Privacy Policy, Terms of Use, battery optimization, and folder selection are live native actions. Folder selection remains mandatory before setup can finish.
+The introduction uses tintable vector illustrations that follow the app theme. Privacy Policy, Terms of Use, battery optimization, and recording-archive selection use native Android screens. A recording archive remains mandatory before setup can finish.
 
 All screenshots above come from deterministic Compose preview fixtures. Refresh the complete gallery on the host without an emulator or connected device:
 
@@ -36,11 +36,11 @@ All screenshots above come from deterministic Compose preview fixtures. Refresh 
 
 - Record available phone or watch sensors at Android sampling periods.
 - Record foreground GPS samples alongside sensor data.
-- Run measurement work in an explicit foreground service with health/location service types.
+- Run recording work in an explicit foreground service with health/location service types.
 - Stop safely from the app, watch, notification, low-battery policy, or a paired-device command.
 - Preview a live watch sensor with a Compose-native chart.
 - Stream watch recordings to the phone with the Wear OS Channel API.
-- Store phone recordings in a user-selected Storage Access Framework folder.
+- Store phone measurements in a user-selected recording archive through the Storage Access Framework.
 - Follow system/dynamic color with light, dark, and custom fallback palettes.
 
 ## Architecture
@@ -96,14 +96,14 @@ Tests use Given/When/Then naming, reusable state/repository fixtures, coroutine 
 
 ## Emulator integration tests
 
-The phone recording tests start the real foreground measurement service, read the device sensors, control test GPS and battery state from Kotlin, and verify the generated files. Run the class directly from Android Studio or with Gradle:
+The phone recording tests start the real foreground recording service, read the device sensors, control test GPS and battery state from Kotlin, and verify the generated files. Run the class directly from Android Studio or with Gradle:
 
 ```shell
 ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   "-Pandroid.testInstrumentationRunnerArguments.class=com.tomasrepcik.sensorbox.emulator.PhoneSensorRecordingEmulatorTest"
 ```
 
-Standalone Wear recording tests use the watch sensors and control test GPS and battery state from Kotlin. They do not require a paired phone:
+Standalone watch recording tests use the watch sensors and control test GPS and battery state from Kotlin. They do not require a paired phone:
 
 ```shell
 ANDROID_SERIAL=emulator-5554 ./gradlew :wear:connectedDebugAndroidTest \
@@ -116,7 +116,7 @@ The paired sync matrix sends CSV, JSON, text, empty, Unicode, overwrite, duplica
 ANDROID_HOME="$HOME/Library/Android/sdk" tools/emulator/run_wear_sync_test.sh
 ```
 
-The runner detects one phone and one watch automatically; `PHONE_SERIAL` and `WEAR_SERIAL` remain available when several devices are connected. It builds and installs once, refreshes the ADB bridge after installation, and launches each scenario on both devices. When an emulator transport exposes its paired node but does not propagate static capabilities, the instrumentation-only repository falls back to that connected node; file transfer still uses the production Channel client and receiver. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected Storage Access Framework directory.
+The runner detects one phone and one watch automatically; `PHONE_SERIAL` and `WEAR_SERIAL` remain available when several devices are connected. It builds and installs once, refreshes the ADB bridge after installation, and launches each scenario on both devices. When an emulator transport exposes its paired node but does not propagate static capabilities, the instrumentation-only repository falls back to that connected node; file transfer still uses the production Channel client and receiver. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected recording archive.
 
 No Firebase project, Maps key, secrets file, or external storage permission is required.
 
@@ -128,7 +128,7 @@ The former Flipper, AppIntro, Material Dialogs, NumberPicker, Android About Page
 
 ## Privacy
 
-Measurements are initiated by the user, represented by an ongoing foreground-service notification, and written locally. SensorBox does not upload measurement data or include analytics/crash-reporting SDKs.
+Recordings are started by the user and remain visible through a foreground-service notification. SensorBox writes each device's measurement locally and does not include upload, analytics, or crash-reporting SDKs.
 
 ## License
 

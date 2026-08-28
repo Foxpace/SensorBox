@@ -14,7 +14,7 @@ class RecordScreenTest {
         var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
             .givenRecordScreen { actualIntent = it }
-            .thenRecordingActionIsVisible()
+            .thenRecordingButtonIsVisible()
             .whenAccelerometerIsTapped()
 
         composeRule.runOnIdle {
@@ -42,7 +42,7 @@ class RecordScreenTest {
             .whenContinueIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(RecordingIntent.OpenMeasurementSetup, actualIntent)
+            assertEquals(RecordingIntent.OpenRecordingSetup, actualIntent)
         }
     }
 
@@ -62,12 +62,12 @@ class RecordScreenTest {
     fun givenWearSensorWhenInfoIsTappedThenWearDetailsIntentIsSent() {
         var actualIntent: RecordingIntent? = null
         RecordScreenRobot(composeRule)
-            .givenRecordScreen(wearConnected = true) { actualIntent = it }
+            .givenRecordScreen(watchConnected = true) { actualIntent = it }
             .whenWearAccelerometerInfoIsTapped()
 
         composeRule.runOnIdle {
             assertEquals(
-                RecordingIntent.OpenSensorDetails(1, RecordingSensorSource.WEAR),
+                RecordingIntent.OpenSensorDetails(1, RecordingDevice.WATCH),
                 actualIntent,
             )
         }
@@ -81,7 +81,7 @@ class RecordScreenTest {
             .whenContinueIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(RecordingIntent.OpenMeasurementSetup, actualIntent)
+            assertEquals(RecordingIntent.OpenRecordingSetup, actualIntent)
         }
     }
 }

@@ -191,7 +191,7 @@ internal fun TransformingLazyColumnItemScope.WearSwitchRow(
 }
 
 @Composable
-internal fun TransformingLazyColumnItemScope.WearPrimaryAction(
+internal fun TransformingLazyColumnItemScope.WearPrimaryButton(
     label: String,
     transformation: TransformationSpec,
     enabled: Boolean = true,
@@ -208,7 +208,7 @@ internal fun TransformingLazyColumnItemScope.WearPrimaryAction(
 }
 
 @Composable
-internal fun TransformingLazyColumnItemScope.WearSecondaryAction(
+internal fun TransformingLazyColumnItemScope.WearSecondaryButton(
     label: String,
     transformation: TransformationSpec,
     onClick: () -> Unit,
@@ -230,7 +230,7 @@ internal fun TransformingLazyColumnItemScope.WearSecondaryAction(
 }
 
 @Composable
-internal fun WearPrimaryEdgeAction(label: String, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun WearPrimaryEdgeButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     EdgeButton(
         onClick = onClick,
         enabled = enabled,

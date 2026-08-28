@@ -10,9 +10,9 @@ import android.os.ParcelFileDescriptor
 import androidx.core.content.ContextCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementIntentFactory
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
-import com.tomasrepcik.sensorbox.sensorservices.services.MeasurementService
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingIntentFactory
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
+import com.tomasrepcik.sensorbox.sensorservices.services.RecordingService
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -84,7 +84,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
         if (!scenario.useInternalStorage) clearDocumentStoragePermissions()
         if (scenario.includesGps) prepareMockGps()
         val scheduledStartMillis = SystemEpochClock.nowMillis()
-        val request = MeasurementLaunchRequest(
+        val request = RecordingRequest(
             sessionId = scenario.sessionId,
             folderName = scenario.name,
             useInternalStorage = scenario.useInternalStorage,
@@ -102,7 +102,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
             activityRecognitionPeriodSeconds = scenario.activityRecognitionPeriodSeconds,
             significantMotion = scenario.significantMotion,
         )
-        val intent = MeasurementIntentFactory(context, SystemEpochClock).create(request)
+        val intent = RecordingIntentFactory(context, SystemEpochClock).create(request)
         assertIntentMatches(intent, request)
         ContextCompat.startForegroundService(context, intent)
         val expectedRecordedTypes = scenario.sensors.mapTo(mutableSetOf(), RecordedSensor::type).apply {
@@ -116,40 +116,40 @@ internal class RecordingEmulatorFixture(private val context: Context) {
         return ActiveRecording(this, scenario, scheduledStartMillis, expectedRecordedTypes)
     }
 
-    private fun assertIntentMatches(intent: Intent, request: MeasurementLaunchRequest) {
-        assertEquals(request.sessionId, intent.getStringExtra(MeasurementService.SESSION_ID))
-        assertEquals(request.folderName, intent.getStringExtra(MeasurementService.FOLDER_NAME))
-        assertEquals(request.useInternalStorage, intent.getBooleanExtra(MeasurementService.INTERNAL_STORAGE, false))
-        val sensorIds = intent.getIntArrayExtra(MeasurementService.ANDROID_SENSORS) ?: intArrayOf()
+    private fun assertIntentMatches(intent: Intent, request: RecordingRequest) {
+        assertEquals(request.sessionId, intent.getStringExtra(RecordingService.SESSION_ID))
+        assertEquals(request.folderName, intent.getStringExtra(RecordingService.FOLDER_NAME))
+        assertEquals(request.useInternalStorage, intent.getBooleanExtra(RecordingService.INTERNAL_STORAGE, false))
+        val sensorIds = intent.getIntArrayExtra(RecordingService.ANDROID_SENSORS) ?: intArrayOf()
         assertEquals(request.sensorIds, sensorIds.toSet())
         assertEquals(
             request.sensorSamplingPeriod,
-            intent.getIntExtra(MeasurementService.ANDROID_SENSORS_SPEED, Int.MIN_VALUE),
+            intent.getIntExtra(RecordingService.ANDROID_SENSORS_SPEED, Int.MIN_VALUE),
         )
-        assertEquals(request.includesGps, intent.getBooleanExtra(MeasurementService.GPS, false))
-        assertEquals(request.stopOnLowBattery, intent.getBooleanExtra(MeasurementService.STOP_ON_LOW_BATTERY, false))
-        assertEquals(request.useWakeLock, intent.getBooleanExtra(MeasurementService.USE_WAKE_LOCK, false))
-        assertEquals(request.gpsIntervalSeconds, intent.getIntExtra(MeasurementService.GPS_INTERVAL_SECONDS, -1))
-        assertEquals(request.gpsMinDistanceMeters, intent.getIntExtra(MeasurementService.GPS_DISTANCE_METERS, -1))
-        assertEquals(request.durationMillis, intent.getLongExtra(MeasurementService.DURATION_MILLIS, -1))
-        assertEquals(request.notes, intent.getStringArrayListExtra(MeasurementService.NOTES).orEmpty())
+        assertEquals(request.includesGps, intent.getBooleanExtra(RecordingService.GPS, false))
+        assertEquals(request.stopOnLowBattery, intent.getBooleanExtra(RecordingService.STOP_ON_LOW_BATTERY, false))
+        assertEquals(request.useWakeLock, intent.getBooleanExtra(RecordingService.USE_WAKE_LOCK, false))
+        assertEquals(request.gpsIntervalSeconds, intent.getIntExtra(RecordingService.GPS_INTERVAL_SECONDS, -1))
+        assertEquals(request.gpsMinDistanceMeters, intent.getIntExtra(RecordingService.GPS_DISTANCE_METERS, -1))
+        assertEquals(request.durationMillis, intent.getLongExtra(RecordingService.DURATION_MILLIS, -1))
+        assertEquals(request.notes, intent.getStringArrayListExtra(RecordingService.NOTES).orEmpty())
         assertEquals(
             request.alarmOffsetsSeconds,
-            (intent.getIntArrayExtra(MeasurementService.ALARM_OFFSETS_SECONDS) ?: intArrayOf()).toList(),
+            (intent.getIntArrayExtra(RecordingService.ALARM_OFFSETS_SECONDS) ?: intArrayOf()).toList(),
         )
         assertEquals(
             request.activityRecognition,
-            intent.getBooleanExtra(MeasurementService.ACTIVITY_RECOGNITION, false),
+            intent.getBooleanExtra(RecordingService.ACTIVITY_RECOGNITION, false),
         )
         assertEquals(
             request.activityRecognitionPeriodSeconds,
-            intent.getIntExtra(MeasurementService.ACTIVITY_RECOGNITION_PERIOD_SECONDS, -1),
+            intent.getIntExtra(RecordingService.ACTIVITY_RECOGNITION_PERIOD_SECONDS, -1),
         )
-        assertEquals(request.significantMotion, intent.getBooleanExtra(MeasurementService.SIGNIFICANT_MOTION, false))
+        assertEquals(request.significantMotion, intent.getBooleanExtra(RecordingService.SIGNIFICANT_MOTION, false))
     }
 
     fun stopAnyRecording() {
-        context.startService(serviceIntent(MeasurementService.ACTION_STOP))
+        context.startService(serviceIntent(RecordingService.ACTION_STOP_RECORDING))
     }
 
     private fun grantRuntimePermissions() {
@@ -210,9 +210,9 @@ internal class RecordingEmulatorFixture(private val context: Context) {
             .use { it.readText() }
 
     private fun annotate(text: String) {
-        context.startService(serviceIntent(MeasurementService.ACTION_ANNOTATE).apply {
-            putExtra(MeasurementService.ANNOTATION_TIME, SystemEpochClock.nowMillis())
-            putExtra(MeasurementService.ANNOTATION_TEXT, text)
+        context.startService(serviceIntent(RecordingService.ACTION_ANNOTATE).apply {
+            putExtra(RecordingService.ANNOTATION_TIME, SystemEpochClock.nowMillis())
+            putExtra(RecordingService.ANNOTATION_TEXT, text)
         })
     }
 
@@ -263,7 +263,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
     private fun measurementDirectory(measurementName: String): File =
         File(context.filesDir, "SensorBox/$measurementName")
 
-    private fun serviceIntent(actionName: String): Intent = Intent(context, MeasurementService::class.java).apply {
+    private fun serviceIntent(actionName: String): Intent = Intent(context, RecordingService::class.java).apply {
         action = actionName
     }
 

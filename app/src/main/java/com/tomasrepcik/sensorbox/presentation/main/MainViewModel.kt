@@ -3,7 +3,7 @@ package com.tomasrepcik.sensorbox.presentation.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
-    private val sessionStore: MeasurementSessionStore,
+    private val sessionStore: RecordingSessionStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MainState())
     private var hasChosenInitialRoute = false

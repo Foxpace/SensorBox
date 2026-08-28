@@ -81,7 +81,7 @@ private fun OnboardingLayout(
         }
         OnboardingControls(
             pageIndex = pageIndex,
-            hasStorage = state.storagePath != null,
+            archiveSelected = state.recordingArchivePath != null,
             isLandscape = isLandscape,
             onIntent = onIntent,
             modifier = Modifier
@@ -186,7 +186,7 @@ private fun PortraitOnboardingMessage(
         Spacer(Modifier.height(24.dp))
         OnboardingText(page)
         Spacer(Modifier.height(18.dp))
-        OnboardingPageActions(page.action, state.storagePath, onIntent)
+        OnboardingPageButtons(page.prompt, state.recordingArchivePath, onIntent)
     }
 }
 
@@ -213,7 +213,7 @@ private fun LandscapeOnboardingMessage(
         ) {
             OnboardingText(page)
             Spacer(Modifier.height(12.dp))
-            OnboardingPageActions(page.action, state.storagePath, onIntent)
+            OnboardingPageButtons(page.prompt, state.recordingArchivePath, onIntent)
         }
     }
 }
@@ -252,17 +252,17 @@ private fun OnboardingText(page: OnboardingPage) {
 }
 
 @Composable
-private fun OnboardingPageActions(action: OnboardingAction, path: String?, onIntent: (OnboardingIntent) -> Unit) {
-    when (action) {
-        OnboardingAction.NONE -> Unit
-        OnboardingAction.POLICIES -> PolicyActions(onIntent)
-        OnboardingAction.BATTERY -> BatteryAction(onIntent)
-        OnboardingAction.STORAGE -> StorageAction(path, onIntent)
+private fun OnboardingPageButtons(prompt: OnboardingPrompt, path: String?, onIntent: (OnboardingIntent) -> Unit) {
+    when (prompt) {
+        OnboardingPrompt.NONE -> Unit
+        OnboardingPrompt.POLICIES -> PolicyButtons(onIntent)
+        OnboardingPrompt.BATTERY -> BatteryButton(onIntent)
+        OnboardingPrompt.ARCHIVE -> ArchiveButton(path, onIntent)
     }
 }
 
 @Composable
-private fun PolicyActions(onIntent: (OnboardingIntent) -> Unit) {
+private fun PolicyButtons(onIntent: (OnboardingIntent) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         SensorBoxSecondaryButton(
             label = stringResource(R.string.intro_policy_button),
@@ -280,7 +280,7 @@ private fun PolicyActions(onIntent: (OnboardingIntent) -> Unit) {
 }
 
 @Composable
-private fun BatteryAction(onIntent: (OnboardingIntent) -> Unit) {
+private fun BatteryButton(onIntent: (OnboardingIntent) -> Unit) {
     SensorBoxSecondaryButton(
         label = stringResource(R.string.intro_battery_action),
         onClick = { onIntent(OnboardingIntent.RequestBatteryOptimizationExemption) },
@@ -290,20 +290,20 @@ private fun BatteryAction(onIntent: (OnboardingIntent) -> Unit) {
 }
 
 @Composable
-private fun StorageAction(path: String?, onIntent: (OnboardingIntent) -> Unit) {
+private fun ArchiveButton(path: String?, onIntent: (OnboardingIntent) -> Unit) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         SensorBoxSecondaryButton(
             label = stringResource(
-                if (path == null) R.string.intro_storage_action else R.string.intro_storage_change_action,
+                if (path == null) R.string.intro_archive_action else R.string.intro_archive_change_action,
             ),
-            onClick = { onIntent(OnboardingIntent.ChooseStorage) },
+            onClick = { onIntent(OnboardingIntent.ChooseRecordingArchive) },
             modifier = Modifier.fillMaxWidth(),
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         )
         if (path != null) {
             Spacer(Modifier.height(10.dp))
             Text(
-                stringResource(R.string.intro_storage_selected, path),
+                stringResource(R.string.intro_archive_selected, path),
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
@@ -315,7 +315,7 @@ private fun StorageAction(path: String?, onIntent: (OnboardingIntent) -> Unit) {
 @Composable
 private fun OnboardingControls(
     pageIndex: Int,
-    hasStorage: Boolean,
+    archiveSelected: Boolean,
     isLandscape: Boolean,
     onIntent: (OnboardingIntent) -> Unit,
     modifier: Modifier = Modifier,
@@ -327,7 +327,7 @@ private fun OnboardingControls(
         OnboardingPrimaryButton(
             label = stringResource(if (isLastPage) R.string.intro_finish else R.string.next),
             onClick = { onIntent(onboardingForwardIntent(isLastPage)) },
-            enabled = !isLastPage || hasStorage,
+            enabled = !isLastPage || archiveSelected,
         )
     }
 }
@@ -357,11 +357,11 @@ private data class OnboardingPage(
     @StringRes val title: Int,
     @StringRes val body: Int,
     @DrawableRes val image: Int,
-    val action: OnboardingAction = OnboardingAction.NONE,
+    val prompt: OnboardingPrompt = OnboardingPrompt.NONE,
     val tintIllustration: Boolean = true,
 )
 
-private enum class OnboardingAction { NONE, POLICIES, BATTERY, STORAGE }
+private enum class OnboardingPrompt { NONE, POLICIES, BATTERY, ARCHIVE }
 
 private val ONBOARDING_MAX_WIDTH = 960.dp
 private val ONBOARDING_MESSAGE_MAX_WIDTH = 520.dp
@@ -383,7 +383,7 @@ private val ONBOARDING_PAGES = listOf(
         R.string.intro_policy_title,
         R.string.intro_policy_body,
         R.drawable.ic_onboarding_policy,
-        OnboardingAction.POLICIES,
+        OnboardingPrompt.POLICIES,
     ),
     OnboardingPage(
         R.string.intro_lifecycle_title,
@@ -394,12 +394,12 @@ private val ONBOARDING_PAGES = listOf(
         R.string.intro_battery_title,
         R.string.intro_battery_body,
         R.drawable.ic_onboarding_battery,
-        OnboardingAction.BATTERY,
+        OnboardingPrompt.BATTERY,
     ),
     OnboardingPage(
-        R.string.intro_storage_title,
-        R.string.intro_storage_body,
+        R.string.intro_archive_title,
+        R.string.intro_archive_body,
         R.drawable.ic_onboarding_storage,
-        OnboardingAction.STORAGE,
+        OnboardingPrompt.ARCHIVE,
     ),
 )

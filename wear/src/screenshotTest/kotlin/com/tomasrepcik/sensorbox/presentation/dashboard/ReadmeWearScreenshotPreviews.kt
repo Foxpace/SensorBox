@@ -19,7 +19,7 @@ import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProdu
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.DisplayPreferences
 import com.tomasrepcik.sensorbox.core.preferences.RecordingPreferences
-import com.tomasrepcik.sensorbox.domain.sensors.WearSensorDescriptor
+import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorDescriptor
 import com.tomasrepcik.sensorbox.ui.theme.WearSensorBoxTheme
 
 @PreviewTest
@@ -99,7 +99,7 @@ private fun readmeWearSensors() = listOf(
     readmeWearSensor(2, "Goldfish 3-axis Magnetic field sensor"),
 )
 
-private fun readmeWearSensor(type: Int, name: String) = WearSensorDescriptor(
+private fun readmeWearSensor(type: Int, name: String) = WatchSensorDescriptor(
     type = type,
     name = name,
     vendor = "Android",

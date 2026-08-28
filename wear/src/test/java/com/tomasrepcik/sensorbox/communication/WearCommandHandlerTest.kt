@@ -5,7 +5,7 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
-import com.tomasrepcik.sensorbox.domain.measurement.WearRecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.WatchRecordingControlUseCase
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
@@ -69,7 +69,7 @@ class WearCommandHandlerTest {
         fixture.requirements.validationResult = AppResult.failure(
             AppError(
                 code = AppErrorCode.PERMISSION,
-                operation = "Validate Wear recording permissions",
+                operation = "Validate watch recording permissions",
                 diagnosticMessage = "Wear OS is missing required recording permissions",
                 context = mapOf("missingPermissions" to "android.permission.ACCESS_FINE_LOCATION"),
             ),
@@ -82,7 +82,7 @@ class WearCommandHandlerTest {
         val result = fixture.repository.commands.single() as WearCommand.RecordingResult
         assertEquals(WearRecordingOutcome.FAILED, result.outcome)
         assertEquals(AppErrorCode.PERMISSION, result.errorCode)
-        assertEquals("Validate Wear recording permissions", result.errorOperation)
+        assertEquals("Validate watch recording permissions", result.errorOperation)
         assertEquals(
             "android.permission.ACCESS_FINE_LOCATION",
             result.errorContext["missingPermissions"],
@@ -139,7 +139,7 @@ class WearCommandHandlerTest {
     }
 }
 
-private class FakeWearRecordingControl : WearRecordingControlUseCase {
+private class FakeWearRecordingControl : WatchRecordingControlUseCase {
     var startCalls = 0
     var stopCalls = 0
 

@@ -22,8 +22,8 @@ fun readmeSourceSelection() = PhoneReadmeFrame {
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeMeasurementSetup() = PhoneReadmeFrame {
-    MeasurementSetupScreen(
+fun readmeRecordingSetup() = PhoneReadmeFrame {
+    RecordingSetupScreen(
         state = readmeRecordingState().copy(selectedSensorIds = setOf(Sensor.TYPE_GRAVITY)),
         onIntent = {},
         onBack = {},
@@ -58,11 +58,11 @@ fun readmeIntroBattery() = OnboardingReadmePreview(page = 4)
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroStorage() = OnboardingReadmePreview(page = 5, storagePath = "Documents/SensorBox")
+fun readmeIntroStorage() = OnboardingReadmePreview(page = 5, recordingArchivePath = "Documents/SensorBox")
 
 @Composable
-private fun OnboardingReadmePreview(page: Int, storagePath: String? = null) = PhoneReadmeFrame {
-    OnboardingScreen(state = OnboardingState(page = page, storagePath = storagePath), onIntent = {})
+private fun OnboardingReadmePreview(page: Int, recordingArchivePath: String? = null) = PhoneReadmeFrame {
+    OnboardingScreen(state = OnboardingState(page = page, recordingArchivePath = recordingArchivePath), onIntent = {})
 }
 
 @Composable
@@ -82,7 +82,7 @@ private fun readmeRecordingState() = RecordingState(
         SensorDescriptor(Sensor.TYPE_MAGNETIC_FIELD, "MMC56X3X Magnetometer", "MEMSIC"),
         SensorDescriptor(Sensor.TYPE_ROTATION_VECTOR, "Rotation Vector Sensor", "Google"),
     ),
-    storagePath = "Documents/SensorBox",
+    recordingArchivePath = "Documents/SensorBox",
 )
 
 @Preview(

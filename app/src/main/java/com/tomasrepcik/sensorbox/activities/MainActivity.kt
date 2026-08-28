@@ -46,11 +46,11 @@ class MainActivity : ComponentActivity() {
     private val recordingViewModel: RecordingViewModel by viewModels()
     private val measurementBrowserViewModel: MeasurementBrowserViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
-    private var storageRequestOwner = StorageRequestOwner.RECORDING
+    private var recordingArchiveRequestOwner = RecordingArchiveRequestOwner.RECORDING
     private val directoryPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        when (storageRequestOwner) {
-            StorageRequestOwner.ONBOARDING -> onboardingViewModel.handleStorageResult(it.data)
-            StorageRequestOwner.RECORDING -> recordingViewModel.handleStorageResult(it.data)
+        when (recordingArchiveRequestOwner) {
+            RecordingArchiveRequestOwner.ONBOARDING -> onboardingViewModel.handleRecordingArchiveResult(it.data)
+            RecordingArchiveRequestOwner.RECORDING -> recordingViewModel.handleRecordingArchiveResult(it.data)
         }
     }
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleOnboardingEffect(effect: OnboardingEffect) {
         when (effect) {
-            OnboardingEffect.PickStorageDirectory -> openStoragePicker(StorageRequestOwner.ONBOARDING)
+            OnboardingEffect.PickRecordingArchive -> openRecordingArchivePicker(RecordingArchiveRequestOwner.ONBOARDING)
             OnboardingEffect.OpenPrivacyPolicy -> openWebPage(getString(R.string.link_privacy_policy))
             OnboardingEffect.OpenTermsOfUse -> openWebPage(getString(R.string.link_terms))
             OnboardingEffect.RequestBatteryOptimizationExemption -> requestBatteryOptimizationExemption()
@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleRecordingEffect(effect: RecordingEffect) {
         when (effect) {
-            RecordingEffect.PickStorageDirectory -> openStoragePicker(StorageRequestOwner.RECORDING)
+            RecordingEffect.PickRecordingArchive -> openRecordingArchivePicker(RecordingArchiveRequestOwner.RECORDING)
 
             is RecordingEffect.Navigate -> mainViewModel.navigate(effect.route)
 
@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
             SettingsEffect.ShareDiagnosticsFile -> shareDiagnosticsFile()
             is SettingsEffect.CopyDiagnosticsText -> copyDiagnostics(effect.text)
             SettingsEffect.DiagnosticsCleared -> showToast(R.string.diagnostics_cleared)
-            is SettingsEffect.DiagnosticsFailed -> showToast(R.string.diagnostics_action_failed)
+            is SettingsEffect.DiagnosticsFailed -> showToast(R.string.diagnostics_operation_failed)
             is SettingsEffect.Navigate -> mainViewModel.navigate(effect.route)
         }
     }
@@ -138,10 +138,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun openStoragePicker(owner: StorageRequestOwner) {
-        storageRequestOwner = owner
-        appResult(AppErrorCode.EXTERNAL_ACTION, "Open storage picker") {
-            directoryPicker.launch(storageIntent())
+    private fun openRecordingArchivePicker(owner: RecordingArchiveRequestOwner) {
+        recordingArchiveRequestOwner = owner
+        appResult(AppErrorCode.EXTERNAL_ACTION, "Open recording archive picker") {
+            directoryPicker.launch(recordingArchiveIntent())
         }
     }
 
@@ -215,7 +215,7 @@ class MainActivity : ComponentActivity() {
             )
         }.fold(
             onSuccess = { showToast(R.string.diagnostics_copied) },
-            onFailure = { showToast(R.string.diagnostics_action_failed) },
+            onFailure = { showToast(R.string.diagnostics_operation_failed) },
         )
     }
 
@@ -223,13 +223,13 @@ class MainActivity : ComponentActivity() {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
-    private fun storageIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+    private fun recordingArchiveIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
     }
 
-    private enum class StorageRequestOwner {
+    private enum class RecordingArchiveRequestOwner {
         ONBOARDING,
         RECORDING,
     }

@@ -31,7 +31,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
 
 @Composable
 fun SensorBoxApp(
@@ -50,7 +50,7 @@ fun SensorBoxApp(
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
         return
     }
-    if (mainState.keepScreenAwake && mainState.session is MeasurementSessionState.Running) KeepScreenAwake()
+    if (mainState.keepScreenAwake && mainState.session is RecordingSessionState.Running) KeepScreenAwake()
     SensorBoxNavHost(
         mainState = mainState,
         onboardingState = onboardingState,
@@ -108,8 +108,8 @@ private fun SensorBoxNavHost(
     )
 }
 
-private fun MainState.displayedRoute() = if (session is MeasurementSessionState.Running) {
-    MainRoute.ACTIVE_MEASUREMENT
+private fun MainState.displayedRoute() = if (session is RecordingSessionState.Running) {
+    MainRoute.ACTIVE_RECORDING
 } else {
     route
 }
@@ -117,7 +117,7 @@ private fun MainState.displayedRoute() = if (session is MeasurementSessionState.
 @Composable
 private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute: MainRoute) {
     LaunchedEffect(displayedRoute) {
-        if (displayedRoute != MainRoute.ACTIVE_MEASUREMENT && backStack.lastOrNull() == MainRoute.ACTIVE_MEASUREMENT) {
+        if (displayedRoute != MainRoute.ACTIVE_RECORDING && backStack.lastOrNull() == MainRoute.ACTIVE_RECORDING) {
             backStack.removeLastOrNull()
         }
         if (backStack.lastOrNull() != displayedRoute) {
@@ -128,10 +128,10 @@ private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute
 }
 
 private fun navigateBack(state: MainState, backStack: NavBackStack<NavKey>, onNavigate: (MainRoute) -> Unit) {
-    if (state.session is MeasurementSessionState.Running) return
+    if (state.session is RecordingSessionState.Running) return
     if (backStack.size > 1) backStack.removeLastOrNull()
     val destination = backStack.lastOrNull() as? MainRoute ?: MainRoute.RECORD
-    if (destination != MainRoute.ACTIVE_MEASUREMENT) onNavigate(destination)
+    if (destination != MainRoute.ACTIVE_RECORDING) onNavigate(destination)
 }
 
 private fun MainRoute.isRootDestination() = when (this) {
@@ -139,10 +139,10 @@ private fun MainRoute.isRootDestination() = when (this) {
     MainRoute.RECORD,
     -> true
 
-    MainRoute.ACTIVE_MEASUREMENT,
+    MainRoute.ACTIVE_RECORDING,
     MainRoute.SENSOR_DETAILS,
     MainRoute.SENSOR_PREVIEW,
-    MainRoute.SETUP,
+    MainRoute.RECORDING_SETUP,
     MainRoute.MEASUREMENTS,
     MainRoute.MEASUREMENT_DETAILS,
     MainRoute.MEASUREMENT_FILE,
@@ -169,8 +169,8 @@ private fun RouteContent(
     when (route) {
         MainRoute.ONBOARDING -> OnboardingScreen(onboardingState, onOnboardingIntent)
 
-        MainRoute.ACTIVE_MEASUREMENT -> FullScreen { modifier ->
-            ActiveMeasurementScreen(recordingState, onRecordingIntent, modifier)
+        MainRoute.ACTIVE_RECORDING -> FullScreen { modifier ->
+            ActiveRecordingScreen(recordingState, onRecordingIntent, modifier)
         }
 
         MainRoute.SENSOR_DETAILS -> FullScreen { modifier ->
@@ -186,8 +186,8 @@ private fun RouteContent(
             SensorPreviewScreen(state = recordingState, onBack = onBack, modifier = modifier)
         }
 
-        MainRoute.SETUP -> FullScreen { modifier ->
-            MeasurementSetupScreen(
+        MainRoute.RECORDING_SETUP -> FullScreen { modifier ->
+            RecordingSetupScreen(
                 state = recordingState,
                 onIntent = onRecordingIntent,
                 modifier = modifier,
@@ -242,7 +242,7 @@ private fun MeasurementBrowserRoute(
             MainRoute.MEASUREMENTS -> MeasurementsScreen(state, onIntent, onBack, modifier)
             MainRoute.MEASUREMENT_DETAILS -> MeasurementDetailsScreen(state, onIntent, onBack, modifier)
             MainRoute.MEASUREMENT_FILE -> MeasurementFileScreen(state, onIntent, onBack, modifier)
-            else -> error("Not a measurement archive route")
+            else -> error("Not a measurement browser route")
         }
     }
 }

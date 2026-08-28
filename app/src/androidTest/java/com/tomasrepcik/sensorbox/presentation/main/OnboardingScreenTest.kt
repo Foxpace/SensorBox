@@ -22,16 +22,16 @@ class OnboardingScreenTest {
         robot.whenNextIsTapped().thenPageIsVisible("Android may pause recordings").whenNextIsTapped()
         robot.thenPageIsVisible("Allow reliable background work").whenBatterySettingsIsTapped()
         assertEquals(OnboardingIntent.RequestBatteryOptimizationExemption, robot.lastIntent)
-        robot.whenNextIsTapped().thenPageIsVisible("Choose a recording folder")
+        robot.whenNextIsTapped().thenPageIsVisible("Choose a recording archive")
         robot.thenFinishIsDisabled().whenChooseFolderIsTapped()
-        assertEquals(OnboardingIntent.ChooseStorage, robot.lastIntent)
+        assertEquals(OnboardingIntent.ChooseRecordingArchive, robot.lastIntent)
     }
 
     @Test
     fun givenSelectedFolderWhenFinishingThenCompleteIntroductionIntentIsSent() {
         val robot = OnboardingScreenRobot(composeRule).givenInteractiveOnboarding(
             page = 5,
-            storagePath = "Documents/SensorBox",
+            recordingArchivePath = "Documents/SensorBox",
         )
 
         robot.thenFinishIsEnabled().whenFinishIsTapped()

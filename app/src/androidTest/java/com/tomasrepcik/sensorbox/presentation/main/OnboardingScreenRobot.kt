@@ -17,10 +17,10 @@ class OnboardingScreenRobot(private val rule: ComposeContentTestRule) {
     var lastIntent: OnboardingIntent? = null
         private set
 
-    fun givenInteractiveOnboarding(page: Int = 0, storagePath: String? = null) = apply {
+    fun givenInteractiveOnboarding(page: Int = 0, recordingArchivePath: String? = null) = apply {
         rule.setContent {
             var state by remember {
-                mutableStateOf(OnboardingState(page = page, storagePath = storagePath))
+                mutableStateOf(OnboardingState(page = page, recordingArchivePath = recordingArchivePath))
             }
             SensorBoxTheme {
                 OnboardingScreen(state) { intent ->
@@ -57,7 +57,7 @@ class OnboardingScreenRobot(private val rule: ComposeContentTestRule) {
     }
 
     fun whenChooseFolderIsTapped() = apply {
-        rule.onNodeWithText("Choose folder").performClick()
+        rule.onNodeWithText("Choose archive").performClick()
     }
 
     fun whenFinishIsTapped() = apply {

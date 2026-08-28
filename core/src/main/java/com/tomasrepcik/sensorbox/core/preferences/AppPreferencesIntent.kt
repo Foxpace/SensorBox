@@ -11,7 +11,7 @@ sealed interface AppPreferencesIntent {
 
     data class SetSensorSamplingPeriod(val period: Int) : AppPreferencesIntent
 
-    data class SetLowBatteryRestriction(val enabled: Boolean) : AppPreferencesIntent
+    data class SetStopOnLowBattery(val enabled: Boolean) : AppPreferencesIntent
 
     data class SetWakeLock(val enabled: Boolean) : AppPreferencesIntent
 

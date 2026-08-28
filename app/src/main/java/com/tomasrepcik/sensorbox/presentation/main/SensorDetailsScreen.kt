@@ -47,9 +47,9 @@ fun SensorDetailsScreen(
     modifier: Modifier = Modifier,
 ) {
     val sensor = state.detailsSensorType?.let { type ->
-        val sensors = when (state.detailsSensorSource) {
-            RecordingSensorSource.PHONE -> state.sensors
-            RecordingSensorSource.WEAR -> state.wearSensors
+        val sensors = when (state.detailsDevice) {
+            RecordingDevice.PHONE -> state.sensors
+            RecordingDevice.WATCH -> state.watchSensors
         }
         sensors.firstOrNull { it.type == type }
     }
@@ -59,12 +59,12 @@ fun SensorDetailsScreen(
         sensor != null -> sensor.name
         else -> stringResource(R.string.sensor_unavailable)
     }
-    val showPreview = state.detailsSensorSource == RecordingSensorSource.PHONE &&
+    val showPreview = state.detailsDevice == RecordingDevice.PHONE &&
         (state.detailsSensorType == null || sensor != null) && canPreview
     Box(modifier.fillMaxSize()) {
         SensorDetailsList(state, sensor, title, showPreview, onBack)
         if (showPreview) {
-            PreviewAction(onPreview, Modifier.align(Alignment.BottomCenter))
+            PreviewButton(onPreview, Modifier.align(Alignment.BottomCenter))
         }
     }
 }
@@ -142,7 +142,7 @@ private fun GpsDetails(state: RecordingState) {
         GpsPermissionStatus(details.hasPermission)
         GpsDetailRows(details, state, unavailableValue)
         if (!details.hasPermission) {
-            GpsPermissionAction {
+            GpsPermissionButton {
                 permissionRequest.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -195,7 +195,7 @@ private fun localizedValue(value: Number?, unavailableValue: String): String =
 @Composable
 internal fun GpsPermission(hasPermission: Boolean, onRequest: () -> Unit) {
     GpsPermissionStatus(hasPermission)
-    if (!hasPermission) GpsPermissionAction(onRequest)
+    if (!hasPermission) GpsPermissionButton(onRequest)
 }
 
 @Composable
@@ -207,7 +207,7 @@ private fun GpsPermissionStatus(hasPermission: Boolean) {
 }
 
 @Composable
-private fun GpsPermissionAction(onRequest: () -> Unit) {
+private fun GpsPermissionButton(onRequest: () -> Unit) {
     Text(
         stringResource(R.string.location_permission_explanation),
         color = MaterialTheme.colorScheme.error,
@@ -229,7 +229,7 @@ private fun ParameterRow(label: String, value: String, showDivider: Boolean = tr
 }
 
 @Composable
-private fun PreviewAction(onPreview: () -> Unit, modifier: Modifier = Modifier) {
+private fun PreviewButton(onPreview: () -> Unit, modifier: Modifier = Modifier) {
     Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
         Box(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),

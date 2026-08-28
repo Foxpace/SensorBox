@@ -12,7 +12,7 @@ import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.GooglePlayWearConnectionRepository
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
@@ -102,7 +102,7 @@ class PhoneWearDiscoveryEmulatorTest {
             ).getOrThrow()
 
             val result = awaitCommand<WearCommand.RecordingResult>(commands) {
-                it.sessionId == sessionId && it.action == WearRecordingAction.START
+                it.sessionId == sessionId && it.operation == WearRecordingOperation.START
             }
             assertEquals(WearRecordingOutcome.SUCCEEDED, result.outcome)
         } finally {
@@ -147,10 +147,10 @@ class PhoneWearDiscoveryEmulatorTest {
             ).getOrThrow()
 
             val result = awaitCommand<WearCommand.RecordingResult>(commands) {
-                it.sessionId == sessionId && it.action == WearRecordingAction.START
+                it.sessionId == sessionId && it.operation == WearRecordingOperation.START
             }
             assertEquals(WearRecordingOutcome.FAILED, result.outcome)
-            assertEquals("Validate Wear recording permissions", result.errorOperation)
+            assertEquals("Validate watch recording permissions", result.errorOperation)
             assertEquals("Wear OS is missing required recording permissions", result.errorMessage)
             assertTrue(
                 result.errorContext["missingPermissions"]

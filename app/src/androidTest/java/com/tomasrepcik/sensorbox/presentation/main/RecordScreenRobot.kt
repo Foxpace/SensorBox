@@ -13,7 +13,7 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
     fun givenRecordScreen(
         selected: Boolean = false,
         gpsSelected: Boolean = false,
-        wearConnected: Boolean = false,
+        watchConnected: Boolean = false,
         onIntent: (RecordingIntent) -> Unit = {},
     ) = apply {
         rule.setContent {
@@ -23,13 +23,13 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
                         sensors = listOf(SensorDescriptor(1, "Accelerometer", "Fixture")),
                         selectedSensorIds = if (selected) setOf(1) else emptySet(),
                         includesGps = gpsSelected,
-                        isWearConnected = wearConnected,
-                        wearSensors = if (wearConnected) {
+                        isWatchConnected = watchConnected,
+                        watchSensors = if (watchConnected) {
                             listOf(SensorDescriptor(1, "Wear Accelerometer", "Fixture"))
                         } else {
                             emptyList()
                         },
-                        storagePath = "Fixture/SensorBox",
+                        recordingArchivePath = "Fixture/SensorBox",
                     ),
                     onIntent = onIntent,
                 )
@@ -58,7 +58,7 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
         rule.onNodeWithText("Continue").performClick()
     }
 
-    fun thenRecordingActionIsVisible() = apply {
+    fun thenRecordingButtonIsVisible() = apply {
         rule.onNodeWithText("Continue").assertIsDisplayed()
     }
 }

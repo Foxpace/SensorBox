@@ -15,12 +15,12 @@ class RecordingReducerTest {
     }
 
     @Test
-    fun `Given record state When storage is requested Then picker effect is emitted`() {
+    fun `Given record state When recording archive is requested Then picker effect is emitted`() {
         val givenState = RecordingStateFixtures.state()
 
-        val actual = RecordingReducer.reduce(givenState, RecordingIntent.ChooseStorage)
+        val actual = RecordingReducer.reduce(givenState, RecordingIntent.ChooseRecordingArchive)
 
-        assertEquals(RecordingEffect.PickStorageDirectory, actual.effect)
+        assertEquals(RecordingEffect.PickRecordingArchive, actual.effect)
     }
 
     @Test
@@ -36,9 +36,9 @@ class RecordingReducerTest {
     fun `Given an unselected Wear sensor When toggled Then only Wear selection changes`() {
         val givenState = RecordingStateFixtures.state()
 
-        val actual = RecordingReducer.reduce(givenState, RecordingIntent.ToggleWearSensor(sensorId = 21))
+        val actual = RecordingReducer.reduce(givenState, RecordingIntent.ToggleWatchSensor(sensorId = 21))
 
-        assertTrue(21 in actual.state.selectedWearSensorIds)
+        assertTrue(21 in actual.state.selectedWatchSensorIds)
         assertTrue(actual.state.selectedSensorIds.isEmpty())
     }
 
@@ -64,9 +64,9 @@ class RecordingReducerTest {
     fun `Given selected sensors When setup is opened Then setup route is shown`() {
         val givenState = RecordingStateFixtures.state(selectedSensorIds = setOf(1))
 
-        val actual = RecordingReducer.reduce(givenState, RecordingIntent.OpenMeasurementSetup)
+        val actual = RecordingReducer.reduce(givenState, RecordingIntent.OpenRecordingSetup)
 
-        assertEquals(RecordingEffect.Navigate(MainRoute.SETUP), actual.effect)
+        assertEquals(RecordingEffect.Navigate(MainRoute.RECORDING_SETUP), actual.effect)
     }
 
     @Test
@@ -85,16 +85,16 @@ class RecordingReducerTest {
 
         val actual = RecordingReducer.reduce(
             givenState,
-            RecordingIntent.OpenSensorDetails(21, RecordingSensorSource.WEAR),
+            RecordingIntent.OpenSensorDetails(21, RecordingDevice.WATCH),
         )
 
         assertEquals(RecordingEffect.Navigate(MainRoute.SENSOR_DETAILS), actual.effect)
         assertEquals(21, actual.state.detailsSensorType)
-        assertEquals(RecordingSensorSource.WEAR, actual.state.detailsSensorSource)
+        assertEquals(RecordingDevice.WATCH, actual.state.detailsDevice)
     }
 
     @Test
-    fun `Given measurement setup When returning Then sensor selection is shown`() {
+    fun `Given recording setup When returning Then sensor selection is shown`() {
         val givenState = RecordingStateFixtures.state(selectedSensorIds = setOf(1))
 
         val actual = RecordingReducer.reduce(givenState, RecordingIntent.ReturnToSensorSelection)

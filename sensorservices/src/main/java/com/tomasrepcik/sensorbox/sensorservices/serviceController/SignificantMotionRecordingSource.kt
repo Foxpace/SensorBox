@@ -5,22 +5,22 @@ import com.tomasrepcik.sensorbox.recording.RecordingSource
 import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
 import com.tomasrepcik.sensorbox.recording.RecordingSourceType
 import com.tomasrepcik.sensorbox.recording.RecordingStopContext
-import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SignificantMotion
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SignificantMotionRecording
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
 
 internal class SignificantMotionRecordingSource(
-    private val request: MeasurementLaunchRequest,
-    private val measurement: SignificantMotion,
+    private val request: RecordingRequest,
+    private val recording: SignificantMotionRecording,
 ) : RecordingSource {
     override val type = RecordingSourceType.SIGNIFICANT_MOTION
-    override val failures = measurement.failures
+    override val failures = recording.failures
 
     override suspend fun start(spec: RecordingSourceSpec): AppResult<Unit> =
         if (spec is RecordingSourceSpec.SignificantMotion) {
-            measurement.start(request.folderName, request.useInternalStorage)
+            recording.start(request.folderName, request.useInternalStorage)
         } else {
             invalidSpec(type)
         }
 
-    override suspend fun stop(context: RecordingStopContext): AppResult<Unit> = measurement.stop()
+    override suspend fun stop(context: RecordingStopContext): AppResult<Unit> = recording.stop()
 }

@@ -12,7 +12,7 @@
         tools:ignore="HighSamplingRate" />
     <application>
         <service
-            android:name=".services.MeasurementService"
+            android:name=".services.RecordingService"
             android:foregroundServiceType="health|location"
             android:enabled="true"
             android:exported="false"

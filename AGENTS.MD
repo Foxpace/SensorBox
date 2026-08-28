@@ -23,8 +23,8 @@ Every screen is its own module and cross-cutting concerns are in their own modul
 The modules are small and have a single responsibility.
 Every screen has root composable, where the viewmodel and UI meet ends.
 The UI only talks to viewmodel, not repos. Repos and usecases are part of the viewmodels.
-UI is dumb and only renders the state. Root is responsible for delegating actions, events and
-native side effects - it can use other classes to do so.
+UI is dumb and only renders the state. The root composable delegates intents and performs
+native side effects. It can use other classes to do so.
 
 ## Testing
 
@@ -42,15 +42,36 @@ The tests should be simple and readable, ideally only one line per statement in 
 
 Run only tests, which are required and at the end of large implementation, run the whole test suite.
 
-## Terminology
+## Glossary
 
-- Screen / Root Screen - a screen is a module that contains all the code for a single screen. It has its own ViewModel, UI and repos. It is responsible for rendering the state and delegating actions to the ViewModel.
-- State - a state is an immutable data class that contains all the data needed to render the UI. It is returned by the ViewModel and rendered by the UI.
-- Action - an action is a user interaction that is delegated to the ViewModel. It can be a button click, a gesture, a keyboard shortcut, etc.
-- User intent - a user intent is a high-level action that the user wants to perform. It is translated into one or more actions that are delegated to the ViewModel. Naming is based on user intent, not technical terms. For example, "Open App" is a user intent, while "LaunchActivity" is a technical term. Contract between layers can be merged with technical term.
-- Contract - defines communication between layers. Techncial terms can be used for these classes too.
-- Repo - a repo is a class that is responsible for fetching data from a data source. It can be a local database, a remote API, or any other data source. It is used by the ViewModel to fetch data and return it as a state.
-- Usecase - a usecase is a class that contains business logic and orchestrates data from multiple repos. It is used by the ViewModel to perform complex actions and return a state. It equals to a user intention to do something.
+### Recording domain
+
+- Recording - the activity of capturing data.
+- Recording session - one start-to-stop recording operation. It may run on the phone alone or on both phone and watch.
+- Recording setup - editable choices made before recording.
+- Recording request - the immutable command created from the setup when recording starts.
+- Recording source - an independently managed data producer, such as sensors or GPS. One source may create several files.
+- Paired recording - one session coordinated across phone and watch.
+- Measurement - one device's stored output for a recording session. A metadata-only measurement is valid.
+- Measurement file - one stored data stream within a measurement.
+- Measurement metadata - facts about the whole measurement, not a user-visible recording source.
+- Sample - one timestamped observation, normally stored as one row.
+- Recording archive - the selected phone directory containing phone and synced watch measurements.
+- Sync - copying watch measurements to the phone archive without merging or removing the watch originals.
+- Sensor - a sensor exposed by the phone or watch. Sensor type names its kind, such as accelerometer.
+- Use phone and watch in domain code. Reserve Android and Wear OS for platform code.
+
+### MVI
+
+- Screen - stateless UI that renders state and sends intents.
+- Intent - something the UI asks the ViewModel to handle. Do not use Action as a synonym.
+- State - immutable data needed to render a screen.
+- Effect - a one-time operation outside state rendering, such as navigation or requesting permission.
+- ViewModel - owns state, handles intents, and coordinates domain operations.
+- Reducer - a pure state transition.
+- Contract - the state, intents, effects, and reducer used by a screen.
+- Repo - a boundary for reading or changing stored data or platform state.
+- Use case - one named domain operation or user goal.
 
 ## People
 

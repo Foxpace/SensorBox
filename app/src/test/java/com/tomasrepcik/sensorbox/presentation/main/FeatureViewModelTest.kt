@@ -7,15 +7,15 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
 import com.tomasrepcik.sensorbox.core.testing.FakeAppPreferencesRepository
-import com.tomasrepcik.sensorbox.domain.measurement.DocumentStorageGateway
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementPermissionsUseCase
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
-import com.tomasrepcik.sensorbox.domain.measurement.RecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
+import com.tomasrepcik.sensorbox.domain.recording.RecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingPermissionsUseCase
+import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
 import com.tomasrepcik.sensorbox.domain.sensors.AvailableSensorsUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
-import com.tomasrepcik.sensorbox.domain.sensors.WearSensorCatalogStore
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
+import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorCatalogStore
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.FakeWearConnectionRepository
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
@@ -43,35 +43,37 @@ class FeatureViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `Given onboarding storage When completed Then state and navigation effect are owned by onboarding`() = runTest {
-        val viewModel = OnboardingViewModel(
-            preferencesRepository = FakeAppPreferencesRepository(),
-            documentStorage = FakeDocumentStorage(hasStorage = true),
-        )
-        val effect = async { viewModel.effects.first() }
+    fun `Given onboarding recording archive When completed Then state and navigation effect are owned by onboarding`() =
+        runTest {
+            val viewModel = OnboardingViewModel(
+                preferencesRepository = FakeAppPreferencesRepository(),
+                recordingArchive = FakeRecordingArchiveRepository(isSelected = true),
+            )
+            val effect = async { viewModel.effects.first() }
 
-        viewModel.accept(OnboardingIntent.AdvanceOnboarding)
-        viewModel.accept(OnboardingIntent.CompleteOnboarding)
-        advanceUntilIdle()
+            viewModel.accept(OnboardingIntent.AdvanceOnboarding)
+            viewModel.accept(OnboardingIntent.CompleteOnboarding)
+            advanceUntilIdle()
 
-        assertEquals(1, viewModel.state.value.page)
-        assertEquals(OnboardingEffect.Navigate(MainRoute.RECORD), effect.await())
-    }
-
-    @Test
-    fun `Given onboarding has no storage When completed Then storage error code is exposed`() = runTest {
-        val viewModel = OnboardingViewModel(
-            preferencesRepository = FakeAppPreferencesRepository(),
-            documentStorage = FakeDocumentStorage(hasStorage = false),
-        )
-
-        viewModel.accept(OnboardingIntent.CompleteOnboarding)
-
-        assertEquals(AppErrorCode.STORAGE, viewModel.state.value.errorCode)
-    }
+            assertEquals(1, viewModel.state.value.page)
+            assertEquals(OnboardingEffect.Navigate(MainRoute.RECORD), effect.await())
+        }
 
     @Test
-    fun `Given settings action When sampling changes Then settings owns updated preference state`() = runTest {
+    fun `Given onboarding has no recording archive When completed Then recording archive error code is exposed`() =
+        runTest {
+            val viewModel = OnboardingViewModel(
+                preferencesRepository = FakeAppPreferencesRepository(),
+                recordingArchive = FakeRecordingArchiveRepository(isSelected = false),
+            )
+
+            viewModel.accept(OnboardingIntent.CompleteOnboarding)
+
+            assertEquals(AppErrorCode.STORAGE, viewModel.state.value.errorCode)
+        }
+
+    @Test
+    fun `Given settings intent When sampling changes Then settings owns updated preference state`() = runTest {
         val viewModel = SettingsViewModel(
             preferencesRepository = FakeAppPreferencesRepository(),
             diagnosticsStore = FakeDiagnosticsStore(),
@@ -86,7 +88,7 @@ class FeatureViewModelTest {
     }
 
     @Test
-    fun `Given settings action When theme changes Then settings owns updated appearance state`() = runTest {
+    fun `Given settings intent When theme changes Then settings owns updated appearance state`() = runTest {
         val viewModel = SettingsViewModel(
             preferencesRepository = FakeAppPreferencesRepository(),
             diagnosticsStore = FakeDiagnosticsStore(),
@@ -124,32 +126,32 @@ class FeatureViewModelTest {
         val viewModel = recordingViewModel(FakeRecordingWorkflow())
         advanceUntilIdle()
 
-        viewModel.accept(RecordingIntent.StartMeasurement)
+        viewModel.accept(RecordingIntent.StartRecording)
 
         assertEquals(RecordingMessage.PICK_AT_LEAST_ONE_SOURCE, viewModel.state.value.message)
         assertEquals(AppErrorCode.VALIDATION, viewModel.state.value.errorCode)
     }
 
     @Test
-    fun `Given Wear permission rejection When recording starts Then Wear guidance is shown`() = runTest {
+    fun `Given watch permission rejection When recording starts Then watch guidance is shown`() = runTest {
         val workflow = FakeRecordingWorkflow().apply {
             startResult = AppResult.failure(
                 AppError(
                     code = AppErrorCode.PERMISSION,
                     operation = "Handle paired PREPARE acknowledgement",
                     diagnosticMessage = "Paired PREPARE permission rejected",
-                    context = mapOf("source" to "wear"),
+                    context = mapOf("source" to "watch"),
                 ),
             )
         }
         val viewModel = recordingViewModel(workflow)
         advanceUntilIdle()
 
-        viewModel.accept(RecordingIntent.ToggleWearSensor(1))
-        viewModel.accept(RecordingIntent.StartMeasurement)
+        viewModel.accept(RecordingIntent.ToggleWatchSensor(1))
+        viewModel.accept(RecordingIntent.StartRecording)
         advanceUntilIdle()
 
-        assertEquals(RecordingMessage.WEAR_PERMISSION_REQUIRED, viewModel.state.value.message)
+        assertEquals(RecordingMessage.WATCH_PERMISSION_REQUIRED, viewModel.state.value.message)
         assertEquals(AppErrorCode.PERMISSION, viewModel.state.value.errorCode)
     }
 
@@ -157,16 +159,16 @@ class FeatureViewModelTest {
     fun `Given waiting start When tapped Then progress appears and duplicate taps are ignored`() = runTest {
         val startGate = CompletableDeferred<Unit>()
         val workflow = FakeRecordingWorkflow().apply { this.startGate = startGate }
-        val sessionStore = MeasurementSessionStore()
+        val sessionStore = RecordingSessionStore()
         val viewModel = recordingViewModel(workflow, sessionStore = sessionStore)
         advanceUntilIdle()
 
         viewModel.accept(RecordingIntent.ToggleSensor(1))
-        viewModel.accept(RecordingIntent.StartMeasurement)
+        viewModel.accept(RecordingIntent.StartRecording)
         runCurrent()
 
         assertTrue(viewModel.state.value.isStarting)
-        viewModel.accept(RecordingIntent.StartMeasurement)
+        viewModel.accept(RecordingIntent.StartRecording)
         assertEquals(1, workflow.startCalls)
 
         startGate.complete(Unit)
@@ -174,7 +176,7 @@ class FeatureViewModelTest {
 
         assertTrue(viewModel.state.value.isStarting)
         sessionStore.markRunning(
-            MeasurementSessionState.Running("session", "fixture", 0L, listOf(1), false),
+            RecordingSessionState.Running("session", "fixture", 0L, listOf(1), false),
         )
         runCurrent()
 
@@ -193,7 +195,7 @@ class FeatureViewModelTest {
         viewModel.accept(RecordingIntent.SetStartDelay(2))
 
         // When
-        viewModel.accept(RecordingIntent.StartMeasurement)
+        viewModel.accept(RecordingIntent.StartRecording)
         runCurrent()
 
         // Then
@@ -210,21 +212,21 @@ class FeatureViewModelTest {
     }
 
     @Test
-    fun `Given storage action When chosen Then recording emits only its picker effect`() = runTest {
+    fun `Given recording archive intent When chosen Then recording emits only its picker effect`() = runTest {
         val viewModel = recordingViewModel(FakeRecordingWorkflow())
         val effect = async { viewModel.effects.first() }
 
-        viewModel.accept(RecordingIntent.ChooseStorage)
+        viewModel.accept(RecordingIntent.ChooseRecordingArchive)
 
-        assertEquals(RecordingEffect.PickStorageDirectory, effect.await())
+        assertEquals(RecordingEffect.PickRecordingArchive, effect.await())
     }
 
     @Test
-    fun `Given an active measurement When stopped Then recording navigates to the main screen`() = runTest {
+    fun `Given an active recording When stopped Then recording navigates to the main screen`() = runTest {
         val viewModel = recordingViewModel(FakeRecordingWorkflow())
         val effect = async { viewModel.effects.first() }
 
-        viewModel.accept(RecordingIntent.StopMeasurement)
+        viewModel.accept(RecordingIntent.StopRecording)
         advanceUntilIdle()
 
         assertEquals(RecordingEffect.Navigate(MainRoute.RECORD), effect.await())
@@ -232,7 +234,7 @@ class FeatureViewModelTest {
 
     @Test
     fun `Given a Wear catalog When observed Then every sensor detail is retained`() = runTest {
-        val catalog = WearSensorCatalogStore()
+        val catalog = WatchSensorCatalogStore()
         val viewModel = recordingViewModel(FakeRecordingWorkflow(), catalog)
         advanceUntilIdle()
 
@@ -271,37 +273,37 @@ class FeatureViewModelTest {
                 reportingMode = com.tomasrepcik.sensorbox.domain.sensors.SensorReportingMode.CONTINUOUS,
                 isWakeUpSensor = true,
             ),
-            viewModel.state.value.wearSensors.single(),
+            viewModel.state.value.watchSensors.single(),
         )
     }
 
     private fun recordingViewModel(
         workflow: RecordingControlUseCase,
-        wearSensorCatalog: WearSensorCatalogStore = WearSensorCatalogStore(),
-        sessionStore: MeasurementSessionStore = MeasurementSessionStore(),
+        watchSensorCatalog: WatchSensorCatalogStore = WatchSensorCatalogStore(),
+        sessionStore: RecordingSessionStore = RecordingSessionStore(),
     ): RecordingViewModel {
         val repository = FakeWearConnectionRepository()
         return RecordingViewModel(
             preferencesRepository = FakeAppPreferencesRepository(),
             availableSensors = AvailableSensorsUseCase { emptyList() },
-            storage = FakeDocumentStorage(hasStorage = true),
-            permissions = MeasurementPermissionsUseCase { emptySet() },
+            recordingArchive = FakeRecordingArchiveRepository(isSelected = true),
+            permissions = RecordingPermissionsUseCase { emptySet() },
             recording = workflow,
             sessionStore = sessionStore,
-            observeWearCapability = ObserveWearCapabilityUseCase(repository),
-            sendWearCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository)),
-            wearSensorCatalog = wearSensorCatalog,
+            observeWatchCapability = ObserveWearCapabilityUseCase(repository),
+            sendWatchCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository)),
+            watchSensorCatalog = watchSensorCatalog,
             elapsedRealtimeClock = ElapsedRealtimeClock { 10_000L },
         )
     }
 }
 
-private class FakeDocumentStorage(private val hasStorage: Boolean) : DocumentStorageGateway {
-    override fun hasStorage(): AppResult<Boolean> = AppResult.success(hasStorage)
+private class FakeRecordingArchiveRepository(private val isSelected: Boolean) : RecordingArchiveRepository {
+    override fun isSelected(): AppResult<Boolean> = AppResult.success(isSelected)
 
-    override fun displayPath(): AppResult<String?> = AppResult.success(if (hasStorage) "fixture" else null)
+    override fun path(): AppResult<String?> = AppResult.success(if (isSelected) "fixture" else null)
 
-    override fun persist(resultIntent: Intent): AppResult<Unit> = AppResult.success(Unit)
+    override fun select(resultIntent: Intent): AppResult<Unit> = AppResult.success(Unit)
 }
 
 private class FakeDiagnosticsStore(
@@ -321,7 +323,7 @@ private class FakeRecordingWorkflow : RecordingControlUseCase {
     var startGate: CompletableDeferred<Unit>? = null
     var startCalls = 0
 
-    override suspend fun start(request: MeasurementRequest): AppResult<Unit> {
+    override suspend fun start(request: RecordingSetup): AppResult<Unit> {
         startCalls += 1
         startGate?.await()
         return startResult

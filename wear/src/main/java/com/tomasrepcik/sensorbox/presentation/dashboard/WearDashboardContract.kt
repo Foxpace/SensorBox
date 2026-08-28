@@ -1,15 +1,15 @@
 package com.tomasrepcik.sensorbox.presentation.dashboard
 
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
-import com.tomasrepcik.sensorbox.domain.sensors.WearSensorDescriptor
+import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorDescriptor
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
 
 enum class WearRoute { MENU, RECORD, LIVE, SETTINGS, ACTIVE }
 
 data class WearDashboardState(
     val route: WearRoute = WearRoute.MENU,
-    val sensors: List<WearSensorDescriptor> = emptyList(),
+    val sensors: List<WatchSensorDescriptor> = emptyList(),
     val selectedSensorIds: Set<Int> = emptySet(),
     val includesGps: Boolean = false,
     val liveSensorType: Int? = null,
@@ -33,9 +33,9 @@ sealed interface WearDashboardIntent {
     data object Back : WearDashboardIntent
     data class ToggleSensor(val sensorType: Int) : WearDashboardIntent
     data object ToggleGps : WearDashboardIntent
-    data object StartMeasurement : WearDashboardIntent
+    data object StartRecording : WearDashboardIntent
     data class PermissionsResolved(val granted: Boolean) : WearDashboardIntent
-    data object StopMeasurement : WearDashboardIntent
+    data object StopRecording : WearDashboardIntent
     data class ObserveSensor(val sensorType: Int) : WearDashboardIntent
     data class SetSamplingPeriod(val index: Int) : WearDashboardIntent
     data object ToggleBatteryRestriction : WearDashboardIntent
@@ -60,10 +60,10 @@ object WearDashboardReducer {
         else -> state
     }
 
-    fun measurementSessionChanged(state: WearDashboardState, session: MeasurementSessionState) = when {
-        session is MeasurementSessionState.Running -> state.copy(route = WearRoute.ACTIVE)
+    fun recordingSessionChanged(state: WearDashboardState, session: RecordingSessionState) = when {
+        session is RecordingSessionState.Running -> state.copy(route = WearRoute.ACTIVE)
 
-        session is MeasurementSessionState.Idle && state.route == WearRoute.ACTIVE ->
+        session is RecordingSessionState.Idle && state.route == WearRoute.ACTIVE ->
             state.copy(route = WearRoute.MENU)
 
         else -> state

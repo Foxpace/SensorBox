@@ -40,16 +40,16 @@ class WearCommandCodecTest {
             WearCommand.StopRecording("session-123", WearStopReason.LOW_BATTERY),
             WearCommand.RecordingResult(
                 sessionId = "session-123",
-                action = WearRecordingAction.START,
+                operation = WearRecordingOperation.START,
                 outcome = WearRecordingOutcome.SUCCEEDED,
             ),
             WearCommand.RecordingResult(
                 sessionId = "session-123",
-                action = WearRecordingAction.STOP,
+                operation = WearRecordingOperation.STOP,
                 outcome = WearRecordingOutcome.FAILED,
-                errorCode = AppErrorCode.MEASUREMENT,
-                errorOperation = "Stop Wear recording",
-                errorMessage = "Wear recording service could not stop",
+                errorCode = AppErrorCode.RECORDING,
+                errorOperation = "Stop watch recording",
+                errorMessage = "watch recording service could not stop",
                 errorContext = mapOf("serviceState" to "stopping"),
                 failureCount = 2,
             ),
@@ -79,9 +79,9 @@ class WearCommandCodecTest {
     fun `Given a successful result with an error When encoded Then it is rejected`() {
         val invalid = WearCommand.RecordingResult(
             sessionId = "session-123",
-            action = WearRecordingAction.START,
+            operation = WearRecordingOperation.START,
             outcome = WearRecordingOutcome.SUCCEEDED,
-            errorCode = AppErrorCode.MEASUREMENT,
+            errorCode = AppErrorCode.RECORDING,
             errorOperation = "Unexpected failure",
             errorMessage = "A successful result cannot contain an error",
         )

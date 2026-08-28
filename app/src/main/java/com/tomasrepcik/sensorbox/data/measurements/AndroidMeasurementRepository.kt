@@ -81,10 +81,10 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         val permission = context.contentResolver.persistedUriPermissions
             .filter { it.isReadPermission }
             .maxByOrNull { it.persistedTime }
-            ?: throw IllegalStateException("Recording directory is not configured")
+            ?: throw IllegalStateException("Recording archive is not configured")
         return DocumentFile.fromTreeUri(context, permission.uri)
             ?.takeIf(DocumentFile::isDirectory)
-            ?: throw IllegalStateException("Recording directory is unavailable")
+            ?: throw IllegalStateException("Recording archive is unavailable")
     }
 
     private fun measurementDirectory(measurementId: String): DocumentFile = selectedMeasurementsDirectory().listFiles()

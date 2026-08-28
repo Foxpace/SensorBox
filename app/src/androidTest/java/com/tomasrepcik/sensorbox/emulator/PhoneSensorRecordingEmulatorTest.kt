@@ -142,7 +142,7 @@ class PhoneSensorRecordingEmulatorTest {
     }
 
     @Test
-    fun givenSignificantMotionWhenStoppedThenThePreparedFileCloses() {
+    fun givenSignificantMotionRecordingWhenStoppedThenThePreparedFileCloses() {
         fixture.start(
             RecordingScenario(
                 name = "PHONE_SIGNIFICANT_MOTION_FAILURE_TEST",

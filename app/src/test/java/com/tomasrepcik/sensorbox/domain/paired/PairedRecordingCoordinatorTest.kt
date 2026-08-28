@@ -4,9 +4,9 @@ import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
-import com.tomasrepcik.sensorbox.domain.measurement.PhoneRecordingController
-import com.tomasrepcik.sensorbox.domain.measurement.StartedPhoneRecording
+import com.tomasrepcik.sensorbox.domain.recording.PhoneRecordingController
+import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
+import com.tomasrepcik.sensorbox.domain.recording.StartedPhoneRecording
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnectionRepository
@@ -14,7 +14,7 @@ import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearNode
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +26,7 @@ import org.junit.Test
 
 class PairedRecordingCoordinatorTest {
     @Test
-    fun `Given phone sources only When recording starts Then no Wear command is sent`() = runTest {
+    fun `Given phone sources only When recording starts Then no watch command is sent`() = runTest {
         // Given
         val fixture = Fixture()
 
@@ -40,12 +40,12 @@ class PairedRecordingCoordinatorTest {
     }
 
     @Test
-    fun `Given Wear sources When recording starts Then phone starts before direct Wear start`() = runTest {
+    fun `Given watch sources When recording starts Then phone starts before direct watch start`() = runTest {
         // Given
         val fixture = Fixture()
 
         // When
-        val result = fixture.coordinator.start(request(wearSensorIds = setOf(1)))
+        val result = fixture.coordinator.start(request(watchSensorIds = setOf(1)))
 
         // Then
         assertTrue(result.isSuccess)
@@ -60,23 +60,23 @@ class PairedRecordingCoordinatorTest {
 
         // When
         val result = fixture.coordinator.start(
-            request(wearSensorIds = setOf(1), durationSeconds = 12),
+            request(watchSensorIds = setOf(1), durationSeconds = 12),
         )
 
         // Then
-        val wearStart = fixture.repository.commands.single() as WearCommand.StartRecording
+        val watchStart = fixture.repository.commands.single() as WearCommand.StartRecording
         assertTrue(result.isSuccess)
         assertEquals(12_000L, fixture.phone.startedDurationMillis)
-        assertEquals(fixture.phone.startedDurationMillis, wearStart.request.durationMillis)
+        assertEquals(fixture.phone.startedDurationMillis, watchStart.request.durationMillis)
     }
 
     @Test
-    fun `Given Wear start fails When recording starts Then phone and Wear are stopped`() = runTest {
+    fun `Given watch start fails When recording starts Then phone and watch are stopped`() = runTest {
         // Given
         val fixture = Fixture().apply { repository.failStart = true }
 
         // When
-        val result = fixture.coordinator.start(request(wearSensorIds = setOf(1)))
+        val result = fixture.coordinator.start(request(watchSensorIds = setOf(1)))
 
         // Then
         assertTrue(result.isFailure)
@@ -85,13 +85,13 @@ class PairedRecordingCoordinatorTest {
     }
 
     @Test
-    fun `Given Wear start result is lost When recording starts Then phone keeps recording`() = runTest {
+    fun `Given watch start result is lost When recording starts Then phone keeps recording`() = runTest {
         // Given
         val fixture = Fixture().apply { repository.dropStartResult = true }
 
         // When
         val result = fixture.coordinator.start(
-            request(wearSensorIds = setOf(1), durationSeconds = 12),
+            request(watchSensorIds = setOf(1), durationSeconds = 12),
         )
 
         // Then
@@ -102,10 +102,10 @@ class PairedRecordingCoordinatorTest {
     }
 
     @Test
-    fun `Given paired recording When stopped Then phone and Wear receive stop`() = runTest {
+    fun `Given paired recording When stopped Then phone and watch receive stop`() = runTest {
         // Given
         val fixture = Fixture()
-        fixture.coordinator.start(request(wearSensorIds = setOf(1)))
+        fixture.coordinator.start(request(watchSensorIds = setOf(1)))
 
         // When
         val result = fixture.coordinator.stop()
@@ -132,7 +132,7 @@ class PairedRecordingCoordinatorTest {
     }
 
     @Test
-    fun `Given active recording When stale Wear stop arrives Then phone keeps recording`() = runTest {
+    fun `Given active recording When stale watch stop arrives Then phone keeps recording`() = runTest {
         // Given
         val fixture = Fixture()
         fixture.coordinator.start(request())
@@ -146,11 +146,11 @@ class PairedRecordingCoordinatorTest {
     }
 
     @Test
-    fun `Given phone timer expires while Wear is unreachable When recording starts again Then phone is available`() =
+    fun `Given phone timer expires while watch is unreachable When recording starts again Then phone is available`() =
         runTest {
             // Given
             val fixture = Fixture()
-            fixture.coordinator.start(request(wearSensorIds = setOf(1), durationSeconds = 12))
+            fixture.coordinator.start(request(watchSensorIds = setOf(1), durationSeconds = 12))
             val sessionId = (fixture.repository.commands.single() as WearCommand.StartRecording).sessionId
             fixture.repository.failSends = true
 
@@ -169,7 +169,7 @@ class PairedRecordingCoordinatorTest {
             assertEquals(2, fixture.phone.startCalls)
         }
 
-    private fun request(wearSensorIds: Set<Int> = emptySet(), durationSeconds: Int = 0) = MeasurementRequest(
+    private fun request(watchSensorIds: Set<Int> = emptySet(), durationSeconds: Int = 0) = RecordingSetup(
         sensorIds = setOf(1),
         includesGps = false,
         samplingPeriodIndex = 0,
@@ -177,12 +177,12 @@ class PairedRecordingCoordinatorTest {
         useWakeLock = false,
         gpsIntervalSeconds = 10,
         gpsMinDistanceMeters = 20,
-        wearSensorIds = wearSensorIds,
+        watchSensorIds = watchSensorIds,
         durationSeconds = durationSeconds,
     )
 
     private class Fixture {
-        val inbox = WearRecordingResultInbox()
+        val inbox = WatchRecordingResultInbox()
         val phone = FakePhoneRecordingController()
         val repository = RecordingResultRepository(inbox)
         val coordinator = PairedRecordingCoordinator(
@@ -199,7 +199,7 @@ private class FakePhoneRecordingController : PhoneRecordingController {
     var stopCalls = 0
     var startedDurationMillis = 0L
 
-    override fun start(sessionId: String, request: MeasurementRequest): AppResult<StartedPhoneRecording> {
+    override fun start(sessionId: String, request: RecordingSetup): AppResult<StartedPhoneRecording> {
         startCalls += 1
         startedDurationMillis = request.durationSeconds.coerceAtLeast(0) * 1_000L
         return AppResult.success(StartedPhoneRecording(sessionId, "fixture", startedDurationMillis))
@@ -218,7 +218,7 @@ private class FakePhoneRecordingController : PhoneRecordingController {
     override fun annotate(text: String, timestampMillis: Long): AppResult<Unit> = AppResult.success(Unit)
 }
 
-private class RecordingResultRepository(private val inbox: WearRecordingResultInbox) : WearConnectionRepository {
+private class RecordingResultRepository(private val inbox: WatchRecordingResultInbox) : WearConnectionRepository {
     val commands = mutableListOf<WearCommand>()
     var failStart = false
     var failSends = false
@@ -239,26 +239,26 @@ private class RecordingResultRepository(private val inbox: WearRecordingResultIn
             is WearCommand.StartRecording -> if (!dropStartResult) {
                 publish(
                     command.sessionId,
-                    WearRecordingAction.START,
+                    WearRecordingOperation.START,
                     failed = failStart,
                 )
             }
 
-            is WearCommand.StopRecording -> publish(command.sessionId, WearRecordingAction.STOP, failed = false)
+            is WearCommand.StopRecording -> publish(command.sessionId, WearRecordingOperation.STOP, failed = false)
 
             else -> Unit
         }
         return AppResult.success(Unit)
     }
 
-    private fun publish(sessionId: String, action: WearRecordingAction, failed: Boolean) {
+    private fun publish(sessionId: String, operation: WearRecordingOperation, failed: Boolean) {
         inbox.publish(
             WearCommand.RecordingResult(
                 sessionId = sessionId,
-                action = action,
+                operation = operation,
                 outcome = if (failed) WearRecordingOutcome.FAILED else WearRecordingOutcome.SUCCEEDED,
-                errorCode = AppErrorCode.MEASUREMENT.takeIf { failed },
-                errorOperation = "Start Wear recording".takeIf { failed },
+                errorCode = AppErrorCode.RECORDING.takeIf { failed },
+                errorOperation = "Start watch recording".takeIf { failed },
                 errorMessage = "Fixture start failed".takeIf { failed },
                 failureCount = if (failed) 1 else 0,
             ),
