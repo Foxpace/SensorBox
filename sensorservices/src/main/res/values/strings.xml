@@ -4,6 +4,6 @@
     <string name="no_path">No storage path</string>
     <string name="text_stop">Stop</string>
     <string name="notification_title">Recording sensors</string>
-    <string name="notification_content">SensorBox is writing measurement data</string>
+    <string name="notification_content">SensorBox is recording sensor data</string>
     <string name="notification_channel_name">Sensor recording</string>
 </resources>

@@ -3,8 +3,8 @@ package com.tomasrepcik.sensorbox
 import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
-import com.tomasrepcik.sensorbox.domain.paired.PhoneWearMessageDispatcher
-import com.tomasrepcik.sensorbox.domain.sync.ReceiveWearFileUseCase
+import com.tomasrepcik.sensorbox.domain.paired.PhoneWatchMessageDispatcher
+import com.tomasrepcik.sensorbox.domain.sync.ReceiveWatchFileUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,10 +16,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MsgListener : WearableListenerService() {
     @Inject
-    lateinit var messageDispatcher: PhoneWearMessageDispatcher
+    lateinit var messageDispatcher: PhoneWatchMessageDispatcher
 
     @Inject
-    lateinit var receiveWearFile: ReceiveWearFileUseCase
+    lateinit var receiveWearFile: ReceiveWatchFileUseCase
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

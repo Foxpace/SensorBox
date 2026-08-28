@@ -69,7 +69,7 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.Navigate -> mutableEffects.trySend(SettingsEffect.Navigate(intent.route))
 
             is SettingsIntent.SetSamplingPeriod,
-            is SettingsIntent.SetLowBatteryRestriction,
+            is SettingsIntent.SetStopOnLowBattery,
             is SettingsIntent.SetWakeLock,
             is SettingsIntent.SetKeepScreenAwake,
             is SettingsIntent.SetGpsInterval,
@@ -82,7 +82,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun SettingsIntent.toPreferencesIntent(): AppPreferencesIntent? = when (this) {
         is SettingsIntent.SetSamplingPeriod -> AppPreferencesIntent.SetSensorSamplingPeriod(index)
-        is SettingsIntent.SetLowBatteryRestriction -> AppPreferencesIntent.SetLowBatteryRestriction(enabled)
+        is SettingsIntent.SetStopOnLowBattery -> AppPreferencesIntent.SetStopOnLowBattery(enabled)
         is SettingsIntent.SetWakeLock -> AppPreferencesIntent.SetWakeLock(enabled)
         is SettingsIntent.SetKeepScreenAwake -> AppPreferencesIntent.SetKeepPhoneDisplayOn(enabled)
         is SettingsIntent.SetGpsInterval -> AppPreferencesIntent.SetGpsInterval(seconds)
@@ -122,7 +122,7 @@ class SettingsViewModel @Inject constructor(
         withDiagnostics { mutableEffects.send(SettingsEffect.ShareDiagnosticsFile) }
     }
 
-    private fun withDiagnostics(action: suspend () -> Unit) {
+    private fun withDiagnostics(operation: suspend () -> Unit) {
         viewModelScope.launch(ioDispatcher) {
             when (val result = diagnosticsStore.readText()) {
                 is AppResult.Success -> {
@@ -131,7 +131,7 @@ class SettingsViewModel @Inject constructor(
                         diagnosticsLoaded = true,
                         errorCode = null,
                     )
-                    if (result.value.isNotBlank()) action()
+                    if (result.value.isNotBlank()) operation()
                 }
 
                 is AppResult.Failure -> fail(result.error.code)

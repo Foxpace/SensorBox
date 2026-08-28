@@ -34,8 +34,8 @@ object AppPreferencesReducer {
             display = current.display.copy(dynamicColors = intent.enabled),
         )
 
-        is AppPreferencesIntent.SetLowBatteryRestriction -> current.copy(
-            recording = current.recording.copy(restrictMeasurementOnLowBattery = intent.enabled),
+        is AppPreferencesIntent.SetStopOnLowBattery -> current.copy(
+            recording = current.recording.copy(stopRecordingOnLowBattery = intent.enabled),
         )
 
         is AppPreferencesIntent.SetSensorSamplingPeriod -> current.copy(

@@ -216,7 +216,7 @@ fun SensorBoxSecondaryButton(
 }
 
 @Composable
-fun SensorBoxBottomAction(
+fun SensorBoxBottomButton(
     title: String,
     description: String,
     buttonLabel: String,

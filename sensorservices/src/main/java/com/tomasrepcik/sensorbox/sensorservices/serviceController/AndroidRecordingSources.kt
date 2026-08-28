@@ -10,35 +10,35 @@ import com.tomasrepcik.sensorbox.recording.RecordingSource
 import com.tomasrepcik.sensorbox.sensorservices.handlers.GPSHandler
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
 import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.AndroidActivityRecognitionPlatform
-import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.GPSMeasurement
-import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SensorMeasurement
-import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SignificantMotion
-import com.tomasrepcik.sensorbox.sensorservices.intent.MeasurementLaunchRequest
+import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.GpsRecording
+import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SensorRecording
+import com.tomasrepcik.sensorbox.sensorservices.handlers.measurements.SignificantMotionRecording
+import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
 
 internal class AndroidRecordingSources(
     context: Context,
-    request: MeasurementLaunchRequest,
+    request: RecordingRequest,
     storage: MeasurementStorage,
     diagnosticLogger: DiagnosticLogger,
     clock: EpochClock,
 ) {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
-    private val session = SessionRecordingSource(request, storage, clock, sensorManager)
+    private val sessionMetadata = SessionMetadataRecordingSource(request, storage, clock, sensorManager)
 
     val sources: List<RecordingSource> = listOf(
-        session,
+        sessionMetadata,
         SensorRecordingSource(
             request,
-            SensorMeasurement(
+            SensorRecording(
                 storage = storage,
                 diagnosticLogger = diagnosticLogger,
                 sensorManager = sensorManager,
-                onStopped = session::recordSensorStats,
+                onStopped = sessionMetadata::recordSensorStats,
             ),
         ),
         GpsRecordingSource(
             request,
-            GPSMeasurement(GPSHandler(LocationServices.getFusedLocationProviderClient(context)), storage, clock),
+            GpsRecording(GPSHandler(LocationServices.getFusedLocationProviderClient(context)), storage, clock),
         ),
         ActivityRecordingSource(
             request,
@@ -47,11 +47,11 @@ internal class AndroidRecordingSources(
         ),
         SignificantMotionRecordingSource(
             request,
-            SignificantMotion(storage, sensorManager),
+            SignificantMotionRecording(storage, sensorManager),
         ),
     )
 
-    fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = session.annotate(timestampMillis, text)
+    fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = sessionMetadata.annotate(timestampMillis, text)
 
-    fun playAlarm(): AppResult<Unit> = session.playAlarm()
+    fun playAlarm(): AppResult<Unit> = sessionMetadata.playAlarm()
 }

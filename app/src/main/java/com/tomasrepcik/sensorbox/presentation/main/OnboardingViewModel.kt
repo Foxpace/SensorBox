@@ -8,7 +8,7 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.domain.measurement.DocumentStorageGateway
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +21,10 @@ import javax.inject.Inject
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
-    private val documentStorage: DocumentStorageGateway,
+    private val recordingArchive: RecordingArchiveRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(
-        OnboardingState(storagePath = documentStorage.displayPath().getOrNull()),
+        OnboardingState(recordingArchivePath = recordingArchive.path().getOrNull()),
     )
     private val mutableEffects = Channel<OnboardingEffect>(Channel.BUFFERED)
 
@@ -45,7 +45,7 @@ class OnboardingViewModel @Inject constructor(
 
             OnboardingIntent.CompleteOnboarding -> completeOnboarding()
 
-            OnboardingIntent.ChooseStorage -> mutableEffects.trySend(OnboardingEffect.PickStorageDirectory)
+            OnboardingIntent.ChooseRecordingArchive -> mutableEffects.trySend(OnboardingEffect.PickRecordingArchive)
 
             OnboardingIntent.OpenPrivacyPolicy -> mutableEffects.trySend(OnboardingEffect.OpenPrivacyPolicy)
 
@@ -56,18 +56,18 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    fun handleStorageResult(resultIntent: Intent?) {
-        val result = resultIntent?.let(documentStorage::persist) ?: AppResult.failure(
-            AppError(AppErrorCode.STORAGE, "Select onboarding storage directory"),
+    fun handleRecordingArchiveResult(resultIntent: Intent?) {
+        val result = resultIntent?.let(recordingArchive::select) ?: AppResult.failure(
+            AppError(AppErrorCode.STORAGE, "Select onboarding recording archive"),
         )
         mutableState.value = state.value.copy(
-            storagePath = documentStorage.displayPath().getOrNull(),
+            recordingArchivePath = recordingArchive.path().getOrNull(),
             errorCode = result.errorOrNull()?.code,
         )
     }
 
     private fun completeOnboarding() {
-        if (documentStorage.hasStorage().getOrNull() != true) {
+        if (recordingArchive.isSelected().getOrNull() != true) {
             mutableState.value = state.value.copy(errorCode = AppErrorCode.STORAGE)
             return
         }

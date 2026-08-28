@@ -55,7 +55,7 @@ internal class SensorHolder(
         } else if (result.exceptionOrNull() == null) {
             droppedSamples.incrementAndGet()
             val cause = IllegalStateException("Sensor sample buffer is full")
-            val error = AppError.from(AppErrorCode.MEASUREMENT, "Buffer ${spec.fileName}", cause)
+            val error = AppError.from(AppErrorCode.RECORDING, "Buffer ${spec.fileName}", cause)
             reportFailure(error)
             samples.close(cause)
         } else if (failure.get() != null) {

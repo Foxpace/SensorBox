@@ -34,15 +34,15 @@ class AppPreferencesReducerTest {
     fun `Given battery protection enabled When disabled Then the preference changes`() {
         val original = AppPreferencesFixtures.preferences()
         val givenPreferences = original.copy(
-            recording = original.recording.copy(restrictMeasurementOnLowBattery = true),
+            recording = original.recording.copy(stopRecordingOnLowBattery = true),
         )
 
         val actual = AppPreferencesReducer.reduce(
             current = givenPreferences,
-            intent = AppPreferencesIntent.SetLowBatteryRestriction(false),
+            intent = AppPreferencesIntent.SetStopOnLowBattery(false),
         )
 
-        assertEquals(false, actual.recording.restrictMeasurementOnLowBattery)
+        assertEquals(false, actual.recording.stopRecordingOnLowBattery)
     }
 
     @Test

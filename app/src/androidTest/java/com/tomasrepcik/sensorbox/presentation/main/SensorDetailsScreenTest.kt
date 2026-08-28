@@ -22,7 +22,7 @@ class SensorDetailsScreenTest {
             SensorBoxTheme {
                 SensorDetailsScreen(
                     state = RecordingState(
-                        wearSensors = listOf(
+                        watchSensors = listOf(
                             SensorDescriptor(
                                 type = 1,
                                 name = "Wear Accelerometer",
@@ -39,7 +39,7 @@ class SensorDetailsScreenTest {
                             ),
                         ),
                         detailsSensorType = 1,
-                        detailsSensorSource = RecordingSensorSource.WEAR,
+                        detailsDevice = RecordingDevice.WATCH,
                     ),
                     onBack = {},
                     onPreview = {},

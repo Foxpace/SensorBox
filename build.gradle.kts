@@ -29,7 +29,7 @@ data class ReadmeScreenshot(val module: String, val preview: String, val destina
 
 val readmeScreenshots = listOf(
     ReadmeScreenshot(":app", "readmeSourceSelection", "sensorbox-phone-record.png"),
-    ReadmeScreenshot(":app", "readmeMeasurementSetup", "sensorbox-phone-setup.png"),
+    ReadmeScreenshot(":app", "readmeRecordingSetup", "sensorbox-phone-setup.png"),
     ReadmeScreenshot(":app", "readmeIntroWelcome", "sensorbox-intro-welcome.png"),
     ReadmeScreenshot(":app", "readmeIntroPrivacy", "sensorbox-intro-privacy.png"),
     ReadmeScreenshot(":app", "readmeIntroPolicy", "sensorbox-intro-policy.png"),

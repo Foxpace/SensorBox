@@ -1,8 +1,8 @@
 # Define the SensorBox application architecture
 
-SensorBox organizes code by user workflow and keeps platform code at the edge. `core-common` owns application outcomes and shared clocks. `core` owns reusable Android storage, preferences, and diagnostics. `recording-core` executes a complete recording plan without Android dependencies. `sensorservices` turns that plan into Android sensor and storage work. `WearOsLib` owns Wear command models and Google Play transport. `app` and `wear` own presentation and the phone or watch behavior behind received commands.
+SensorBox organizes code by user workflow and keeps platform code at the edge. `core-common` owns application outcomes and shared clocks. `core` owns reusable Android storage, preferences, and diagnostics. `recording-core` executes a complete recording request without Android dependencies. `sensorservices` turns that request into Android sensor and storage work. `WearOsLib` owns Wear command models and Google Play transport. `app` and `wear` own presentation and the phone or watch behavior behind received commands.
 
-Each screen owns immutable state, user actions, effects, its ViewModel, and the use cases needed by that ViewModel. Root screens connect Compose to the ViewModel and perform native effects. Child UI renders state and reports user actions. Application navigation follows user workflows rather than technical tiers.
+Each screen owns immutable state, intents, effects, its ViewModel, and the use cases needed by that ViewModel. Root composables connect Compose to the ViewModel and perform native effects. Child UI renders state and sends intents. Application navigation follows user workflows rather than technical tiers.
 
 Expected failures cross module interfaces as `AppResult<T>` with stable `AppErrorCode` values. Infrastructure adapters translate platform exceptions. Diagnostics remain local to the device. Tests use fakes at real seams and assert the outcomes seen by production callers.
 

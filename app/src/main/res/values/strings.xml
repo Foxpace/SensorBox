@@ -29,7 +29,7 @@
     <string name="intro_incognito_title">Nothing is going out</string>
     <string name="intro_incognito_body">Measurements stay locally on your devices. SensorBox has no analytics, cloud upload, or account requirement.</string>
     <string name="intro_policy_title">Privacy and terms</string>
-    <string name="intro_policy_body">Review the policies before continuing. SensorBox only records when you explicitly start a measurement.</string>
+    <string name="intro_policy_body">Review the policies before continuing. SensorBox only records when you explicitly start recording.</string>
     <string name="intro_policy_button">Privacy policy</string>
     <string name="intro_terms_button">Terms of use</string>
     <string name="intro_lifecycle_title">Android may pause recordings</string>
@@ -37,14 +37,14 @@
     <string name="intro_battery_title">Allow reliable background work</string>
     <string name="intro_battery_body">You can ask Android to exempt SensorBox from battery optimization. This is optional and can be changed later in system settings.</string>
     <string name="intro_battery_action">Review battery settings</string>
-    <string name="intro_storage_title">Choose a recording folder</string>
-    <string name="intro_storage_body">Android’s folder picker gives SensorBox access only to the location you choose. A folder is required before finishing setup.</string>
-    <string name="intro_storage_action">Choose folder</string>
-    <string name="intro_storage_change_action">Change folder</string>
-    <string name="intro_storage_selected">Selected folder: %1$s</string>
+    <string name="intro_archive_title">Choose a recording archive</string>
+    <string name="intro_archive_body">Android’s folder picker gives SensorBox access only to the directory you choose as the recording archive. An archive is required before finishing setup.</string>
+    <string name="intro_archive_action">Choose archive</string>
+    <string name="intro_archive_change_action">Change archive</string>
+    <string name="intro_archive_selected">Recording archive: %1$s</string>
     <string name="intro_back">Back</string>
     <string name="intro_finish">Start SensorBox</string>
-    <string name="dialog_privacy_policy">SensorBox does not collect or upload your sensor or GPS recordings. Your measurements stay in the folder you select. Recording begins only after your action and remains visible through a foreground-service notification.</string>
+    <string name="dialog_privacy_policy">SensorBox does not collect or upload your sensor or GPS recordings. Your measurements stay in the recording archive you select. Recording begins only after your intent and remains visible through a foreground-service notification.</string>
     <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
     <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
 
@@ -71,16 +71,16 @@
     <string name="privacy_health_data">Privacy and health data</string>
     <string name="privacy_access_title">Why SensorBox requests access</string>
     <string name="privacy_permissions_body">Sensor and location permissions are requested only after you select those sources and tap Start recording.</string>
-    <string name="privacy_storage_body">Recordings are written to the folder you choose through Android’s system document picker.</string>
+    <string name="privacy_storage_body">Measurements are written to the recording archive you choose through Android’s system document picker.</string>
     <string name="privacy_no_upload_body">SensorBox does not upload recorded sensor or location data.</string>
 
     <string name="pick_sensors">Pick sensors</string>
     <string name="phone_and_wear_ready">Phone and Wear OS ready</string>
-    <string name="choose_measurement_signals">Choose signals for this measurement</string>
+    <string name="choose_recording_sources">Choose recording sources</string>
     <string name="options">Options</string>
     <string name="sensors">Sensors</string>
     <string name="phone_sensors">Phone</string>
-    <string name="wear_sensors">Wear OS</string>
+    <string name="watch_sensors">Wear OS</string>
     <string name="selected_count">%1$d of %2$d selected</string>
     <string name="device_location">Device location</string>
     <string name="information_about_gps">Information about GPS</string>
@@ -98,14 +98,14 @@
     </plurals>
     <string name="message_pick_source_title">Select a recording source</string>
     <string name="message_pick_source">Pick at least one sensor or GPS.</string>
-    <string name="message_storage_required_title">Recording folder required</string>
-    <string name="message_storage_required">Choose a folder before recording.</string>
+    <string name="message_recording_archive_required_title">Recording archive required</string>
+    <string name="message_recording_archive_required">Choose a recording archive before recording.</string>
     <string name="message_permission_required_title">Permission required</string>
     <string name="message_permission_required">Grant the required permission, then try again.</string>
     <string name="message_wear_permission_required_title">Permission required on Wear OS</string>
     <string name="message_wear_permission_required">Open SensorBox on your watch, grant Location permission, then try again.</string>
-    <string name="message_measurement_failed_title">Recording could not start</string>
-    <string name="message_measurement_failed">Check diagnostics for details, then try again.</string>
+    <string name="message_recording_failed_title">Recording could not start</string>
+    <string name="message_recording_failed">Check diagnostics for details, then try again.</string>
 
     <string name="measurements">Measurements</string>
     <string name="measurement_details">Measurement details</string>
@@ -122,8 +122,8 @@
     <string name="gps_coordinates">GPS coordinates</string>
     <string name="text_data">Text data</string>
     <string name="loading_measurements">Loading measurements…</string>
-    <string name="measurements_read_failed">The selected recording folder could not be read.</string>
-    <string name="measurements_empty">No measurements were found in the selected recording folder.</string>
+    <string name="measurements_read_failed">The recording archive could not be read.</string>
+    <string name="measurements_empty">No measurements were found in the recording archive.</string>
     <string name="chart_sample_count">%1$d chart samples</string>
     <string name="sensor_chart_zoom_out">Zoom out</string>
     <string name="sensor_chart_show_all">Show all</string>
@@ -138,15 +138,15 @@
     <string name="coordinate_altitude">Altitude: %1$s m</string>
     <string name="coordinate_accuracy">Accuracy: %1$s m</string>
     <string name="text_truncated_notice">Only the first 100,000 characters are shown.</string>
-    <string name="measurement_settings">Measurement settings</string>
-    <string name="measurement_settings_subtitle">Control how measurements are recorded</string>
-    <string name="measurement_setup">Measurement setup</string>
+    <string name="recording_settings">Recording settings</string>
+    <string name="recording_settings_subtitle">Control how recordings run</string>
+    <string name="recording_setup">Recording setup</string>
     <string name="source_summary_ready">%1$s ready</string>
-    <string name="recording_folder">Recording folder</string>
-    <string name="choose_recording_folder">Choose where recordings are saved</string>
-    <string name="folder_required">Folder required</string>
+    <string name="recording_archive">Recording archive</string>
+    <string name="choose_recording_archive">Choose the phone directory for measurements</string>
+    <string name="recording_archive_required">Recording archive required</string>
     <string name="ready_to_record">Ready to record</string>
-    <string name="start_measurement">Start measurement</string>
+    <string name="start_recording">Start recording</string>
     <string name="starting_recording">Starting recording…</string>
     <plurals name="starting_in_seconds">
         <item quantity="one">Starting in %d second…</item>
@@ -155,9 +155,9 @@
     <string name="custom_measurement_name">Measurement name</string>
     <string name="custom_measurement_name_description">Optional folder-name prefix</string>
     <string name="start_delay">Start delay</string>
-    <string name="measurement_duration">Duration</string>
-    <string name="measurement_notes">Notes</string>
-    <string name="measurement_notes_description">One note per line; saved in extra.json</string>
+    <string name="recording_duration">Duration</string>
+    <string name="recording_notes">Notes</string>
+    <string name="recording_notes_description">One note per line; saved in extra.json</string>
     <string name="audible_alarm_offsets">Audible alarms</string>
     <string name="audible_alarm_offsets_description">Seconds after start, separated by commas</string>
     <string name="activity_recognition">Activity recognition</string>
@@ -166,7 +166,7 @@
     <string name="significant_motion">Significant motion</string>
     <string name="significant_motion_description">Record and re-arm the one-shot trigger sensor</string>
     <string name="battery_guard">Battery guard</string>
-    <string name="battery_guard_settings_description">Stop a session when the battery becomes low</string>
+    <string name="battery_guard_settings_description">Stop recording when the battery becomes low</string>
     <string name="battery_guard_setup_description">Stop when the battery becomes low</string>
     <string name="keep_cpu_awake">Keep CPU awake</string>
     <string name="keep_cpu_awake_settings_description">Use a partial wake lock while recording</string>
@@ -198,7 +198,7 @@
     <string name="setup_details_category">Details</string>
     <string name="setup_timing_category">Timing</string>
     <string name="setup_sources_category">Sources</string>
-    <string name="measurement_markers_category">Markers</string>
+    <string name="recording_annotations_category">Markers</string>
     <string name="theme_mode">Theme</string>
     <string name="theme_mode_description">Choose how the app follows the light and dark theme</string>
     <string name="theme_automatic">Automatic</string>
@@ -291,6 +291,6 @@
     <string name="diagnostics_clear_confirmation">Delete both retained diagnostic log files? This cannot be undone.</string>
     <string name="diagnostics_copied">Diagnostics copied.</string>
     <string name="diagnostics_cleared">Diagnostics cleared.</string>
-    <string name="diagnostics_action_failed">The diagnostics action failed.</string>
+    <string name="diagnostics_operation_failed">The diagnostics operation failed.</string>
     <string name="diagnostics_share_failed">Diagnostics could not be shared. The error was saved for a later attempt.</string>
 </resources>

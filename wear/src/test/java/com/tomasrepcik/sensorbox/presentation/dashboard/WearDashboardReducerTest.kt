@@ -2,7 +2,7 @@ package com.tomasrepcik.sensorbox.presentation.dashboard
 
 import com.tomasrepcik.sensorbox.core.testing.AppPreferencesFixtures
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,12 +54,12 @@ class WearDashboardReducerTest {
 
     @Test
     fun `Given recording screen When recording finishes Then menu with sync is restored`() {
-        val active = WearDashboardReducer.measurementSessionChanged(
+        val active = WearDashboardReducer.recordingSessionChanged(
             WearDashboardState(route = WearRoute.RECORD),
-            MeasurementSessionState.Running("session", "fixture", 1L, listOf(1), false),
+            RecordingSessionState.Running("session", "fixture", 1L, listOf(1), false),
         )
 
-        val finished = WearDashboardReducer.measurementSessionChanged(active, MeasurementSessionState.Idle)
+        val finished = WearDashboardReducer.recordingSessionChanged(active, RecordingSessionState.Idle)
 
         assertEquals(WearRoute.ACTIVE, active.route)
         assertEquals(WearRoute.MENU, finished.route)

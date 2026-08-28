@@ -41,7 +41,7 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
             gpsIntervalSeconds = this[Keys.GPS_INTERVAL] ?: 10,
             gpsMinDistanceMeters = this[Keys.GPS_DISTANCE] ?: 20,
             sensorSamplingPeriod = this[Keys.SAMPLING_PERIOD] ?: 0,
-            restrictMeasurementOnLowBattery = this[Keys.LOW_BATTERY] ?: true,
+            stopRecordingOnLowBattery = this[Keys.LOW_BATTERY] ?: true,
             useWakeLock = this[Keys.WAKE_LOCK] ?: false,
         ),
         display = DisplayPreferences(
@@ -63,7 +63,7 @@ class DataStoreAppPreferencesRepository(private val dataStore: DataStore<Prefere
         this[Keys.GPS_INTERVAL] = value.recording.gpsIntervalSeconds
         this[Keys.GPS_DISTANCE] = value.recording.gpsMinDistanceMeters
         this[Keys.SAMPLING_PERIOD] = value.recording.sensorSamplingPeriod
-        this[Keys.LOW_BATTERY] = value.recording.restrictMeasurementOnLowBattery
+        this[Keys.LOW_BATTERY] = value.recording.stopRecordingOnLowBattery
         this[Keys.WAKE_LOCK] = value.recording.useWakeLock
         this[Keys.KEEP_PHONE_DISPLAY_ON] = value.display.keepPhoneDisplayOn
         this[Keys.KEEP_DISPLAY_ON] = value.display.keepWearDisplayOn

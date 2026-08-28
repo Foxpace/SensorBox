@@ -1,17 +1,17 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.navigation3.runtime.NavKey
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionState
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
 import kotlinx.serialization.Serializable
 
 @Serializable
 enum class MainRoute : NavKey {
     ONBOARDING,
     RECORD,
-    ACTIVE_MEASUREMENT,
+    ACTIVE_RECORDING,
     SENSOR_DETAILS,
     SENSOR_PREVIEW,
-    SETUP,
+    RECORDING_SETUP,
     MEASUREMENTS,
     MEASUREMENT_DETAILS,
     MEASUREMENT_FILE,
@@ -23,7 +23,7 @@ enum class MainRoute : NavKey {
 
 data class MainState(
     val route: MainRoute = MainRoute.ONBOARDING,
-    val session: MeasurementSessionState = MeasurementSessionState.Idle,
+    val session: RecordingSessionState = RecordingSessionState.Idle,
     val keepScreenAwake: Boolean = false,
     val hasLoadedPreferences: Boolean = false,
 )

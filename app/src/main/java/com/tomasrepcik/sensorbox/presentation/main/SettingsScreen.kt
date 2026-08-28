@@ -58,7 +58,7 @@ fun SettingsScreen(
     val isBatteryOptimizationExempt = rememberBatteryOptimizationExemption()
     LaunchedEffect(Unit) { onIntent(SettingsIntent.ViewDiagnostics) }
     SensorBoxBackScreen(
-        title = stringResource(R.string.measurement_settings),
+        title = stringResource(R.string.recording_settings),
         onBack = onBack,
         modifier = modifier,
         itemSpacing = 0.dp,
@@ -121,15 +121,15 @@ private fun DiagnosticsSetting(state: SettingsState, onIntent: (SettingsIntent) 
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     } else {
-        SettingsActionRow(
+        SettingsControlRow(
             title = stringResource(R.string.diagnostics_view),
             description = stringResource(R.string.diagnostics_view_summary),
         ) { onIntent(SettingsIntent.Navigate(MainRoute.DIAGNOSTICS)) }
-        SettingsActionRow(
+        SettingsControlRow(
             title = stringResource(R.string.diagnostics_share),
             description = stringResource(R.string.diagnostics_share_summary),
         ) { onIntent(SettingsIntent.ShareDiagnosticsFile) }
-        SettingsActionRow(
+        SettingsControlRow(
             title = stringResource(R.string.diagnostics_clear),
             description = stringResource(R.string.diagnostics_clear_summary),
             showDivider = false,
@@ -259,8 +259,8 @@ private fun BatteryGuardSetting(state: SettingsState, onIntent: (SettingsIntent)
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_settings_description),
-        checked = state.preferences.recording.restrictMeasurementOnLowBattery,
-    ) { onIntent(SettingsIntent.SetLowBatteryRestriction(it)) }
+        checked = state.preferences.recording.stopRecordingOnLowBattery,
+    ) { onIntent(SettingsIntent.SetStopOnLowBattery(it)) }
 }
 
 @Composable
@@ -306,7 +306,7 @@ private fun BatteryOptimizationSetting(isExempt: Boolean, onIntent: (SettingsInt
 private fun AboutSetting(onIntent: (SettingsIntent) -> Unit) {
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
 
-    SettingsActionRow(
+    SettingsControlRow(
         title = stringResource(R.string.menu_about),
         description = stringResource(R.string.about_summary),
         showDivider = false,
@@ -411,7 +411,7 @@ fun BooleanSetting(title: String, description: String, checked: Boolean, onCheck
 }
 
 @Composable
-private fun SettingsActionRow(
+private fun SettingsControlRow(
     title: String,
     description: String,
     showDivider: Boolean = true,

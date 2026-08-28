@@ -9,7 +9,7 @@ import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.Wearable
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
+import com.tomasrepcik.sensorbox.domain.sync.SyncWatchMeasurementsUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.GooglePlayWearConnectionRepository
 import com.tomasrepcik.sensorbox.wearoslib.files.GooglePlayWearFileTransferClient
 import com.tomasrepcik.sensorbox.wearoslib.files.WearSyncEmulatorFixture
@@ -44,7 +44,7 @@ class WearToPhoneSyncSenderEmulatorTest {
 
     @Test
     fun givenPairedEmulatorsWhenWearSyncsThenEverySupportedFileIsTransferred() = runBlocking {
-        val sync = SyncWearMeasurementsUseCase(
+        val sync = SyncWatchMeasurementsUseCase(
             context = context,
             connectionRepository = GooglePlayWearConnectionRepository(context),
             transferClient = GooglePlayWearFileTransferClient(context),
@@ -53,7 +53,7 @@ class WearToPhoneSyncSenderEmulatorTest {
         assertEquals(scenario.transferredFiles.size, syncWhenPhoneBecomesReachable(sync))
     }
 
-    private suspend fun syncWhenPhoneBecomesReachable(sync: SyncWearMeasurementsUseCase): Int {
+    private suspend fun syncWhenPhoneBecomesReachable(sync: SyncWatchMeasurementsUseCase): Int {
         var lastFailure: AppError? = null
         repeat(MAX_ATTEMPTS) {
             when (val result = sync()) {

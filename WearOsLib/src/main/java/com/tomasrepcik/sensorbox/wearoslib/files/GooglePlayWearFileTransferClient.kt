@@ -50,7 +50,7 @@ class GooglePlayWearFileTransferClient @Inject constructor(@ApplicationContext c
             is AppResult.Success -> opened.value.use(consume)
         }
         val close = closeChannel(channel)
-        listOf(transfer, close).combineAppResults(AppErrorCode.CONNECTIVITY, "Receive Wear file")
+        listOf(transfer, close).combineAppResults(AppErrorCode.CONNECTIVITY, "Receive watch file")
     }
 
     private suspend fun openChannel(nodeId: String, path: String): AppResult<ChannelClient.Channel> =

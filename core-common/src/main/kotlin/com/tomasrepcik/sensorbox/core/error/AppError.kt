@@ -34,7 +34,7 @@ data class AppError(
 enum class AppErrorCode {
     CONNECTIVITY,
     EXTERNAL_ACTION,
-    MEASUREMENT,
+    RECORDING,
     PERMISSION,
     PREFERENCES,
     STORAGE,

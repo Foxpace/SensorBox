@@ -9,13 +9,13 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.domain.measurement.WearMeasurementControlUseCase
-import com.tomasrepcik.sensorbox.domain.measurement.WearMeasurementPermissionUseCase
-import com.tomasrepcik.sensorbox.domain.sensors.GetWearSensorsUseCase
+import com.tomasrepcik.sensorbox.domain.recording.DefaultWatchRecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.recording.WatchRecordingPermissionUseCase
+import com.tomasrepcik.sensorbox.domain.sensors.GetWatchSensorsUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.ObserveSensorValuesUseCase
-import com.tomasrepcik.sensorbox.domain.sync.SyncWearMeasurementsUseCase
+import com.tomasrepcik.sensorbox.domain.sync.SyncWatchMeasurementsUseCase
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -28,13 +28,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WearDashboardViewModel @Inject constructor(
-    getSensors: GetWearSensorsUseCase,
+    getSensors: GetWatchSensorsUseCase,
     private val observeSensorValues: ObserveSensorValuesUseCase,
-    private val permissionUseCase: WearMeasurementPermissionUseCase,
-    private val measurementControl: WearMeasurementControlUseCase,
+    private val permissionUseCase: WatchRecordingPermissionUseCase,
+    private val recordingControl: DefaultWatchRecordingControlUseCase,
     private val preferencesRepository: AppPreferencesRepository,
-    private val sessionStore: MeasurementSessionStore,
-    private val syncMeasurements: SyncWearMeasurementsUseCase,
+    private val sessionStore: RecordingSessionStore,
+    private val syncMeasurements: SyncWatchMeasurementsUseCase,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(WearDashboardState(sensors = getSensors()))
     private val mutableEffects = Channel<WearDashboardEffect>(Channel.BUFFERED)
@@ -54,9 +54,9 @@ class WearDashboardViewModel @Inject constructor(
         mutableState.value = WearDashboardReducer.reduce(mutableState.value, intent)
         when (intent) {
             is WearDashboardIntent.Open -> handleDestination(intent.destination)
-            WearDashboardIntent.StartMeasurement -> requestMeasurementStart()
+            WearDashboardIntent.StartRecording -> requestRecordingStart()
             is WearDashboardIntent.PermissionsResolved -> handlePermissionResult(intent.granted)
-            WearDashboardIntent.StopMeasurement -> measurementControl.stop().showFailure()
+            WearDashboardIntent.StopRecording -> recordingControl.stop().showFailure()
             is WearDashboardIntent.ObserveSensor -> observeLiveSensor(intent.sensorType)
             is WearDashboardIntent.SetSamplingPeriod -> setSamplingPeriod(intent.index)
             WearDashboardIntent.ToggleBatteryRestriction -> toggleBatteryRestriction()
@@ -80,14 +80,14 @@ class WearDashboardViewModel @Inject constructor(
         mutableEffects.trySend(WearDashboardEffect.OpenUrl(destination))
     }
 
-    private fun requestMeasurementStart() {
+    private fun requestRecordingStart() {
         val state = mutableState.value
         if (state.selectedSensorIds.isEmpty() && !state.includesGps) {
             mutableState.value = state.copy(message = WearDashboardMessage.PickSource)
             return
         }
         val missing = permissionUseCase(state.includesGps)
-        if (missing.isEmpty()) startMeasurement() else requestPermissions(missing)
+        if (missing.isEmpty()) startRecording() else requestPermissions(missing)
     }
 
     private fun requestPermissions(permissions: Set<String>) {
@@ -96,14 +96,14 @@ class WearDashboardViewModel @Inject constructor(
     }
 
     private fun handlePermissionResult(granted: Boolean) {
-        if (granted && pendingStart) startMeasurement()
+        if (granted && pendingStart) startRecording()
         if (!granted) mutableState.value = mutableState.value.copy(message = WearDashboardMessage.PermissionRequired)
         pendingStart = false
     }
 
-    private fun startMeasurement() {
+    private fun startRecording() {
         val state = mutableState.value
-        measurementControl.start(state.selectedSensorIds, state.includesGps, state.preferences).showFailure()
+        recordingControl.start(state.selectedSensorIds, state.includesGps, state.preferences).showFailure()
     }
 
     private fun observeLiveSensor(sensorType: Int) {
@@ -111,7 +111,7 @@ class WearDashboardViewModel @Inject constructor(
         sensorJob = viewModelScope.launch {
             observeSensorValues(sensorType)
                 .catch { error ->
-                    AppError.from(AppErrorCode.MEASUREMENT, "Observe live sensor", error)
+                    AppError.from(AppErrorCode.RECORDING, "Observe live sensor", error)
                     showSensorError()
                 }
                 .collect(::publishSensorValue)
@@ -142,7 +142,7 @@ class WearDashboardViewModel @Inject constructor(
 
     private fun observeSession() = viewModelScope.launch {
         sessionStore.state.collect { session ->
-            mutableState.value = WearDashboardReducer.measurementSessionChanged(mutableState.value, session)
+            mutableState.value = WearDashboardReducer.recordingSessionChanged(mutableState.value, session)
         }
     }
 
@@ -155,8 +155,8 @@ class WearDashboardViewModel @Inject constructor(
     )
 
     private fun toggleBatteryRestriction() = updatePreference(
-        AppPreferencesIntent.SetLowBatteryRestriction(
-            !mutableState.value.preferences.recording.restrictMeasurementOnLowBattery,
+        AppPreferencesIntent.SetStopOnLowBattery(
+            !mutableState.value.preferences.recording.stopRecordingOnLowBattery,
         ),
     )
 

@@ -13,7 +13,7 @@ data class SettingsState(
 
 sealed interface SettingsIntent {
     data class SetSamplingPeriod(val index: Int) : SettingsIntent
-    data class SetLowBatteryRestriction(val enabled: Boolean) : SettingsIntent
+    data class SetStopOnLowBattery(val enabled: Boolean) : SettingsIntent
     data class SetWakeLock(val enabled: Boolean) : SettingsIntent
     data class SetKeepScreenAwake(val enabled: Boolean) : SettingsIntent
     data class SetGpsInterval(val seconds: Int) : SettingsIntent

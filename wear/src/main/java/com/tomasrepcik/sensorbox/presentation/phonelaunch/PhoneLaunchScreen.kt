@@ -5,7 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.presentation.WearListScreen
 import com.tomasrepcik.sensorbox.presentation.WearPageTitle
-import com.tomasrepcik.sensorbox.presentation.WearPrimaryAction
+import com.tomasrepcik.sensorbox.presentation.WearPrimaryButton
 import com.tomasrepcik.sensorbox.presentation.WearSectionTitle
 
 @Composable
@@ -14,7 +14,7 @@ fun PhoneLaunchScreen(state: PhoneLaunchState, onLaunchPhone: () -> Unit) {
         item { WearPageTitle(stringResource(R.string.activity_info_phone), transformation) }
         item { WearSectionTitle(stringResource(statusText(state.status)), transformation) }
         item {
-            WearPrimaryAction(
+            WearPrimaryButton(
                 label = stringResource(R.string.open_phone),
                 transformation = transformation,
                 onClick = onLaunchPhone,

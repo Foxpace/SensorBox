@@ -1,7 +1,7 @@
 package com.tomasrepcik.sensorbox.communication
 
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentHashMap
@@ -18,19 +18,19 @@ class PhoneRecordingResultInbox @Inject constructor() {
         updates.tryEmit(result)
     }
 
-    fun clear(sessionId: String, action: WearRecordingAction) {
-        results.remove(Key(sessionId, action))
+    fun clear(sessionId: String, operation: WearRecordingOperation) {
+        results.remove(Key(sessionId, operation))
     }
 
-    suspend fun await(sessionId: String, action: WearRecordingAction): WearCommand.RecordingResult {
-        val key = Key(sessionId, action)
+    suspend fun await(sessionId: String, operation: WearRecordingOperation): WearCommand.RecordingResult {
+        val key = Key(sessionId, operation)
         results[key]?.let { return it }
         return updates.first { result -> result.key() == key }
     }
 
-    private fun WearCommand.RecordingResult.key() = Key(sessionId, action)
+    private fun WearCommand.RecordingResult.key() = Key(sessionId, operation)
 
-    private data class Key(val sessionId: String, val action: WearRecordingAction)
+    private data class Key(val sessionId: String, val operation: WearRecordingOperation)
 
     private companion object {
         const val BUFFER_SIZE = 16

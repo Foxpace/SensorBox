@@ -13,8 +13,8 @@ import com.tomasrepcik.sensorbox.sensorservices.R
 object Notify {
     fun createRecordingNotification(context: Context): Notification {
         createChannel(context)
-        val stopIntent = Intent(context, MeasurementService::class.java)
-            .setAction(MeasurementService.ACTION_STOP)
+        val stopIntent = Intent(context, RecordingService::class.java)
+            .setAction(RecordingService.ACTION_STOP_RECORDING)
         val stopAction = PendingIntent.getService(
             context,
             STOP_REQUEST_CODE,
@@ -52,7 +52,7 @@ object Notify {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private const val CHANNEL_ID = "measurement"
+    private const val CHANNEL_ID = "recording"
     private const val OPEN_APP_REQUEST_CODE = 10
     private const val STOP_REQUEST_CODE = 20
 }

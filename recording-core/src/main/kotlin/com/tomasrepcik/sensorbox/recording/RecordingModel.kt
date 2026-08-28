@@ -11,7 +11,7 @@ value class RecordingSessionId(val value: String) {
 }
 
 enum class RecordingSourceType {
-    SESSION,
+    SESSION_METADATA,
     SENSOR,
     GPS,
     ACTIVITY_RECOGNITION,
@@ -21,8 +21,8 @@ enum class RecordingSourceType {
 sealed interface RecordingSourceSpec {
     val type: RecordingSourceType
 
-    data object Session : RecordingSourceSpec {
-        override val type = RecordingSourceType.SESSION
+    data object SessionMetadata : RecordingSourceSpec {
+        override val type = RecordingSourceType.SESSION_METADATA
     }
 
     data class Sensors(val sensorTypes: Set<Int>, val samplingPeriod: Int) : RecordingSourceSpec {
@@ -42,7 +42,7 @@ sealed interface RecordingSourceSpec {
     }
 }
 
-data class RecordingPlan(
+data class RecordingRequest(
     val sessionId: RecordingSessionId,
     val sources: List<RecordingSourceSpec>,
     val durationMillis: Long = 0L,

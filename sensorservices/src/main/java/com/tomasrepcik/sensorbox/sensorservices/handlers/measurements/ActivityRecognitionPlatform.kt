@@ -89,7 +89,7 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
         }
         val prepared = prepareResources(onUpdate, onTransitions)
         if (prepared.isFailure) return prepared
-        return suspendAppResult(AppErrorCode.MEASUREMENT, "Start activity recognition") {
+        return suspendAppResult(AppErrorCode.RECORDING, "Start activity recognition") {
             val activeClient = checkNotNull(client) { "Activity recognition client is missing" }
             val updates = checkNotNull(updatesPendingIntent) { "Activity update request is missing" }
             val transitions = checkNotNull(transitionsPendingIntent) { "Activity transition request is missing" }
@@ -104,7 +104,7 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
     private fun prepareResources(
         onUpdate: (ActivityUpdate) -> Unit,
         onTransitions: (List<ActivityTransitionSample>) -> Unit,
-    ): AppResult<Unit> = appResult(AppErrorCode.MEASUREMENT, "Initialize activity recognition resources") {
+    ): AppResult<Unit> = appResult(AppErrorCode.RECORDING, "Initialize activity recognition resources") {
         updateCallback = onUpdate
         transitionCallback = onTransitions
         val filter = IntentFilter(ACTION_UPDATE).apply { addAction(ACTION_TRANSITION) }
@@ -129,16 +129,16 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
     override suspend fun stop(): AppResult<Unit> {
         val results = mutableListOf<AppResult<*>>()
         updatesPendingIntent?.let { pendingIntent ->
-            results += suspendAppResult(AppErrorCode.MEASUREMENT, "Remove activity updates") {
+            results += suspendAppResult(AppErrorCode.RECORDING, "Remove activity updates") {
                 client?.removeActivityUpdates(pendingIntent)?.await()
             }
         }
         transitionsPendingIntent?.let { pendingIntent ->
-            results += suspendAppResult(AppErrorCode.MEASUREMENT, "Remove activity transitions") {
+            results += suspendAppResult(AppErrorCode.RECORDING, "Remove activity transitions") {
                 client?.removeActivityTransitionUpdates(pendingIntent)?.await()
             }
         }
-        results += appResult(AppErrorCode.MEASUREMENT, "Release activity recognition resources") {
+        results += appResult(AppErrorCode.RECORDING, "Release activity recognition resources") {
             if (receiverRegistered) context.unregisterReceiver(receiver)
             receiverRegistered = false
             client = null
@@ -147,7 +147,7 @@ internal class AndroidActivityRecognitionPlatform(private val context: Context) 
             updateCallback = null
             transitionCallback = null
         }
-        return results.combineAppResults(AppErrorCode.MEASUREMENT, "Pause activity recognition")
+        return results.combineAppResults(AppErrorCode.RECORDING, "Pause activity recognition")
     }
 
     private fun hasPermission(): Boolean = Build.VERSION.SDK_INT < 29 ||

@@ -2,9 +2,9 @@ package com.tomasrepcik.sensorbox.communication
 
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementSessionStore
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementStopReason
-import com.tomasrepcik.sensorbox.sensorservices.session.MeasurementStopped
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopReason
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopped
+import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class WearRecordingSessionObserver @Inject constructor(
-    private val sessionStore: MeasurementSessionStore,
+    private val sessionStore: RecordingSessionStore,
     private val commandHandler: WearCommandHandler,
     private val diagnosticLogger: DiagnosticLogger,
 ) {
@@ -31,19 +31,19 @@ class WearRecordingSessionObserver @Inject constructor(
         }
     }
 
-    private suspend fun onStopped(event: MeasurementStopped) {
+    private suspend fun onStopped(event: RecordingSessionStopped) {
         event.result.errorOrNull()?.let { error -> diagnosticLogger.record(error.toDiagnosticEvent()) }
-        val reason = event.reason.toAutomaticWearReason() ?: return
+        val reason = event.reason.toAutomaticWatchReason() ?: return
         commandHandler.onAutomaticStop(reason).onFailure { error ->
             diagnosticLogger.record(error.toDiagnosticEvent())
         }
     }
 
-    private fun MeasurementStopReason.toAutomaticWearReason(): WearStopReason? = when (this) {
-        MeasurementStopReason.USER_REQUEST -> null
-        MeasurementStopReason.DURATION_EXPIRED -> WearStopReason.DURATION_EXPIRED
-        MeasurementStopReason.LOW_BATTERY -> WearStopReason.LOW_BATTERY
-        MeasurementStopReason.SOURCE_FAILURE -> WearStopReason.SOURCE_FAILURE
-        MeasurementStopReason.SERVICE_DESTROYED -> WearStopReason.SERVICE_DESTROYED
+    private fun RecordingSessionStopReason.toAutomaticWatchReason(): WearStopReason? = when (this) {
+        RecordingSessionStopReason.USER_REQUEST -> null
+        RecordingSessionStopReason.DURATION_EXPIRED -> WearStopReason.DURATION_EXPIRED
+        RecordingSessionStopReason.LOW_BATTERY -> WearStopReason.LOW_BATTERY
+        RecordingSessionStopReason.SOURCE_FAILURE -> WearStopReason.SOURCE_FAILURE
+        RecordingSessionStopReason.SERVICE_DESTROYED -> WearStopReason.SERVICE_DESTROYED
     }
 }

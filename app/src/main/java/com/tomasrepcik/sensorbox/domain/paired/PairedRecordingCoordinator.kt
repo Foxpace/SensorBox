@@ -6,14 +6,14 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.combineAppResults
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
-import com.tomasrepcik.sensorbox.domain.measurement.MeasurementRequest
-import com.tomasrepcik.sensorbox.domain.measurement.PhoneRecordingController
+import com.tomasrepcik.sensorbox.domain.recording.PhoneRecordingController
+import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingAction
+import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import com.tomasrepcik.sensorbox.wearoslib.protocol.recordingSessionId
 import kotlinx.coroutines.withTimeoutOrNull
@@ -25,13 +25,13 @@ import javax.inject.Singleton
 class PairedRecordingCoordinator @Inject constructor(
     private val phoneRecording: PhoneRecordingController,
     private val sendCommand: SendWearCommandUseCase,
-    private val watchResults: WearRecordingResultInbox,
+    private val watchResults: WatchRecordingResultInbox,
     private val diagnosticLogger: DiagnosticLogger,
 ) {
     private var state: PairedRecordingState = PairedRecordingState.Idle
 
     @Suppress("ReturnCount")
-    suspend fun start(request: MeasurementRequest): AppResult<Unit> {
+    suspend fun start(request: RecordingSetup): AppResult<Unit> {
         if (state !is PairedRecordingState.Idle) return conflict("Start recording")
 
         val sessionId = UUID.randomUUID().toString()
@@ -49,14 +49,14 @@ class PairedRecordingCoordinator @Inject constructor(
         }
 
         val watchStart = if (includesWatch) {
-            exchange(startedPhone.toWatchStartCommand(request), WearRecordingAction.START)
+            exchange(startedPhone.toWatchStartCommand(request), WearRecordingOperation.START)
         } else {
             AppResult.success(Unit)
         }
 
         if (state !== starting) return AppResult.success(Unit)
         if (watchStart is AppResult.Failure) {
-            if (watchStart.error.wasWearCommandSent()) {
+            if (watchStart.error.wasWatchCommandSent()) {
                 record(watchStart.error)
                 state = PairedRecordingState.Recording(sessionId, includesWatch)
                 return AppResult.success(Unit)
@@ -103,20 +103,20 @@ class PairedRecordingCoordinator @Inject constructor(
         val watchStop = stopWatch(sessionId, includesWatch, reason)
         state = PairedRecordingState.Idle
         return listOf(phoneStop, watchStop)
-            .combineAppResults(AppErrorCode.MEASUREMENT, "Stop phone and Wear recording")
+            .combineAppResults(AppErrorCode.RECORDING, "Stop phone and watch recording")
             .onFailure(::record)
     }
 
     private suspend fun stopWatch(sessionId: String, includesWatch: Boolean, reason: WearStopReason): AppResult<Unit> =
         if (includesWatch) {
-            exchange(WearCommand.StopRecording(sessionId, reason), WearRecordingAction.STOP)
+            exchange(WearCommand.StopRecording(sessionId, reason), WearRecordingOperation.STOP)
         } else {
             AppResult.success(Unit)
         }
 
-    private suspend fun exchange(command: WearCommand, expectedAction: WearRecordingAction): AppResult<Unit> {
+    private suspend fun exchange(command: WearCommand, expectedOperation: WearRecordingOperation): AppResult<Unit> {
         val sessionId = checkNotNull(command.recordingSessionId())
-        watchResults.clear(sessionId, expectedAction)
+        watchResults.clear(sessionId, expectedOperation)
         var lastSendError: AppError? = null
         var commandWasSent = false
 
@@ -128,7 +128,7 @@ class PairedRecordingCoordinator @Inject constructor(
                     commandWasSent = true
                     lastSendError = null
                     val result = withTimeoutOrNull(RESULT_TIMEOUT_MILLIS / ATTEMPT_COUNT) {
-                        watchResults.await(sessionId, expectedAction)
+                        watchResults.await(sessionId, expectedOperation)
                     }
                     if (result != null) return result.toAppResult(retryCount)
                 }
@@ -140,10 +140,10 @@ class PairedRecordingCoordinator @Inject constructor(
         return AppResult.failure(
             AppError(
                 code = AppErrorCode.TIMEOUT,
-                operation = expectedAction.timeoutOperation(),
-                diagnosticMessage = "Wear $expectedAction result timed out",
+                operation = expectedOperation.timeoutOperation(),
+                diagnosticMessage = "watch $expectedOperation result timed out",
                 context = mapOf(
-                    "source" to "wear",
+                    "source" to "watch",
                     "sessionId" to sessionId,
                     "retryCount" to RETRY_COUNT.toString(),
                     "protocolVersion" to WearCommandCodec.PROTOCOL_VERSION.toString(),
@@ -154,7 +154,7 @@ class PairedRecordingCoordinator @Inject constructor(
         )
     }
 
-    private fun AppError.wasWearCommandSent(): Boolean =
+    private fun AppError.wasWatchCommandSent(): Boolean =
         code == AppErrorCode.TIMEOUT && context["commandWasSent"] == true.toString()
 
     private fun conflict(operation: String): AppResult<Unit> =

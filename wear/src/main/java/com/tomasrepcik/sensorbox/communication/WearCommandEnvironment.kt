@@ -5,9 +5,9 @@ import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.domain.measurement.WearMeasurementPermissionUseCase
-import com.tomasrepcik.sensorbox.domain.sensors.GetWearSensorsUseCase
-import com.tomasrepcik.sensorbox.domain.sensors.toWearSensorInfo
+import com.tomasrepcik.sensorbox.domain.recording.WatchRecordingPermissionUseCase
+import com.tomasrepcik.sensorbox.domain.sensors.GetWatchSensorsUseCase
+import com.tomasrepcik.sensorbox.domain.sensors.toWatchSensorInfo
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingRequest
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSensorInfo
 import kotlinx.coroutines.flow.first
@@ -20,22 +20,22 @@ interface WearRecordingRequirementsUseCase {
 }
 
 class WearRecordingEnvironment @Inject constructor(
-    private val measurementPermissions: WearMeasurementPermissionUseCase,
+    private val recordingPermissions: WatchRecordingPermissionUseCase,
     private val preferencesRepository: AppPreferencesRepository,
-    private val getWearSensors: GetWearSensorsUseCase,
+    private val getWatchSensors: GetWatchSensorsUseCase,
 ) : WearRecordingRequirementsUseCase {
     override suspend fun validate(request: WearRecordingRequest): AppResult<AppPreferences> {
-        val availableSensorIds = getWearSensors().map { it.type }.toSet()
+        val availableSensorIds = getWatchSensors().map { it.type }.toSet()
         if (!availableSensorIds.containsAll(request.sensorIds)) {
-            return AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate Wear recording sensors"))
+            return AppResult.failure(AppError(AppErrorCode.VALIDATION, "Validate watch recording sensors"))
         }
 
-        val missingPermissions = measurementPermissions(request.includesGps)
+        val missingPermissions = recordingPermissions(request.includesGps)
         if (missingPermissions.isNotEmpty()) {
             return AppResult.failure(
                 AppError(
                     code = AppErrorCode.PERMISSION,
-                    operation = "Validate Wear recording permissions",
+                    operation = "Validate watch recording permissions",
                     diagnosticMessage = "Wear OS is missing required recording permissions",
                     context = mapOf("missingPermissions" to missingPermissions.sorted().joinToString()),
                 ),
@@ -45,5 +45,7 @@ class WearRecordingEnvironment @Inject constructor(
         return preferencesRepository.preferences.first()
     }
 
-    override fun availableSensors(): List<WearSensorInfo> = getWearSensors().map { sensor -> sensor.toWearSensorInfo() }
+    override fun availableSensors(): List<WearSensorInfo> = getWatchSensors().map { sensor ->
+        sensor.toWatchSensorInfo()
+    }
 }

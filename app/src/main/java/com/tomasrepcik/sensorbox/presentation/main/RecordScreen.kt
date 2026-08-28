@@ -40,7 +40,7 @@ fun RecordScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, mod
         Box(Modifier.weight(1f)) {
             RecordContent(state, onIntent)
         }
-        SensorSelectionActionBar(state, onIntent)
+        SensorSelectionTopBar(state, onIntent)
     }
 }
 
@@ -80,26 +80,26 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
                 SourceDivider()
             }
         }
-        if (state.isWearConnected) {
+        if (state.isWatchConnected) {
             item { WearSectionHeader() }
             item {
                 GpsRow(
-                    selected = state.wearIncludesGps,
-                    onToggle = { onIntent(RecordingIntent.ToggleWearGps) },
+                    selected = state.watchIncludesGps,
+                    onToggle = { onIntent(RecordingIntent.ToggleWatchGps) },
                 )
             }
             item { SourceDivider() }
-            items(state.wearSensors, key = { "wear_${it.type}" }) { sensor ->
+            items(state.watchSensors, key = { "watch_${it.type}" }) { sensor ->
                 Column {
                     SensorRow(
                         sensor = sensor,
-                        selected = sensor.type in state.selectedWearSensorIds,
-                        onToggle = { onIntent(RecordingIntent.ToggleWearSensor(sensor.type)) },
+                        selected = sensor.type in state.selectedWatchSensorIds,
+                        onToggle = { onIntent(RecordingIntent.ToggleWatchSensor(sensor.type)) },
                         onInfo = {
                             onIntent(
                                 RecordingIntent.OpenSensorDetails(
                                     sensor.type,
-                                    RecordingSensorSource.WEAR,
+                                    RecordingDevice.WATCH,
                                 ),
                             )
                         },
@@ -115,7 +115,7 @@ private fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> 
 @Composable
 private fun WearSectionHeader() {
     Text(
-        stringResource(R.string.wear_sensors),
+        stringResource(R.string.watch_sensors),
         modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 8.dp),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -217,7 +217,7 @@ private fun SourceDivider() {
 }
 
 @Composable
-private fun SensorSelectionActionBar(
+private fun SensorSelectionTopBar(
     state: RecordingState,
     onIntent: (RecordingIntent) -> Unit,
     modifier: Modifier = Modifier,
@@ -234,7 +234,7 @@ private fun SensorSelectionActionBar(
         ) {
             SensorBoxPrimaryButton(
                 label = stringResource(R.string.continue_action),
-                onClick = { onIntent(RecordingIntent.OpenMeasurementSetup) },
+                onClick = { onIntent(RecordingIntent.OpenRecordingSetup) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = sensorCount > 0,
             )
@@ -243,9 +243,9 @@ private fun SensorSelectionActionBar(
 }
 
 private fun selectedSourceCount(state: RecordingState): Int = state.selectedSensorIds.size +
-    state.selectedWearSensorIds.size +
+    state.selectedWatchSensorIds.size +
     (if (state.includesGps) 1 else 0) +
-    (if (state.wearIncludesGps) 1 else 0) +
+    (if (state.watchIncludesGps) 1 else 0) +
     (if (state.activityRecognition) 1 else 0) +
     (if (state.significantMotion) 1 else 0)
 
@@ -287,19 +287,19 @@ fun RecordingMessageText(message: RecordingMessage) {
 @StringRes
 private fun messageTitleResource(message: RecordingMessage): Int = when (message) {
     RecordingMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source_title
-    RecordingMessage.STORAGE_REQUIRED -> R.string.message_storage_required_title
+    RecordingMessage.RECORDING_ARCHIVE_REQUIRED -> R.string.message_recording_archive_required_title
     RecordingMessage.PERMISSION_REQUIRED -> R.string.message_permission_required_title
-    RecordingMessage.WEAR_PERMISSION_REQUIRED -> R.string.message_wear_permission_required_title
-    RecordingMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed_title
+    RecordingMessage.WATCH_PERMISSION_REQUIRED -> R.string.message_wear_permission_required_title
+    RecordingMessage.RECORDING_FAILED -> R.string.message_recording_failed_title
     RecordingMessage.NONE -> R.string.app_name
 }
 
 @StringRes
 private fun messageTextResource(message: RecordingMessage): Int = when (message) {
     RecordingMessage.PICK_AT_LEAST_ONE_SOURCE -> R.string.message_pick_source
-    RecordingMessage.STORAGE_REQUIRED -> R.string.message_storage_required
+    RecordingMessage.RECORDING_ARCHIVE_REQUIRED -> R.string.message_recording_archive_required
     RecordingMessage.PERMISSION_REQUIRED -> R.string.message_permission_required
-    RecordingMessage.WEAR_PERMISSION_REQUIRED -> R.string.message_wear_permission_required
-    RecordingMessage.MEASUREMENT_FAILED -> R.string.message_measurement_failed
+    RecordingMessage.WATCH_PERMISSION_REQUIRED -> R.string.message_wear_permission_required
+    RecordingMessage.RECORDING_FAILED -> R.string.message_recording_failed
     RecordingMessage.NONE -> R.string.app_name
 }

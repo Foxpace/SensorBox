@@ -12,7 +12,7 @@ data class RecordingPreferences(
     val gpsIntervalSeconds: Int = 10,
     val gpsMinDistanceMeters: Int = 20,
     val sensorSamplingPeriod: Int = 0,
-    val restrictMeasurementOnLowBattery: Boolean = true,
+    val stopRecordingOnLowBattery: Boolean = true,
     val useWakeLock: Boolean = false,
 )
 

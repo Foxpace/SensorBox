@@ -61,7 +61,7 @@ class DataStoreAppPreferencesRepositoryTest {
         assertTrue(update.isSuccess)
         assertTrue(before?.onboarding?.hasCompletedIntro == true)
         assertEquals(7, before?.recording?.gpsMinDistanceMeters)
-        assertFalse(before?.recording?.restrictMeasurementOnLowBattery ?: true)
+        assertFalse(before?.recording?.stopRecordingOnLowBattery ?: true)
         assertTrue(before?.display?.keepPhoneDisplayOn == true)
         assertEquals(AppThemeMode.DARK, before?.display?.themeMode)
         assertFalse(before?.display?.dynamicColors ?: true)

@@ -50,7 +50,7 @@ import kotlin.math.max
 
 @Composable
 fun SensorPreviewScreen(state: RecordingState, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    if (state.detailsSensorSource == RecordingSensorSource.WEAR) {
+    if (state.detailsDevice == RecordingDevice.WATCH) {
         SensorBoxBackScreen(
             title = stringResource(R.string.sensor_unavailable),
             onBack = onBack,

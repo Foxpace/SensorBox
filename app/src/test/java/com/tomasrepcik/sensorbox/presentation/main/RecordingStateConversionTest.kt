@@ -24,7 +24,7 @@ class RecordingStateConversionTest {
             ),
         )
 
-        val request = state.toMeasurementRequest()
+        val request = state.toRecordingSetup()
 
         assertEquals(setOf(1), request.sensorIds)
         assertEquals(0, request.durationSeconds)
