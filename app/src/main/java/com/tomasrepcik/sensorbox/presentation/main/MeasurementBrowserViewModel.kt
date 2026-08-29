@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -12,7 +13,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MeasurementBrowserViewModel @Inject constructor(private val repository: MeasurementRepository) : ViewModel() {
+class MeasurementBrowserViewModel @Inject constructor(
+    private val repository: MeasurementRepository,
+    private val appFailures: AppFailureStore,
+) : ViewModel() {
     private val mutableState = MutableStateFlow(MeasurementBrowserState())
     private val mutableEffects = Channel<MeasurementBrowserEffect>(Channel.BUFFERED)
 
@@ -67,6 +71,7 @@ class MeasurementBrowserViewModel @Inject constructor(private val repository: Me
                         state.value,
                         MeasurementBrowserResult.MeasurementsLoadFailed(error.code),
                     )
+                    appFailures.show(error)
                 },
             )
         }
@@ -91,6 +96,7 @@ class MeasurementBrowserViewModel @Inject constructor(private val repository: Me
                         state.value,
                         MeasurementBrowserResult.MeasurementDetailsLoadFailed(error.code),
                     )
+                    appFailures.show(error)
                 },
             )
         }
@@ -117,6 +123,7 @@ class MeasurementBrowserViewModel @Inject constructor(private val repository: Me
                         state.value,
                         MeasurementBrowserResult.MeasurementFileLoadFailed(error.code),
                     )
+                    appFailures.show(error)
                 },
             )
         }

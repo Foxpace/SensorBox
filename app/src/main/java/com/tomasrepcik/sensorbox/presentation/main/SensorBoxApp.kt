@@ -31,7 +31,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 
 @Composable
 fun SensorBoxApp(
@@ -45,9 +45,14 @@ fun SensorBoxApp(
     onRecordingIntent: (RecordingIntent) -> Unit,
     onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
+    onDismissFailure: () -> Unit,
 ) {
     if (!mainState.hasLoadedPreferences) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        return
+    }
+    mainState.visibleFailureCode?.let { failureCode ->
+        AppErrorScreen(failureCode, onDismissFailure)
         return
     }
     if (mainState.keepScreenAwake && mainState.session is RecordingSessionState.Running) KeepScreenAwake()
@@ -153,100 +158,6 @@ private fun MainRoute.isRootDestination() = when (this) {
     -> false
 }
 
-@Composable
-private fun RouteContent(
-    route: MainRoute,
-    onboardingState: OnboardingState,
-    recordingState: RecordingState,
-    measurementBrowserState: MeasurementBrowserState,
-    settingsState: SettingsState,
-    onOnboardingIntent: (OnboardingIntent) -> Unit,
-    onRecordingIntent: (RecordingIntent) -> Unit,
-    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
-    onSettingsIntent: (SettingsIntent) -> Unit,
-    onBack: () -> Unit,
-) {
-    when (route) {
-        MainRoute.ONBOARDING -> OnboardingScreen(onboardingState, onOnboardingIntent)
-
-        MainRoute.ACTIVE_RECORDING -> FullScreen { modifier ->
-            ActiveRecordingScreen(recordingState, onRecordingIntent, modifier)
-        }
-
-        MainRoute.SENSOR_DETAILS -> FullScreen { modifier ->
-            SensorDetailsScreen(
-                recordingState,
-                onBack,
-                { onRecordingIntent(RecordingIntent.Navigate(MainRoute.SENSOR_PREVIEW)) },
-                modifier,
-            )
-        }
-
-        MainRoute.SENSOR_PREVIEW -> FullScreen { modifier ->
-            SensorPreviewScreen(state = recordingState, onBack = onBack, modifier = modifier)
-        }
-
-        MainRoute.RECORDING_SETUP -> FullScreen { modifier ->
-            RecordingSetupScreen(
-                state = recordingState,
-                onIntent = onRecordingIntent,
-                modifier = modifier,
-                onBack = { onRecordingIntent(RecordingIntent.ReturnToSensorSelection) },
-            )
-        }
-
-        MainRoute.MEASUREMENTS,
-        MainRoute.MEASUREMENT_DETAILS,
-        MainRoute.MEASUREMENT_FILE,
-        -> MeasurementBrowserRoute(route, measurementBrowserState, onMeasurementBrowserIntent, onBack)
-
-        MainRoute.LICENSES -> FullScreen { modifier ->
-            OpenSourceLicensesScreen(onBack = onBack, modifier = modifier)
-        }
-
-        MainRoute.RECORD -> FullScreen { modifier ->
-            RecordScreen(recordingState, onRecordingIntent, modifier)
-        }
-
-        MainRoute.SETTINGS -> FullScreen { modifier ->
-            SettingsScreen(
-                state = settingsState,
-                onIntent = onSettingsIntent,
-                modifier = modifier,
-                onBack = onBack,
-            )
-        }
-
-        MainRoute.DIAGNOSTICS -> FullScreen { modifier ->
-            DiagnosticsLogScreen(
-                state = settingsState,
-                onBack = onBack,
-                onRefresh = { onSettingsIntent(SettingsIntent.ViewDiagnostics) },
-                modifier = modifier,
-            )
-        }
-
-        MainRoute.PRIVACY -> FullScreen { modifier -> PrivacyScreen(onBack, modifier) }
-    }
-}
-
-@Composable
-private fun MeasurementBrowserRoute(
-    route: MainRoute,
-    state: MeasurementBrowserState,
-    onIntent: (MeasurementBrowserIntent) -> Unit,
-    onBack: () -> Unit,
-) {
-    FullScreen { modifier ->
-        when (route) {
-            MainRoute.MEASUREMENTS -> MeasurementsScreen(state, onIntent, onBack, modifier)
-            MainRoute.MEASUREMENT_DETAILS -> MeasurementDetailsScreen(state, onIntent, onBack, modifier)
-            MainRoute.MEASUREMENT_FILE -> MeasurementFileScreen(state, onIntent, onBack, modifier)
-            else -> error("Not a measurement browser route")
-        }
-    }
-}
-
 private fun forwardScreenTransition(): ContentTransform =
     (slideInHorizontally(screenTween()) { width -> width / SCREEN_SLIDE_DIVISOR } + fadeIn(screenFadeInTween()))
         .togetherWith(
@@ -279,7 +190,7 @@ private fun KeepScreenAwake() {
 }
 
 @Composable
-private fun FullScreen(content: @Composable (Modifier) -> Unit) {
+internal fun FullScreen(content: @Composable (Modifier) -> Unit) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(padding),

@@ -22,6 +22,7 @@ data class MeasurementDetails(
     val summary: MeasurementSummary,
     val metadata: List<MeasurementMetadataEntry>,
     val files: List<MeasurementFileSummary>,
+    val sensorMetadataByFile: Map<String, List<MeasurementMetadataEntry>> = emptyMap(),
 )
 
 data class MeasurementMetadataEntry(val name: String, val value: String)

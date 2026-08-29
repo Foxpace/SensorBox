@@ -7,9 +7,11 @@ import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.appResult
-import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorCatalogStore
+import com.tomasrepcik.sensorbox.domain.recording.PeerRecordingControl
+import com.tomasrepcik.sensorbox.domain.sensors.ReceiveWatchSensorsUseCase
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
+import com.tomasrepcik.sensorbox.wearoslib.protocol.RecordingResultReceiver
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
@@ -19,21 +21,21 @@ import javax.inject.Inject
 
 class PhoneWatchCommandHandler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val watchSensorCatalog: WatchSensorCatalogStore,
-    private val recordingResults: WatchRecordingResultInbox,
-    private val pairedRecordingCoordinator: PairedRecordingCoordinator,
+    private val receiveWatchSensors: ReceiveWatchSensorsUseCase,
+    private val recordingResults: RecordingResultReceiver,
+    private val recording: PeerRecordingControl,
     private val sendCommand: SendWearCommandUseCase,
 ) {
     suspend fun handle(command: WearCommand): AppResult<Unit> = when (command) {
         WearCommand.LaunchPhone -> launchPhone()
 
         is WearCommand.AvailableSensors -> {
-            watchSensorCatalog.update(command.sensors)
+            receiveWatchSensors.receive(command.sensors)
             AppResult.success(Unit)
         }
 
         is WearCommand.RecordingResult -> {
-            recordingResults.publish(command)
+            recordingResults.receive(command)
             AppResult.success(Unit)
         }
 
@@ -55,7 +57,7 @@ class PhoneWatchCommandHandler @Inject constructor(
         }
 
     private suspend fun stopFromWatch(command: WearCommand.StopRecording): AppResult<Unit> {
-        val stopResult = pairedRecordingCoordinator.stopFromWatch(command.sessionId, command.reason)
+        val stopResult = recording.stopFromWatch(command.sessionId, command.reason)
         val error = stopResult.errorOrNull()
         val result = WearCommand.RecordingResult(
             sessionId = command.sessionId,

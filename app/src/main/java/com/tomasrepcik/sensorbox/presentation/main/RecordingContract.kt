@@ -2,9 +2,11 @@ package com.tomasrepcik.sensorbox.presentation.main
 
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
+import com.tomasrepcik.sensorbox.domain.preview.GpsPreviewData
+import com.tomasrepcik.sensorbox.domain.preview.SensorPreviewData
 import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 
 enum class RecordingMessage {
     NONE,
@@ -46,6 +48,8 @@ data class RecordingState(
     val startCountdownSeconds: Int? = null,
     val message: RecordingMessage = RecordingMessage.NONE,
     val errorCode: AppErrorCode? = null,
+    val gpsPreview: GpsPreviewData = GpsPreviewData(hasPermission = false),
+    val sensorPreview: SensorPreviewData = SensorPreviewData(isAvailable = true),
 ) {
     fun toRecordingSetup() = RecordingSetup(
         sensorIds = selectedSensorIds,
@@ -97,11 +101,16 @@ sealed interface RecordingIntent {
     data class SetKeepScreenAwake(val enabled: Boolean) : RecordingIntent
     data class SetGpsInterval(val seconds: Int) : RecordingIntent
     data class SetGpsDistance(val meters: Int) : RecordingIntent
+    data object StartGpsPreview : RecordingIntent
+    data class StartSensorPreview(val sensorType: Int) : RecordingIntent
+    data object StopPreview : RecordingIntent
+    data object RequestLocationPreviewPermission : RecordingIntent
 }
 
 sealed interface RecordingEffect {
     data object PickRecordingArchive : RecordingEffect
     data class RequestPermissions(val permissions: Set<String>) : RecordingEffect
+    data object RequestLocationPreviewPermission : RecordingEffect
     data class Navigate(val route: MainRoute) : RecordingEffect
 }
 

@@ -1,7 +1,8 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.navigation3.runtime.NavKey
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,4 +27,5 @@ data class MainState(
     val session: RecordingSessionState = RecordingSessionState.Idle,
     val keepScreenAwake: Boolean = false,
     val hasLoadedPreferences: Boolean = false,
+    val visibleFailureCode: AppErrorCode? = null,
 )

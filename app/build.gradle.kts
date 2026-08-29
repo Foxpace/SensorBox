@@ -61,6 +61,7 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(project(":sensorservices"))
+    implementation(project(":recording-core"))
     implementation(project(":wearoslib"))
 
     implementation(libs.androidx.core.ktx)

@@ -43,6 +43,7 @@ class SensorDetailsScreenTest {
                     ),
                     onBack = {},
                     onPreview = {},
+                    onIntent = {},
                 )
             }
         }

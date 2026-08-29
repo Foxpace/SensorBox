@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.CompositeDiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.DiagnosticMetadata
@@ -44,6 +45,10 @@ object DiagnosticsModule {
     @Provides
     fun provideDiagnosticLogger(diagnostics: FileDiagnostics): DiagnosticLogger =
         CompositeDiagnosticLogger(diagnostics, LogcatDiagnosticLogger())
+
+    @Provides
+    @Singleton
+    fun provideAppFailureStore(diagnosticLogger: DiagnosticLogger): AppFailureStore = AppFailureStore(diagnosticLogger)
 
     @Provides
     fun provideDiagnosticsStore(diagnostics: FileDiagnostics): DiagnosticsStore = diagnostics

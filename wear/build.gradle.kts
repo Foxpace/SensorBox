@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":wearoslib"))
     implementation(project(":sensorservices"))
+    implementation(project(":recording-core"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore.preferences)

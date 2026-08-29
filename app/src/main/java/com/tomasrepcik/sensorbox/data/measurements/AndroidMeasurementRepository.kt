@@ -10,7 +10,6 @@ import com.tomasrepcik.sensorbox.domain.measurements.MeasurementDetails
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementFileContent
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementFileKind
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementFileSummary
-import com.tomasrepcik.sensorbox.domain.measurements.MeasurementMetadataEntry
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementRepository
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementSummary
 import com.tomasrepcik.sensorbox.domain.measurements.SensorSeriesSample
@@ -18,7 +17,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -47,14 +45,16 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
                 val directory = measurementDirectory(measurementId)
                 val metadataFile = directory.findFile(METADATA_FILE)?.takeIf(DocumentFile::isFile)
                 val metadata = metadataFile?.let(::readDocumentText).orEmpty()
+                val parsedMetadata = MeasurementMetadataParser.parse(metadata)
                 val files = directory.listFiles()
                     .filter { it.isFile && it.name != METADATA_FILE }
                     .mapNotNull(::createMeasurementFileSummary)
                     .sortedWith(compareBy(MeasurementFileSummary::kind, MeasurementFileSummary::name))
                 MeasurementDetails(
                     summary = createMeasurementSummary(directory),
-                    metadata = parseMetadataEntries(metadata),
+                    metadata = parsedMetadata.session,
                     files = files,
+                    sensorMetadataByFile = parsedMetadata.bySensorFile,
                 )
             }
         }
@@ -110,31 +110,6 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
             else -> MeasurementFileKind.TEXT
         }
         return MeasurementFileSummary(name, formatFileDisplayName(name), kind, document.length())
-    }
-
-    private fun parseMetadataEntries(value: String): List<MeasurementMetadataEntry> {
-        if (value.isBlank()) return emptyList()
-        val result = mutableListOf<MeasurementMetadataEntry>()
-        collectMetadataEntries(parseMetadataObject(value), prefix = "", destination = result)
-        return result
-    }
-
-    private fun collectMetadataEntries(
-        element: JsonElement,
-        prefix: String,
-        destination: MutableList<MeasurementMetadataEntry>,
-    ) {
-        when (element) {
-            is JsonObject -> element.forEach { (key, value) ->
-                collectMetadataEntries(value, prefix.appendMetadataKey(key), destination)
-            }
-
-            is JsonArray -> element.forEachIndexed { index, value ->
-                collectMetadataEntries(value, "$prefix[$index]", destination)
-            }
-
-            is JsonPrimitive -> destination += MeasurementMetadataEntry(prefix, element.content)
-        }
     }
 
     private fun parseSensorSeries(
@@ -259,8 +234,6 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
     private fun parseMetadataObject(value: String): JsonObject = JSON.parseToJsonElement(value).jsonObject
 
     private fun JsonElement.asPrimitive(): JsonPrimitive? = this as? JsonPrimitive
-
-    private fun String.appendMetadataKey(value: String): String = if (isEmpty()) value else "$this.$value"
 
     private fun formatFileDisplayName(value: String): String = value.substringBeforeLast('.')
         .replace('_', ' ')

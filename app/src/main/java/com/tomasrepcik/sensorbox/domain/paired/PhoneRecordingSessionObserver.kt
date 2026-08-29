@@ -2,9 +2,10 @@ package com.tomasrepcik.sensorbox.domain.paired
 
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopReason
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopped
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
+import com.tomasrepcik.sensorbox.domain.recording.PhoneRecordingSessionControl
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopReason
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopped
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class PhoneRecordingSessionObserver @Inject constructor(
     private val sessionStore: RecordingSessionStore,
-    private val pairedRecordingCoordinator: PairedRecordingCoordinator,
+    private val recording: PhoneRecordingSessionControl,
     private val diagnosticLogger: DiagnosticLogger,
 ) {
     private val started = AtomicBoolean(false)
@@ -34,7 +35,7 @@ class PhoneRecordingSessionObserver @Inject constructor(
     private suspend fun onStopped(event: RecordingSessionStopped) {
         event.result.errorOrNull()?.let { error -> diagnosticLogger.record(error.toDiagnosticEvent()) }
         val reason = event.reason.toAutomaticWatchReason() ?: return
-        pairedRecordingCoordinator.onAutomaticPhoneStop(event.sessionId, reason)
+        recording.onAutomaticPhoneStop(event.sessionId, reason)
     }
 
     private fun RecordingSessionStopReason.toAutomaticWatchReason(): WearStopReason? = when (this) {

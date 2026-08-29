@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="close">Close</string>
+    <string name="app_error_title">Something went wrong</string>
+    <string name="app_error_connectivity">The device connection failed. The error was saved.</string>
+    <string name="app_error_permission">The permission could not be used. The error was saved.</string>
+    <string name="app_error_recording">The recording operation failed. The error was saved.</string>
+    <string name="app_error_storage">Local storage could not be used. The error was saved.</string>
+    <string name="app_error_unknown">The operation failed. The error was saved.</string>
     <string name="app_name" translatable="false">SensorBox</string>
 
     <string name="activity_record">Record</string>

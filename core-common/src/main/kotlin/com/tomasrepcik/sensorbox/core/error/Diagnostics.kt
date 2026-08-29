@@ -1,7 +1,5 @@
 package com.tomasrepcik.sensorbox.core.error
 
-import java.io.File
-
 enum class DiagnosticSeverity {
     INFO,
     WARNING,
@@ -34,8 +32,6 @@ fun interface DiagnosticLogger {
 
 interface DiagnosticsStore {
     fun readText(): AppResult<String>
-
-    fun exportFile(): AppResult<File>
 
     fun clear(): AppResult<Unit>
 }

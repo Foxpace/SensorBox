@@ -118,6 +118,13 @@ ANDROID_HOME="$HOME/Library/Android/sdk" tools/emulator/run_wear_sync_test.sh
 
 The runner detects one phone and one watch automatically; `PHONE_SERIAL` and `WEAR_SERIAL` remain available when several devices are connected. It builds and installs once, refreshes the ADB bridge after installation, and launches each scenario on both devices. When an emulator transport exposes its paired node but does not propagate static capabilities, the instrumentation-only repository falls back to that connected node; file transfer still uses the production Channel client and receiver. Received files use app-internal storage only in debuggable builds; release builds continue to require the user-selected recording archive.
 
+The phone-driven paired recording test runs instrumentation only on the phone. It discovers a real Wear sensor, starts and stops a watch recording over the production message protocol, asks Wear OS to sync measurements, and verifies the transferred metadata and sensor samples on the phone:
+
+```shell
+PHONE_SERIAL=emulator-5554 WEAR_SERIAL=emulator-5556 \
+  tools/emulator/run_phone_paired_recording_test.sh
+```
+
 No Firebase project, Maps key, secrets file, or external storage permission is required.
 
 ## Dependencies

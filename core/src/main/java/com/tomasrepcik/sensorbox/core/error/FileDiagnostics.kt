@@ -74,14 +74,6 @@ class FileDiagnostics internal constructor(
         }
     }
 
-    override fun exportFile(): AppResult<File> = appResult(AppErrorCode.STORAGE, "Export diagnostics") {
-        synchronized(fileLock) {
-            val text = readTextLocked()
-            diagnosticsDirectory.mkdirs()
-            exportFilePath().apply { writeText(text) }
-        }
-    }
-
     override fun clear(): AppResult<Unit> = appResult(AppErrorCode.STORAGE, "Clear diagnostics") {
         synchronized(fileLock) {
             diagnosticFiles().plus(exportFilePath()).forEach { file ->

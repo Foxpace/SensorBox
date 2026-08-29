@@ -2,7 +2,7 @@ package com.tomasrepcik.sensorbox.presentation.dashboard
 
 import com.tomasrepcik.sensorbox.core.testing.AppPreferencesFixtures
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

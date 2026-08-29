@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tomasrepcik.sensorbox.presentation.phonelaunch.PhoneLaunchIntent
 import com.tomasrepcik.sensorbox.presentation.phonelaunch.PhoneLaunchScreen
 import com.tomasrepcik.sensorbox.presentation.phonelaunch.PhoneLaunchViewModel
 import com.tomasrepcik.sensorbox.ui.theme.WearSensorBoxTheme
@@ -23,7 +22,7 @@ class MoveToMain : ComponentActivity() {
             WearSensorBoxTheme {
                 PhoneLaunchScreen(
                     state = state,
-                    onLaunchPhone = { viewModel.accept(PhoneLaunchIntent.LaunchRequested) },
+                    onIntent = viewModel::accept,
                 )
             }
         }

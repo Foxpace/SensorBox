@@ -1,5 +1,7 @@
 package com.tomasrepcik.sensorbox.presentation.phonelaunch
 
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+
 enum class PhoneLaunchStatus {
     IDLE,
     PHONE_UNAVAILABLE,
@@ -11,6 +13,7 @@ enum class PhoneLaunchStatus {
 data class PhoneLaunchState(
     val isPhoneConnected: Boolean = false,
     val status: PhoneLaunchStatus = PhoneLaunchStatus.IDLE,
+    val visibleFailureCode: AppErrorCode? = null,
 )
 
 sealed interface PhoneLaunchIntent {
@@ -19,6 +22,8 @@ sealed interface PhoneLaunchIntent {
     data class ConnectionChanged(val isConnected: Boolean) : PhoneLaunchIntent
 
     data class LaunchCompleted(val succeeded: Boolean) : PhoneLaunchIntent
+
+    data object DismissFailure : PhoneLaunchIntent
 }
 
 sealed interface PhoneLaunchEffect {
@@ -32,6 +37,7 @@ object PhoneLaunchReducer {
         is PhoneLaunchIntent.ConnectionChanged -> connectionChanged(state, intent.isConnected)
         is PhoneLaunchIntent.LaunchCompleted -> launchCompleted(state, intent.succeeded)
         PhoneLaunchIntent.LaunchRequested -> launchRequested(state)
+        PhoneLaunchIntent.DismissFailure -> PhoneLaunchNext(state.copy(visibleFailureCode = null))
     }
 
     private fun connectionChanged(state: PhoneLaunchState, isConnected: Boolean) = PhoneLaunchNext(
