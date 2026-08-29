@@ -1,6 +1,6 @@
 package com.tomasrepcik.sensorbox.core.preferences
 
-import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.failure.AppResult
 import kotlinx.coroutines.flow.Flow
 
 interface AppPreferencesRepository {

@@ -3,8 +3,8 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 adb_bin="${ANDROID_HOME:?ANDROID_HOME must point to the Android SDK}/platform-tools/adb"
-phone_test="com.tomasrepcik.sensorbox.emulator.WearToPhoneSyncReceiverEmulatorTest"
-wear_test="com.tomasrepcik.sensorbox.emulator.WearToPhoneSyncSenderEmulatorTest"
+phone_test="com.tomasrepcik.sensorbox.measurements.sync.WearToPhoneSyncReceiverEmulatorTest"
+wear_test="com.tomasrepcik.sensorbox.sync.WearToPhoneSyncSenderEmulatorTest"
 runner="com.tomasrepcik.sensorbox.test/androidx.test.runner.AndroidJUnitRunner"
 result_directory="$(mktemp -d -t sensorbox-wear-sync.XXXXXX)"
 scenarios=(

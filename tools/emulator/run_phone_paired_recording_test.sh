@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 adb_bin="${ADB_BIN:-$(command -v adb)}"
-phone_test="com.tomasrepcik.sensorbox.emulator.PhonePairedRecordingEmulatorTest"
+phone_test="com.tomasrepcik.sensorbox.pairedrecording.PhonePairedRecordingEmulatorTest"
 runner="com.tomasrepcik.sensorbox.test/androidx.test.runner.AndroidJUnitRunner"
 result_file="$(mktemp -t sensorbox-paired-recording.XXXXXX)"
 

@@ -1,9 +1,9 @@
 package com.tomasrepcik.sensorbox.recording
 
-import com.tomasrepcik.sensorbox.core.error.AppError
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
-import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.combineAppResults
+import com.tomasrepcik.sensorbox.core.failure.AppError
+import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
+import com.tomasrepcik.sensorbox.core.failure.AppResult
+import com.tomasrepcik.sensorbox.core.failure.combineAppResults
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

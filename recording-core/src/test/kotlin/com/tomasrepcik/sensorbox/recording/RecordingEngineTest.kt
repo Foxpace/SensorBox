@@ -1,8 +1,8 @@
 package com.tomasrepcik.sensorbox.recording
 
-import com.tomasrepcik.sensorbox.core.error.AppError
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
-import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.failure.AppError
+import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
+import com.tomasrepcik.sensorbox.core.failure.AppResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow

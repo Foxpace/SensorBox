@@ -22,7 +22,7 @@
         android:required="true" />
 
     <application
-        android:name=".SensorBoxApp"
+        android:name=".bootstrap.SensorBoxApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_descriptor"
@@ -33,7 +33,7 @@
         android:theme="@style/AppTheme.Compose"
         tools:targetApi="s">
         <activity
-            android:name=".activities.MainActivity"
+            android:name=".bootstrap.MainActivity"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Compose"
             android:exported="true">
@@ -44,7 +44,7 @@
         </activity>
 
         <service
-            android:name=".MsgListener"
+            android:name=".pairedrecording.MsgListener"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />

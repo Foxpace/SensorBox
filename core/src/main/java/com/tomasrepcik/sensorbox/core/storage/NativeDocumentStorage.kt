@@ -4,11 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
-import com.tomasrepcik.sensorbox.core.error.AppError
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
-import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.appResult
-import com.tomasrepcik.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.core.failure.AppError
+import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
+import com.tomasrepcik.sensorbox.core.failure.AppResult
+import com.tomasrepcik.sensorbox.core.failure.appResult
+import com.tomasrepcik.sensorbox.core.failure.flatMap
 import java.io.InputStream
 import java.io.OutputStream
 
