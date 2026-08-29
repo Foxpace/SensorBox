@@ -4,11 +4,14 @@ import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -96,7 +99,7 @@ class RecordingEngineTest {
     }
 
     @Test
-    fun `Given runtime and stop failures When session stops Then session receives every failure`() = runTest {
+    fun `Given runtime and stop failures When a source fails Then both failures are published`() = runTest {
         // Given
         val calls = mutableListOf<String>()
         val session = FakeSource(RecordingSourceType.SESSION_METADATA, calls)
@@ -107,16 +110,20 @@ class RecordingEngineTest {
             waitFor = { kotlinx.coroutines.delay(it) },
         )
         engine.start(request(RecordingSourceSpec.SessionMetadata, RecordingSourceSpec.Sensors(setOf(1), 0)))
+        val failed = async { engine.events.first { it is RecordingEvent.SourceFailed } }
+        runCurrent()
 
         // When
         sensor.reportFailure()
         runCurrent()
 
         // Then
+        val event = failed.await() as RecordingEvent.SourceFailed
         assertEquals(
             listOf("Record SENSOR", "Stop SENSOR"),
-            session.stopContext?.failures?.map(AppError::operation),
+            listOf(event.failure.operation, event.stopFailure?.operation),
         )
+        assertEquals(null, session.stopContext)
     }
 
     @Test
@@ -141,7 +148,7 @@ class RecordingEngineTest {
         // Given
         val calls = mutableListOf<String>()
         val engine = RecordingEngine(
-            sources = listOf(FakeSource(RecordingSourceType.SENSOR, calls)),
+            sources = listOf(FakeSource(RecordingSourceType.SENSOR, calls, yieldOnStop = true)),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
         )
@@ -157,16 +164,17 @@ class RecordingEngineTest {
     }
 
     @Test
-    fun `Given a running source When it reports failure Then the recording stops`() = runTest {
+    fun `Given one running source fails When another source remains Then recording continues`() = runTest {
         // Given
         val calls = mutableListOf<String>()
+        val metadata = FakeSource(RecordingSourceType.SESSION_METADATA, calls)
         val source = FakeSource(RecordingSourceType.SENSOR, calls)
         val engine = RecordingEngine(
-            sources = listOf(source),
+            sources = listOf(metadata, source),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
         )
-        val request = request(RecordingSourceSpec.Sensors(setOf(1), 0))
+        val request = request(RecordingSourceSpec.SessionMetadata, RecordingSourceSpec.Sensors(setOf(1), 0))
         engine.start(request)
 
         // When
@@ -175,7 +183,39 @@ class RecordingEngineTest {
 
         // Then
         assertEquals(1, calls.count { it == "stop:SENSOR:SOURCE_FAILURE" })
-        assertTrue(engine.stop(RecordingStopReason.USER_REQUEST).isFailure)
+        assertTrue(engine.stop(RecordingStopReason.USER_REQUEST).isSuccess)
+        assertEquals(1, calls.count { it == "stop:SESSION_METADATA:USER_REQUEST" })
+        assertEquals(0, calls.count { it == "stop:SENSOR:USER_REQUEST" })
+    }
+
+    @Test
+    fun `Given every running source fails When recording stops Then metadata only session remains valid`() = runTest {
+        // Given
+        val calls = mutableListOf<String>()
+        val sensor = FakeSource(RecordingSourceType.SENSOR, calls)
+        val gps = FakeSource(RecordingSourceType.GPS, calls)
+        val engine = RecordingEngine(
+            sources = listOf(sensor, gps),
+            scope = backgroundScope,
+            waitFor = { kotlinx.coroutines.delay(it) },
+        )
+        engine.start(
+            request(
+                RecordingSourceSpec.Sensors(setOf(1), 0),
+                RecordingSourceSpec.Gps(10, 20),
+            ),
+        )
+
+        // When
+        sensor.reportFailure()
+        gps.reportFailure()
+        runCurrent()
+        val result = engine.stop(RecordingStopReason.USER_REQUEST)
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(1, calls.count { it == "stop:SENSOR:SOURCE_FAILURE" })
+        assertEquals(1, calls.count { it == "stop:GPS:SOURCE_FAILURE" })
     }
 
     private fun engine(vararg sources: RecordingSource) = RecordingEngine(
@@ -196,6 +236,7 @@ private class FakeSource(
     private val calls: MutableList<String>,
     private val startFails: Boolean = false,
     private val stopFails: Boolean = false,
+    private val yieldOnStop: Boolean = false,
 ) : RecordingSource {
     private val mutableFailures = MutableSharedFlow<AppError>(replay = 1)
     override val failures: Flow<AppError> = mutableFailures
@@ -208,6 +249,7 @@ private class FakeSource(
     }
 
     override suspend fun stop(context: RecordingStopContext): AppResult<Unit> {
+        if (yieldOnStop) yield()
         stopContext = context
         calls += "stop:$type:${context.reason}"
         return if (stopFails) failure("Stop $type") else AppResult.success(Unit)

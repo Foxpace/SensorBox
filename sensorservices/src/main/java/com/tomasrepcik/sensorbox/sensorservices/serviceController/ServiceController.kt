@@ -11,6 +11,7 @@ import com.tomasrepcik.sensorbox.recording.RecordingSourceSpec
 import com.tomasrepcik.sensorbox.recording.RecordingStopReason
 import com.tomasrepcik.sensorbox.sensorservices.handlers.MeasurementStorage
 import com.tomasrepcik.sensorbox.sensorservices.intent.RecordingRequest
+import com.tomasrepcik.sensorbox.sensorservices.services.RecordingSessionExecution
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharedFlow
 import com.tomasrepcik.sensorbox.recording.RecordingRequest as EngineRecordingRequest
@@ -22,7 +23,7 @@ internal class ServiceController(
     storage: MeasurementStorage,
     diagnosticLogger: DiagnosticLogger,
     clock: EpochClock,
-) {
+) : RecordingSessionExecution {
     private val androidSources = AndroidRecordingSources(context, request, storage, diagnosticLogger, clock)
     private val sessionId = RecordingSessionId(request.sessionId)
     private val engine = RecordingEngine(
@@ -30,15 +31,16 @@ internal class ServiceController(
         scope = scope,
     )
 
-    val events: SharedFlow<RecordingEvent> = engine.events
+    override val events: SharedFlow<RecordingEvent> = engine.events
 
-    suspend fun start(): AppResult<Unit> = engine.start(request.toEngineRequest(sessionId))
+    override suspend fun start(): AppResult<Unit> = engine.start(request.toEngineRequest(sessionId))
 
-    suspend fun stop(reason: RecordingStopReason): AppResult<Unit> = engine.stop(reason)
+    override suspend fun stop(reason: RecordingStopReason): AppResult<Unit> = engine.stop(reason)
 
-    fun annotate(timestampMillis: Long, text: String): AppResult<Unit> = androidSources.annotate(timestampMillis, text)
+    override fun annotate(timestampMillis: Long, text: String): AppResult<Unit> =
+        androidSources.annotate(timestampMillis, text)
 
-    fun playAlarm(): AppResult<Unit> = androidSources.playAlarm()
+    override fun playAlarm(): AppResult<Unit> = androidSources.playAlarm()
 
     private fun RecordingRequest.toEngineRequest(sessionId: RecordingSessionId): EngineRecordingRequest {
         val specs = buildList {

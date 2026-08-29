@@ -10,7 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
@@ -108,17 +108,32 @@ class RecordingEngine(
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun observeSourceFailures(recording: ActiveRecording) {
-        val failures = recording.startedSources.map(RecordingSource::failures)
+        val failures = recording.startedSources.map { source ->
+            source.failures.map { failure -> FailedSource(source, failure) }
+        }
         recording.failureMonitor = scope.launch {
-            val failure = merge(*failures.toTypedArray()).first()
-            if (activeRecording === recording) {
-                recording.failureMonitor = null
-                stopRecording(
-                    recording = recording,
-                    context = RecordingStopContext(RecordingStopReason.SOURCE_FAILURE, listOf(failure)),
-                )
+            merge(*failures.toTypedArray()).collect { failedSource ->
+                if (activeRecording === recording) {
+                    stopFailedSource(recording, failedSource)
+                }
             }
         }
+    }
+
+    private suspend fun stopFailedSource(recording: ActiveRecording, failedSource: FailedSource) {
+        if (!recording.startedSources.remove(failedSource.source)) return
+
+        val stopResult = failedSource.source.stop(
+            RecordingStopContext(RecordingStopReason.SOURCE_FAILURE, listOf(failedSource.failure)),
+        )
+        mutableEvents.emit(
+            RecordingEvent.SourceFailed(
+                sessionId = recording.request.sessionId,
+                sourceType = failedSource.source.type,
+                failure = failedSource.failure,
+                stopFailure = stopResult.errorOrNull(),
+            ),
+        )
     }
 
     private fun validate(request: RecordingRequest): AppResult<Unit> {
@@ -147,7 +162,13 @@ class RecordingEngine(
         if (request.durationMillis <= 0L) return
         recording.durationStop = scope.launch {
             waitFor(request.durationMillis)
-            stop(RecordingStopReason.DURATION_EXPIRED)
+            if (activeRecording === recording) {
+                recording.durationStop = null
+                stopRecording(
+                    recording = recording,
+                    context = RecordingStopContext(RecordingStopReason.DURATION_EXPIRED),
+                )
+            }
         }
     }
 
@@ -167,6 +188,8 @@ class RecordingEngine(
         var durationStop: Job? = null,
         var failureMonitor: Job? = null,
     )
+
+    private data class FailedSource(val source: RecordingSource, val failure: AppError)
 
     private companion object {
         const val EVENT_BUFFER_SIZE = 16

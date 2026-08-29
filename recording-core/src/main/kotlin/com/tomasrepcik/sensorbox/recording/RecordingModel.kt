@@ -68,6 +68,13 @@ sealed interface RecordingEvent {
 
     data class RecordingStarted(override val sessionId: RecordingSessionId) : RecordingEvent
 
+    data class SourceFailed(
+        override val sessionId: RecordingSessionId,
+        val sourceType: RecordingSourceType,
+        val failure: AppError,
+        val stopFailure: AppError? = null,
+    ) : RecordingEvent
+
     data class RecordingStopped(
         override val sessionId: RecordingSessionId,
         val reason: RecordingStopReason,

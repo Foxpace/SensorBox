@@ -6,11 +6,13 @@ import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.domain.recording.WatchRecordingControlUseCase
+import com.tomasrepcik.sensorbox.domain.sync.SyncWatchMeasurementsUseCase
 import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnectionRepository
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearNode
+import com.tomasrepcik.sensorbox.wearoslib.protocol.RecordingCommandExchange
 import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
@@ -103,6 +105,19 @@ class WearCommandHandlerTest {
     }
 
     @Test
+    fun `Given a sync command When handled Then watch measurements are sent`() = runTest {
+        // Given
+        val fixture = Fixture()
+
+        // When
+        val result = fixture.handler.handle(WearCommand.SyncMeasurements)
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(1, fixture.syncCalls)
+    }
+
+    @Test
     fun `Given Wear timer expires while phone is unreachable When recording starts again Then Wear is available`() =
         runTest {
             // Given
@@ -130,11 +145,24 @@ class WearCommandHandlerTest {
         val repository = CapturingRepository()
         val recording = FakeWearRecordingControl()
         val requirements = FakeWearRecordingRequirements()
+        var syncCalls = 0
+        private val sendCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository))
+        private val exchange = RecordingCommandExchange(
+            sendCommand = sendCommand,
+            peerCapability = "phone-capability",
+            peerPath = "/phone",
+            peerName = "phone",
+        )
         val handler = WearCommandHandler(
             recording = recording,
             environment = requirements,
-            sendCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository)),
-            phoneResults = PhoneRecordingResultInbox(),
+            sendCommand = sendCommand,
+            recordingCommands = exchange,
+            recordingResults = exchange,
+            syncMeasurements = SyncWatchMeasurementsUseCase {
+                syncCalls += 1
+                AppResult.success(1)
+            },
         )
     }
 }

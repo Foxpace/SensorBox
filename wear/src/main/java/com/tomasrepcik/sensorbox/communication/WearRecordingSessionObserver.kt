@@ -2,9 +2,9 @@ package com.tomasrepcik.sensorbox.communication
 
 import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.toDiagnosticEvent
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopReason
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStopped
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopReason
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopped
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearStopReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

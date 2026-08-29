@@ -30,6 +30,9 @@ object Notify {
             .setContentIntent(createOpenAppAction(context))
             .addAction(R.drawable.ic_stop, context.getString(R.string.text_stop), stopAction)
             .build()
+            .apply {
+                flags = flags or Notification.FLAG_NO_CLEAR
+            }
     }
 
     private fun createOpenAppAction(context: Context): PendingIntent? {

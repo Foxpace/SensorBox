@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.sensorservices.handlers
 
 import android.content.ContextWrapper
-import android.content.Intent
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
 import org.junit.Assert.assertEquals
@@ -37,7 +36,7 @@ class StorageHandlerTest {
         var createdMeasurement: String? = null
         var openedFile: String? = null
 
-        override fun persistRootAccess(intent: Intent): AppResult<Unit> = AppResult.success(Unit)
+        override fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit> = AppResult.success(Unit)
 
         override fun hasConfiguredDirectory(): AppResult<Boolean> = AppResult.success(true)
 

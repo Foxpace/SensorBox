@@ -5,8 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
 import android.os.Build
 import android.os.PowerManager
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
@@ -25,7 +25,7 @@ internal class RecordingHostResources(
     private val scope: CoroutineScope,
     private val requestStop: (RecordingStopReason) -> Unit,
     private val playAlarm: () -> Unit,
-) {
+) : RecordingHostEnvironment {
     private var wakeLock: PowerManager.WakeLock? = null
     private var batteryReceiverRegistered = false
     private var alarmJobs: List<Job> = emptyList()
@@ -36,13 +36,13 @@ internal class RecordingHostResources(
         }
     }
 
-    fun start(request: RecordingRequest) {
+    override fun start(request: RecordingRequest) {
         promoteToForeground(request)
         if (request.requiresWakeLock) acquireWakeLock()
         if (request.stopOnLowBattery) registerLowBatteryReceiver()
     }
 
-    fun scheduleAlarms(offsetsSeconds: List<Int>) {
+    override fun scheduleAlarms(offsetsSeconds: List<Int>) {
         alarmJobs = offsetsSeconds.distinct().sorted().map { seconds ->
             scope.launch {
                 delay(seconds * 1_000L)
@@ -51,15 +51,19 @@ internal class RecordingHostResources(
         }
     }
 
-    fun release(): AppResult<Unit> {
+    override fun release(): AppResult<Unit> {
         alarmJobs.forEach(Job::cancel)
         alarmJobs = emptyList()
         return listOf(releaseWakeLock(), unregisterLowBatteryReceiver())
             .combineAppResults(AppErrorCode.RECORDING, "Release recording host resources")
     }
 
-    fun removeNotification() {
+    override fun removeNotification() {
         service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
+    }
+
+    override fun stopService() {
+        service.stopSelf()
     }
 
     private fun promoteToForeground(request: RecordingRequest) {
@@ -72,9 +76,9 @@ internal class RecordingHostResources(
     }
 
     private fun foregroundTypes(request: RecordingRequest): Int = if (request.includesGps) {
-        FOREGROUND_SERVICE_TYPE_HEALTH or FOREGROUND_SERVICE_TYPE_LOCATION
+        FOREGROUND_SERVICE_TYPE_SPECIAL_USE or FOREGROUND_SERVICE_TYPE_LOCATION
     } else {
-        FOREGROUND_SERVICE_TYPE_HEALTH
+        FOREGROUND_SERVICE_TYPE_SPECIAL_USE
     }
 
     private fun acquireWakeLock() {
