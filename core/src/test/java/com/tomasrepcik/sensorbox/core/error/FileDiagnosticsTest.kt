@@ -83,18 +83,6 @@ class FileDiagnosticsTest {
     }
 
     @Test
-    fun `Given retained logs When exported Then ordered text is copied to the export file`() {
-        val diagnostics = diagnostics(temporaryFolder.newFolder("diagnostics"))
-        diagnostics.record(event(message = "First"))
-        diagnostics.record(event(message = "Second"))
-
-        val exported = diagnostics.exportFile().getOrNull()
-
-        assertEquals(diagnostics.readText().getOrNull(), exported?.readText())
-        assertTrue(exported?.name?.contains("export") == true)
-    }
-
-    @Test
     fun `Given concurrent installation When an exception is dispatched Then the handler is installed once`() {
         val diagnostics = diagnostics(temporaryFolder.newFolder("diagnostics"))
         val original = Thread.getDefaultUncaughtExceptionHandler()

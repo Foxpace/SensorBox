@@ -2,8 +2,9 @@ package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
     private val sessionStore: RecordingSessionStore,
+    private val appFailures: AppFailureStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MainState())
     private var hasChosenInitialRoute = false
@@ -24,6 +26,7 @@ class MainViewModel @Inject constructor(
     init {
         observePreferences()
         observeSession()
+        observeFailures()
     }
 
     fun navigate(route: MainRoute) {
@@ -33,6 +36,10 @@ class MainViewModel @Inject constructor(
 
     fun showPrivacyRationale() {
         navigate(MainRoute.PRIVACY)
+    }
+
+    fun dismissFailure() {
+        appFailures.dismiss()
     }
 
     private fun observePreferences() {
@@ -57,8 +64,9 @@ class MainViewModel @Inject constructor(
                             hasLoadedPreferences = true,
                         )
                     },
-                    onFailure = {
+                    onFailure = { error ->
                         mutableState.value = state.value.copy(hasLoadedPreferences = true)
+                        appFailures.show(error)
                     },
                 )
             }
@@ -69,6 +77,14 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             sessionStore.state.collect { session ->
                 mutableState.value = state.value.copy(session = session)
+            }
+        }
+    }
+
+    private fun observeFailures() {
+        viewModelScope.launch {
+            appFailures.visibleFailure.collect { failure ->
+                mutableState.value = state.value.copy(visibleFailureCode = failure?.code)
             }
         }
     }

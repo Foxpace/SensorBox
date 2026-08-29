@@ -2,7 +2,9 @@ package com.tomasrepcik.sensorbox.presentation.main
 
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.domain.measurements.GpsCoordinate
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementDetails
 import com.tomasrepcik.sensorbox.domain.measurements.MeasurementFileContent
@@ -30,7 +32,7 @@ class MeasurementBrowserViewModelTest {
     @Test
     fun `Given saved measurements When refreshed Then newest folders are exposed`() = runTest {
         val repository = FakeMeasurementRepository()
-        val viewModel = MeasurementBrowserViewModel(repository)
+        val viewModel = MeasurementBrowserViewModel(repository, failureStore())
 
         viewModel.onIntent(MeasurementBrowserIntent.RefreshMeasurements)
         advanceUntilIdle()
@@ -42,7 +44,7 @@ class MeasurementBrowserViewModelTest {
     @Test
     fun `Given a measurement When its GPS file opens Then details content and navigation are retained`() = runTest {
         val repository = FakeMeasurementRepository()
-        val viewModel = MeasurementBrowserViewModel(repository)
+        val viewModel = MeasurementBrowserViewModel(repository, failureStore())
         val detailsEffect = async { viewModel.effects.first() }
 
         viewModel.onIntent(MeasurementBrowserIntent.OpenMeasurementDetails(repository.summary.id))
@@ -73,7 +75,7 @@ class MeasurementBrowserViewModelTest {
                 AppError(AppErrorCode.STORAGE, "Read fixture measurement repository"),
             )
         }
-        val viewModel = MeasurementBrowserViewModel(repository)
+        val viewModel = MeasurementBrowserViewModel(repository, failureStore())
 
         viewModel.onIntent(MeasurementBrowserIntent.RefreshMeasurements)
         advanceUntilIdle()
@@ -81,6 +83,8 @@ class MeasurementBrowserViewModelTest {
         assertFalse(viewModel.state.value.isLoading)
         assertEquals(AppErrorCode.STORAGE, viewModel.state.value.errorCode)
     }
+
+    private fun failureStore() = AppFailureStore(DiagnosticLogger { })
 }
 
 private class FakeMeasurementRepository : MeasurementRepository {

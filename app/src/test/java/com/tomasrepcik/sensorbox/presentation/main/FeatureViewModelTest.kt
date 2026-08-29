@@ -1,30 +1,36 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
-import android.content.Intent
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.error.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
 import com.tomasrepcik.sensorbox.core.testing.FakeAppPreferencesRepository
+import com.tomasrepcik.sensorbox.domain.diagnostics.DiagnosticsShareFile
+import com.tomasrepcik.sensorbox.domain.diagnostics.DiagnosticsShareFilePreparer
+import com.tomasrepcik.sensorbox.domain.licenses.OpenSourceLicense
+import com.tomasrepcik.sensorbox.domain.licenses.OpenSourceLicenseRepository
+import com.tomasrepcik.sensorbox.domain.preview.DevicePreviewRepository
+import com.tomasrepcik.sensorbox.domain.preview.GpsPreviewData
+import com.tomasrepcik.sensorbox.domain.preview.SensorPreviewData
 import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveSelection
 import com.tomasrepcik.sensorbox.domain.recording.RecordingControlUseCase
 import com.tomasrepcik.sensorbox.domain.recording.RecordingPermissionsUseCase
 import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
-import com.tomasrepcik.sensorbox.domain.sensors.AvailableSensorsUseCase
+import com.tomasrepcik.sensorbox.domain.sensors.AvailableRecordingSources
+import com.tomasrepcik.sensorbox.domain.sensors.AvailableRecordingSourcesUseCase
 import com.tomasrepcik.sensorbox.domain.sensors.SensorDescriptor
-import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorCatalogStore
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
-import com.tomasrepcik.sensorbox.wearoslib.connectivity.FakeWearConnectionRepository
-import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
-import com.tomasrepcik.sensorbox.wearoslib.connectivity.SendWearMessageUseCase
-import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearSensorInfo
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -35,7 +41,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeatureViewModelTest {
@@ -48,6 +53,7 @@ class FeatureViewModelTest {
             val viewModel = OnboardingViewModel(
                 preferencesRepository = FakeAppPreferencesRepository(),
                 recordingArchive = FakeRecordingArchiveRepository(isSelected = true),
+                appFailures = failureStore(),
             )
             val effect = async { viewModel.effects.first() }
 
@@ -65,6 +71,7 @@ class FeatureViewModelTest {
             val viewModel = OnboardingViewModel(
                 preferencesRepository = FakeAppPreferencesRepository(),
                 recordingArchive = FakeRecordingArchiveRepository(isSelected = false),
+                appFailures = failureStore(),
             )
 
             viewModel.accept(OnboardingIntent.CompleteOnboarding)
@@ -73,11 +80,36 @@ class FeatureViewModelTest {
         }
 
     @Test
+    fun `Given archive lookup fails When onboarding completes Then app failure is visible`() = runTest {
+        // Given
+        val appFailures = failureStore()
+        val archive = FakeRecordingArchiveRepository(
+            selectedResult = AppResult.failure(AppError(AppErrorCode.STORAGE, "Check fixture archive")),
+        )
+        val viewModel = OnboardingViewModel(
+            FakeAppPreferencesRepository(),
+            archive,
+            appFailures,
+        )
+
+        // When
+        viewModel.accept(OnboardingIntent.CompleteOnboarding)
+
+        // Then
+        assertEquals(AppErrorCode.STORAGE, appFailures.visibleFailure.value?.code)
+        assertEquals(null, viewModel.state.value.errorCode)
+    }
+
+    @Test
     fun `Given settings intent When sampling changes Then settings owns updated preference state`() = runTest {
         val viewModel = SettingsViewModel(
             preferencesRepository = FakeAppPreferencesRepository(),
             diagnosticsStore = FakeDiagnosticsStore(),
             ioDispatcher = mainDispatcherRule.dispatcher,
+            appFailures = failureStore(),
+            devicePreview = FakeDevicePreviewRepository(),
+            licenses = FakeOpenSourceLicenseRepository(),
+            diagnosticsShareFile = FakeDiagnosticsShareFilePreparer(),
         )
         advanceUntilIdle()
 
@@ -93,6 +125,10 @@ class FeatureViewModelTest {
             preferencesRepository = FakeAppPreferencesRepository(),
             diagnosticsStore = FakeDiagnosticsStore(),
             ioDispatcher = mainDispatcherRule.dispatcher,
+            appFailures = failureStore(),
+            devicePreview = FakeDevicePreviewRepository(),
+            licenses = FakeOpenSourceLicenseRepository(),
+            diagnosticsShareFile = FakeDiagnosticsShareFilePreparer(),
         )
         advanceUntilIdle()
 
@@ -103,22 +139,25 @@ class FeatureViewModelTest {
     }
 
     @Test
-    fun `Given diagnostics read failure When viewed Then settings emits the stable error code`() = runTest {
+    fun `Given diagnostics read failure When viewed Then app failure is visible`() = runTest {
         val diagnostics = FakeDiagnosticsStore(
             readResult = AppResult.failure(AppError(AppErrorCode.STORAGE, "Read fixture diagnostics")),
         )
+        val appFailures = failureStore()
         val viewModel = SettingsViewModel(
             FakeAppPreferencesRepository(),
             diagnostics,
             mainDispatcherRule.dispatcher,
+            appFailures,
+            FakeDevicePreviewRepository(),
+            FakeOpenSourceLicenseRepository(),
+            FakeDiagnosticsShareFilePreparer(),
         )
-        val effect = async { viewModel.effects.first() }
 
         viewModel.accept(SettingsIntent.ViewDiagnostics)
         advanceUntilIdle()
 
-        assertEquals(AppErrorCode.STORAGE, viewModel.state.value.errorCode)
-        assertEquals(SettingsEffect.DiagnosticsFailed(AppErrorCode.STORAGE), effect.await())
+        assertEquals(AppErrorCode.STORAGE, appFailures.visibleFailure.value?.code)
     }
 
     @Test
@@ -130,6 +169,29 @@ class FeatureViewModelTest {
 
         assertEquals(RecordingMessage.PICK_AT_LEAST_ONE_SOURCE, viewModel.state.value.message)
         assertEquals(AppErrorCode.VALIDATION, viewModel.state.value.errorCode)
+    }
+
+    @Test
+    fun `Given archive lookup fails When recording starts Then app failure is visible`() = runTest {
+        // Given
+        val appFailures = failureStore()
+        val archive = FakeRecordingArchiveRepository(
+            selectedResult = AppResult.failure(AppError(AppErrorCode.STORAGE, "Check fixture archive")),
+        )
+        val viewModel = recordingViewModel(
+            workflow = FakeRecordingWorkflow(),
+            archive = archive,
+            appFailures = appFailures,
+        )
+        advanceUntilIdle()
+        viewModel.accept(RecordingIntent.ToggleSensor(1))
+
+        // When
+        viewModel.accept(RecordingIntent.StartRecording)
+
+        // Then
+        assertEquals(AppErrorCode.STORAGE, appFailures.visibleFailure.value?.code)
+        assertEquals(RecordingMessage.NONE, viewModel.state.value.message)
     }
 
     @Test
@@ -233,27 +295,31 @@ class FeatureViewModelTest {
     }
 
     @Test
-    fun `Given a Wear catalog When observed Then every sensor detail is retained`() = runTest {
-        val catalog = WatchSensorCatalogStore()
-        val viewModel = recordingViewModel(FakeRecordingWorkflow(), catalog)
+    fun `Given available watch sources When observed Then every sensor detail is retained`() = runTest {
+        val sources = FakeAvailableRecordingSources()
+        val viewModel = recordingViewModel(FakeRecordingWorkflow(), sources)
         advanceUntilIdle()
 
-        catalog.update(
-            listOf(
-                WearSensorInfo(
-                    type = 1,
-                    name = "Wear Accelerometer",
-                    vendor = "Fixture",
-                    version = 7,
-                    stringType = "android.sensor.accelerometer",
-                    maximumRange = 78.4f,
-                    resolution = 0.0024f,
-                    power = 0.25f,
-                    minimumDelayMicros = 5_000,
-                    maximumDelayMicros = 200_000,
-                    reportingMode = 0,
-                    isWakeUpSensor = true,
+        sources.update(
+            AvailableRecordingSources(
+                phoneSensors = emptyList(),
+                watchSensors = listOf(
+                    SensorDescriptor(
+                        type = 1,
+                        name = "Wear Accelerometer",
+                        vendor = "Fixture",
+                        version = 7,
+                        stringType = "android.sensor.accelerometer",
+                        maximumRange = 78.4f,
+                        resolution = 0.0024f,
+                        power = 0.25f,
+                        minimumDelayMicros = 5_000,
+                        maximumDelayMicros = 200_000,
+                        reportingMode = com.tomasrepcik.sensorbox.domain.sensors.SensorReportingMode.CONTINUOUS,
+                        isWakeUpSensor = true,
+                    ),
                 ),
+                isWatchConnected = true,
             ),
         )
         advanceUntilIdle()
@@ -279,31 +345,52 @@ class FeatureViewModelTest {
 
     private fun recordingViewModel(
         workflow: RecordingControlUseCase,
-        watchSensorCatalog: WatchSensorCatalogStore = WatchSensorCatalogStore(),
+        availableSources: AvailableRecordingSourcesUseCase = FakeAvailableRecordingSources(),
         sessionStore: RecordingSessionStore = RecordingSessionStore(),
-    ): RecordingViewModel {
-        val repository = FakeWearConnectionRepository()
-        return RecordingViewModel(
-            preferencesRepository = FakeAppPreferencesRepository(),
-            availableSensors = AvailableSensorsUseCase { emptyList() },
-            recordingArchive = FakeRecordingArchiveRepository(isSelected = true),
-            permissions = RecordingPermissionsUseCase { emptySet() },
-            recording = workflow,
-            sessionStore = sessionStore,
-            observeWatchCapability = ObserveWearCapabilityUseCase(repository),
-            sendWatchCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository)),
-            watchSensorCatalog = watchSensorCatalog,
-            elapsedRealtimeClock = ElapsedRealtimeClock { 10_000L },
-        )
+        archive: RecordingArchiveRepository = FakeRecordingArchiveRepository(isSelected = true),
+        appFailures: AppFailureStore = failureStore(),
+    ): RecordingViewModel = RecordingViewModel(
+        preferencesRepository = FakeAppPreferencesRepository(),
+        availableSources = availableSources,
+        recordingArchive = archive,
+        permissions = RecordingPermissionsUseCase { emptySet() },
+        recording = workflow,
+        sessionStore = sessionStore,
+        elapsedRealtimeClock = ElapsedRealtimeClock { 10_000L },
+        appFailures = appFailures,
+        devicePreview = FakeDevicePreviewRepository(),
+    )
+
+    private fun failureStore() = AppFailureStore(DiagnosticLogger { })
+}
+
+private class FakeAvailableRecordingSources(
+    initial: AvailableRecordingSources = AvailableRecordingSources(phoneSensors = emptyList()),
+) : AvailableRecordingSourcesUseCase {
+    private val sources = MutableStateFlow(initial)
+
+    override val current: AvailableRecordingSources
+        get() = sources.value
+
+    override fun observe(): Flow<AvailableRecordingSources> = sources
+
+    fun update(value: AvailableRecordingSources) {
+        sources.value = value
     }
 }
 
-private class FakeRecordingArchiveRepository(private val isSelected: Boolean) : RecordingArchiveRepository {
-    override fun isSelected(): AppResult<Boolean> = AppResult.success(isSelected)
+private class FakeRecordingArchiveRepository(
+    isSelected: Boolean = true,
+    private val selectedResult: AppResult<Boolean> = AppResult.success(isSelected),
+) : RecordingArchiveRepository {
+    override fun isSelected(): AppResult<Boolean> = selectedResult
 
-    override fun path(): AppResult<String?> = AppResult.success(if (isSelected) "fixture" else null)
+    override fun path(): AppResult<String?> = selectedResult.fold(
+        onSuccess = { AppResult.success(if (it) "fixture" else null) },
+        onFailure = { AppResult.success(null) },
+    )
 
-    override fun select(resultIntent: Intent): AppResult<Unit> = AppResult.success(Unit)
+    override fun select(selection: RecordingArchiveSelection.Selected): AppResult<Unit> = AppResult.success(Unit)
 }
 
 private class FakeDiagnosticsStore(
@@ -311,11 +398,27 @@ private class FakeDiagnosticsStore(
 ) : DiagnosticsStore {
     override fun readText(): AppResult<String> = readResult
 
-    override fun exportFile(): AppResult<File> = AppResult.failure(
-        AppError(AppErrorCode.STORAGE, "Export fixture diagnostics"),
-    )
-
     override fun clear(): AppResult<Unit> = AppResult.success(Unit)
+}
+
+private class FakeDevicePreviewRepository : DevicePreviewRepository {
+    override fun observeGps(intervalSeconds: Int, minimumDistanceMeters: Int) =
+        kotlinx.coroutines.flow.flowOf(AppResult.success(GpsPreviewData(hasPermission = true)))
+
+    override fun observeSensor(sensorType: Int) =
+        kotlinx.coroutines.flow.flowOf(AppResult.success(SensorPreviewData(isAvailable = true)))
+
+    override fun batteryOptimizationExemption(): AppResult<Boolean> = AppResult.success(false)
+}
+
+private class FakeOpenSourceLicenseRepository : OpenSourceLicenseRepository {
+    override fun load(): AppResult<List<OpenSourceLicense>> = AppResult.success(emptyList())
+}
+
+private class FakeDiagnosticsShareFilePreparer : DiagnosticsShareFilePreparer {
+    override fun prepare(text: String): AppResult<DiagnosticsShareFile> = AppResult.success(
+        DiagnosticsShareFile("content://diagnostics", "diagnostics.jsonl", "application/x-ndjson"),
+    )
 }
 
 private class FakeRecordingWorkflow : RecordingControlUseCase {

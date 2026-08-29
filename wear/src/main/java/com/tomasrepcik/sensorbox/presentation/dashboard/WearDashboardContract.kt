@@ -1,9 +1,10 @@
 package com.tomasrepcik.sensorbox.presentation.dashboard
 
+import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorDescriptor
 import com.tomasrepcik.sensorbox.presentation.menu.WearMenuDestination
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 
 enum class WearRoute { MENU, RECORD, LIVE, SETTINGS, ACTIVE }
 
@@ -13,10 +14,12 @@ data class WearDashboardState(
     val selectedSensorIds: Set<Int> = emptySet(),
     val includesGps: Boolean = false,
     val liveSensorType: Int? = null,
-    val latestValue: Float? = null,
+    val liveSamples: List<Float> = emptyList(),
     val preferences: AppPreferences = AppPreferences(),
     val isSyncing: Boolean = false,
+    val isWaitingForPermissions: Boolean = false,
     val message: WearDashboardMessage? = null,
+    val visibleFailureCode: AppErrorCode? = null,
 )
 
 sealed interface WearDashboardMessage {
@@ -42,6 +45,7 @@ sealed interface WearDashboardIntent {
     data object ToggleWakeLock : WearDashboardIntent
     data object ToggleDisplay : WearDashboardIntent
     data object SyncMeasurements : WearDashboardIntent
+    data object DismissFailure : WearDashboardIntent
 }
 
 sealed interface WearDashboardEffect {
@@ -72,7 +76,7 @@ object WearDashboardReducer {
     private fun WearDashboardState.selectLiveSensor(sensorType: Int) = copy(
         route = WearRoute.LIVE,
         liveSensorType = sensorType,
-        latestValue = null,
+        liveSamples = emptyList(),
     )
 
     private fun WearDashboardState.toggleSensor(sensorType: Int): WearDashboardState {

@@ -2,12 +2,16 @@ package com.tomasrepcik.sensorbox.presentation.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppError
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.error.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
 import com.tomasrepcik.sensorbox.di.IoDispatcher
+import com.tomasrepcik.sensorbox.domain.diagnostics.DiagnosticsShareFilePreparer
+import com.tomasrepcik.sensorbox.domain.licenses.OpenSourceLicenseRepository
+import com.tomasrepcik.sensorbox.domain.preview.DevicePreviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -23,6 +27,10 @@ class SettingsViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
     private val diagnosticsStore: DiagnosticsStore,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val appFailures: AppFailureStore,
+    private val devicePreview: DevicePreviewRepository,
+    private val licenses: OpenSourceLicenseRepository,
+    private val diagnosticsShareFile: DiagnosticsShareFilePreparer,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(SettingsState())
     private val mutableEffects = Channel<SettingsEffect>(Channel.BUFFERED)
@@ -31,15 +39,15 @@ class SettingsViewModel @Inject constructor(
     val effects = mutableEffects.receiveAsFlow()
 
     init {
+        loadLicenses()
         viewModelScope.launch {
             preferencesRepository.preferences.collect { result ->
                 when (result) {
                     is AppResult.Success -> mutableState.value = state.value.copy(
                         preferences = result.value,
-                        errorCode = null,
                     )
 
-                    is AppResult.Failure -> mutableState.value = state.value.copy(errorCode = result.error.code)
+                    is AppResult.Failure -> appFailures.show(result.error)
                 }
             }
         }
@@ -50,6 +58,7 @@ class SettingsViewModel @Inject constructor(
             update(it)
             return
         }
+        if (handleStateIntent(intent)) return
         when (intent) {
             SettingsIntent.RequestBatteryOptimizationExemption ->
                 mutableEffects.trySend(SettingsEffect.RequestBatteryOptimizationExemption)
@@ -64,10 +73,11 @@ class SettingsViewModel @Inject constructor(
 
             SettingsIntent.ClearDiagnostics -> clearDiagnostics()
 
-            SettingsIntent.DismissDiagnostics -> mutableState.value = state.value.copy(diagnosticsText = null)
-
-            is SettingsIntent.Navigate -> mutableEffects.trySend(SettingsEffect.Navigate(intent.route))
-
+            SettingsIntent.DismissDiagnostics,
+            SettingsIntent.RefreshBatteryOptimization,
+            is SettingsIntent.SelectOpenSourceLicense,
+            SettingsIntent.DismissOpenSourceLicense,
+            is SettingsIntent.Navigate,
             is SettingsIntent.SetSamplingPeriod,
             is SettingsIntent.SetStopOnLowBattery,
             is SettingsIntent.SetWakeLock,
@@ -77,6 +87,41 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetThemeMode,
             is SettingsIntent.SetDynamicColors,
             -> Unit
+        }
+    }
+
+    private fun handleStateIntent(intent: SettingsIntent): Boolean {
+        when (intent) {
+            SettingsIntent.DismissDiagnostics -> mutableState.value = state.value.copy(diagnosticsText = null)
+
+            SettingsIntent.RefreshBatteryOptimization -> refreshBatteryOptimization()
+
+            is SettingsIntent.SelectOpenSourceLicense ->
+                mutableState.value = state.value.copy(selectedLicenseName = intent.name)
+
+            SettingsIntent.DismissOpenSourceLicense ->
+                mutableState.value = state.value.copy(selectedLicenseName = null)
+
+            is SettingsIntent.Navigate -> mutableEffects.trySend(SettingsEffect.Navigate(intent.route))
+
+            else -> return false
+        }
+        return true
+    }
+
+    private fun refreshBatteryOptimization() {
+        when (val result = devicePreview.batteryOptimizationExemption()) {
+            is AppResult.Success -> mutableState.value = state.value.copy(isBatteryOptimizationExempt = result.value)
+            is AppResult.Failure -> fail(result.error)
+        }
+    }
+
+    private fun loadLicenses() {
+        viewModelScope.launch(ioDispatcher) {
+            when (val result = licenses.load()) {
+                is AppResult.Success -> mutableState.value = state.value.copy(openSourceLicenses = result.value)
+                is AppResult.Failure -> fail(result.error)
+            }
         }
     }
 
@@ -95,7 +140,7 @@ class SettingsViewModel @Inject constructor(
     private fun update(intent: AppPreferencesIntent) {
         viewModelScope.launch {
             preferencesRepository.dispatch(intent).onFailure { error ->
-                mutableState.value = state.value.copy(errorCode = error.code)
+                appFailures.show(error)
             }
         }
     }
@@ -106,35 +151,45 @@ class SettingsViewModel @Inject constructor(
                 is AppResult.Success -> mutableState.value = state.value.copy(
                     diagnosticsText = result.value,
                     diagnosticsLoaded = true,
-                    errorCode = null,
                 )
 
-                is AppResult.Failure -> fail(result.error.code)
+                is AppResult.Failure -> fail(result.error)
             }
         }
     }
 
     private fun shareDiagnosticsText() {
-        withDiagnostics { mutableEffects.send(SettingsEffect.ShareDiagnosticsText) }
+        withDiagnostics { text -> mutableEffects.send(SettingsEffect.ShareDiagnosticsText(text)) }
     }
 
     private fun shareDiagnosticsFile() {
-        withDiagnostics { mutableEffects.send(SettingsEffect.ShareDiagnosticsFile) }
+        withDiagnostics { text ->
+            when (val result = diagnosticsShareFile.prepare(text)) {
+                is AppResult.Success -> mutableEffects.send(
+                    SettingsEffect.ShareDiagnosticsFile(
+                        result.value.contentUri,
+                        result.value.displayName,
+                        result.value.mimeType,
+                    ),
+                )
+
+                is AppResult.Failure -> fail(result.error)
+            }
+        }
     }
 
-    private fun withDiagnostics(operation: suspend () -> Unit) {
+    private fun withDiagnostics(operation: suspend (String) -> Unit) {
         viewModelScope.launch(ioDispatcher) {
             when (val result = diagnosticsStore.readText()) {
                 is AppResult.Success -> {
                     mutableState.value = state.value.copy(
                         diagnosticsText = result.value,
                         diagnosticsLoaded = true,
-                        errorCode = null,
                     )
-                    if (result.value.isNotBlank()) operation()
+                    if (result.value.isNotBlank()) operation(result.value)
                 }
 
-                is AppResult.Failure -> fail(result.error.code)
+                is AppResult.Failure -> fail(result.error)
             }
         }
     }
@@ -143,7 +198,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch(ioDispatcher) {
             when (val result = diagnosticsStore.readText()) {
                 is AppResult.Success -> mutableEffects.send(SettingsEffect.CopyDiagnosticsText(result.value))
-                is AppResult.Failure -> fail(result.error.code)
+                is AppResult.Failure -> fail(result.error)
             }
         }
     }
@@ -155,18 +210,20 @@ class SettingsViewModel @Inject constructor(
                     mutableState.value = state.value.copy(
                         diagnosticsText = "",
                         diagnosticsLoaded = true,
-                        errorCode = null,
                     )
                     mutableEffects.send(SettingsEffect.DiagnosticsCleared)
                 }
 
-                is AppResult.Failure -> fail(result.error.code)
+                is AppResult.Failure -> fail(result.error)
             }
         }
     }
 
-    private suspend fun fail(code: AppErrorCode) {
-        mutableState.value = state.value.copy(errorCode = code)
-        mutableEffects.send(SettingsEffect.DiagnosticsFailed(code))
+    private fun fail(error: AppError) {
+        appFailures.show(error)
+    }
+
+    fun reportFailure(error: AppError) {
+        fail(error)
     }
 }

@@ -59,7 +59,6 @@ class MainActivity : ComponentActivity() {
             ) {
                 WearDashboardScreen(
                     state = state,
-                    chartModelProducer = viewModel.chartModelProducer,
                     accept = viewModel::accept,
                 )
             }
@@ -73,12 +72,12 @@ class MainActivity : ComponentActivity() {
                 "Request Wear permissions",
             ) {
                 permissions.launch(effect.permissions.toTypedArray())
-            }
+            }.onFailure(viewModel::reportFailure)
 
             WearDashboardEffect.OpenPhone -> appResult(
                 AppErrorCode.EXTERNAL_ACTION,
                 "Open phone launcher",
-            ) { startActivity(Intent(this, MoveToMain::class.java)) }
+            ) { startActivity(Intent(this, MoveToMain::class.java)) }.onFailure(viewModel::reportFailure)
 
             is WearDashboardEffect.OpenUrl -> openOnPhone(effect.destination)
         }
@@ -102,16 +101,12 @@ class MainActivity : ComponentActivity() {
                             onSuccess = {
                                 Toast.makeText(this, R.string.open_phone_browser, Toast.LENGTH_SHORT).show()
                             },
-                            onFailure = {
-                                Toast.makeText(this, R.string.open_phone_browser_failed, Toast.LENGTH_LONG).show()
-                            },
+                            onFailure = viewModel::reportFailure,
                         )
                 },
                 ContextCompat.getMainExecutor(this),
             )
-        }.onFailure {
-            Toast.makeText(this, R.string.open_phone_browser_failed, Toast.LENGTH_LONG).show()
-        }
+        }.onFailure(viewModel::reportFailure)
     }
 
     private fun updateDisplayPolicy(keepDisplayOn: Boolean) {

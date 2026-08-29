@@ -1,28 +1,22 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
+import com.tomasrepcik.sensorbox.domain.preview.DevicePreviewRepository
 import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveSelection
 import com.tomasrepcik.sensorbox.domain.recording.RecordingControlUseCase
 import com.tomasrepcik.sensorbox.domain.recording.RecordingPermissionsUseCase
 import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
-import com.tomasrepcik.sensorbox.domain.sensors.AvailableSensorsUseCase
-import com.tomasrepcik.sensorbox.domain.sensors.WatchSensorCatalogStore
-import com.tomasrepcik.sensorbox.domain.sensors.toSensorDescriptor
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionState
-import com.tomasrepcik.sensorbox.sensorservices.session.RecordingSessionStore
-import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_APP_CAPABILITY
-import com.tomasrepcik.sensorbox.wearoslib.WearOsConstants.WEAR_MESSAGE_PATH
-import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
-import com.tomasrepcik.sensorbox.wearoslib.connectivity.WearConnection
-import com.tomasrepcik.sensorbox.wearoslib.protocol.SendWearCommandUseCase
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
+import com.tomasrepcik.sensorbox.domain.sensors.AvailableRecordingSourcesUseCase
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -31,7 +25,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,20 +34,20 @@ import javax.inject.Inject
 @Suppress("TooManyFunctions")
 class RecordingViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
-    private val availableSensors: AvailableSensorsUseCase,
+    private val availableSources: AvailableRecordingSourcesUseCase,
     private val recordingArchive: RecordingArchiveRepository,
     private val permissions: RecordingPermissionsUseCase,
     private val recording: RecordingControlUseCase,
     private val sessionStore: RecordingSessionStore,
-    private val observeWatchCapability: ObserveWearCapabilityUseCase,
-    private val sendWatchCommand: SendWearCommandUseCase,
-    private val watchSensorCatalog: WatchSensorCatalogStore,
     private val elapsedRealtimeClock: ElapsedRealtimeClock,
+    private val appFailures: AppFailureStore,
+    private val devicePreview: DevicePreviewRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(initialState())
     private val mutableEffects = Channel<RecordingEffect>(Channel.BUFFERED)
     private var elapsedJob: Job? = null
     private var startJob: Job? = null
+    private var previewJob: Job? = null
 
     val state: StateFlow<RecordingState> = mutableState.asStateFlow()
     val effects = mutableEffects.receiveAsFlow()
@@ -62,11 +55,15 @@ class RecordingViewModel @Inject constructor(
     init {
         observePreferences()
         observeRecordingSession()
-        observeWatchConnection()
-        observeWatchSensors()
+        observeRecordingFailures()
+        observeAvailableSources()
     }
 
     fun accept(intent: RecordingIntent) {
+        intent.toPreferencesIntent()?.let {
+            updatePreference(it)
+            return
+        }
         when (intent) {
             RecordingIntent.StartRecording -> startRecording()
 
@@ -74,37 +71,43 @@ class RecordingViewModel @Inject constructor(
 
             is RecordingIntent.AddAnnotation -> recording.annotate(intent.text).showFailure()
 
-            is RecordingIntent.SetSamplingPeriod -> updatePreference(
-                AppPreferencesIntent.SetSensorSamplingPeriod(intent.index),
-            )
+            RecordingIntent.StartGpsPreview -> startGpsPreview()
 
-            is RecordingIntent.SetStopOnLowBattery -> updatePreference(
-                AppPreferencesIntent.SetStopOnLowBattery(intent.enabled),
-            )
+            is RecordingIntent.StartSensorPreview -> startSensorPreview(intent.sensorType)
 
-            is RecordingIntent.SetWakeLock -> updatePreference(AppPreferencesIntent.SetWakeLock(intent.enabled))
+            RecordingIntent.StopPreview -> stopPreview()
 
-            is RecordingIntent.SetKeepScreenAwake -> updatePreference(
-                AppPreferencesIntent.SetKeepPhoneDisplayOn(intent.enabled),
-            )
-
-            is RecordingIntent.SetGpsInterval -> updatePreference(AppPreferencesIntent.SetGpsInterval(intent.seconds))
-
-            is RecordingIntent.SetGpsDistance -> updatePreference(AppPreferencesIntent.SetGpsMinDistance(intent.meters))
+            RecordingIntent.RequestLocationPreviewPermission ->
+                mutableEffects.trySend(RecordingEffect.RequestLocationPreviewPermission)
 
             else -> reduce(intent)
         }
     }
 
-    fun handleRecordingArchiveResult(resultIntent: Intent?) {
-        val persisted = resultIntent?.let(recordingArchive::select) ?: AppResult.failure(
-            AppError(AppErrorCode.STORAGE, "Select recording archive"),
-        )
+    private fun RecordingIntent.toPreferencesIntent(): AppPreferencesIntent? = when (this) {
+        is RecordingIntent.SetSamplingPeriod -> AppPreferencesIntent.SetSensorSamplingPeriod(index)
+        is RecordingIntent.SetStopOnLowBattery -> AppPreferencesIntent.SetStopOnLowBattery(enabled)
+        is RecordingIntent.SetWakeLock -> AppPreferencesIntent.SetWakeLock(enabled)
+        is RecordingIntent.SetKeepScreenAwake -> AppPreferencesIntent.SetKeepPhoneDisplayOn(enabled)
+        is RecordingIntent.SetGpsInterval -> AppPreferencesIntent.SetGpsInterval(seconds)
+        is RecordingIntent.SetGpsDistance -> AppPreferencesIntent.SetGpsMinDistance(meters)
+        else -> null
+    }
+
+    fun handleRecordingArchiveResult(selection: RecordingArchiveSelection) {
+        if (selection is RecordingArchiveSelection.Cancelled) return
+
+        val persisted = recordingArchive.select(selection as RecordingArchiveSelection.Selected)
+        persisted.errorOrNull()?.let(appFailures::show)
         mutableState.value = state.value.copy(
-            recordingArchivePath = recordingArchive.path().getOrNull(),
+            recordingArchivePath = readRecordingArchivePath(),
             message = if (persisted.isSuccess) RecordingMessage.NONE else RecordingMessage.RECORDING_ARCHIVE_REQUIRED,
             errorCode = persisted.errorOrNull()?.code,
         )
+    }
+
+    fun reportFailure(error: AppError) {
+        appFailures.show(error)
     }
 
     fun handlePermissionResult() {
@@ -117,9 +120,48 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
+    fun handleLocationPreviewPermissionResult() {
+        startGpsPreview()
+    }
+
+    private fun startGpsPreview() {
+        previewJob?.cancel()
+        val preferences = state.value.preferences.recording
+        previewJob = viewModelScope.launch {
+            devicePreview.observeGps(
+                preferences.gpsIntervalSeconds,
+                preferences.gpsMinDistanceMeters,
+            ).collect { result ->
+                when (result) {
+                    is AppResult.Success -> mutableState.value = state.value.copy(gpsPreview = result.value)
+                    is AppResult.Failure -> appFailures.show(result.error)
+                }
+            }
+        }
+    }
+
+    private fun startSensorPreview(sensorType: Int) {
+        previewJob?.cancel()
+        previewJob = viewModelScope.launch {
+            devicePreview.observeSensor(sensorType).collect { result ->
+                when (result) {
+                    is AppResult.Success -> mutableState.value = state.value.copy(sensorPreview = result.value)
+                    is AppResult.Failure -> appFailures.show(result.error)
+                }
+            }
+        }
+    }
+
+    private fun stopPreview() {
+        previewJob?.cancel()
+        previewJob = null
+    }
+
     private fun initialState() = RecordingState(
-        sensors = availableSensors(),
-        recordingArchivePath = recordingArchive.path().getOrNull(),
+        sensors = availableSources.current.phoneSensors,
+        watchSensors = availableSources.current.watchSensors,
+        isWatchConnected = availableSources.current.isWatchConnected,
+        recordingArchivePath = readRecordingArchivePath(),
     )
 
     private fun observePreferences() {
@@ -133,10 +175,7 @@ class RecordingViewModel @Inject constructor(
                         )
                     },
                     onFailure = { error ->
-                        mutableState.value = state.value.copy(
-                            message = RecordingMessage.RECORDING_FAILED,
-                            errorCode = error.code,
-                        )
+                        appFailures.show(error)
                     },
                 )
             }
@@ -147,6 +186,14 @@ class RecordingViewModel @Inject constructor(
         viewModelScope.launch {
             sessionStore.state.collect { session ->
                 onSessionChanged(session)
+            }
+        }
+    }
+
+    private fun observeRecordingFailures() {
+        viewModelScope.launch {
+            sessionStore.events.collect { event ->
+                event.result.errorOrNull()?.let(appFailures::show)
             }
         }
     }
@@ -167,35 +214,22 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    private fun observeWatchConnection() {
+    private fun observeAvailableSources() {
         viewModelScope.launch {
-            observeWatchCapability(WEAR_APP_CAPABILITY)
-                .catch { error ->
-                    AppError.from(AppErrorCode.CONNECTIVITY, "Observe Wear connection", error)
-                    emit(WearConnection.Disconnected)
-                }
-                .collect { connection ->
-                    if (connection is WearConnection.Connected) {
-                        sendWatchCommand(
-                            WEAR_APP_CAPABILITY,
-                            WEAR_MESSAGE_PATH,
-                            WearCommand.RequestAvailableSensors,
-                        )
-                    } else {
-                        watchSensorCatalog.clear()
-                    }
-                }
-        }
-    }
-
-    private fun observeWatchSensors() {
-        viewModelScope.launch {
-            combine(watchSensorCatalog.sensors, watchSensorCatalog.isAvailable) { sensors, isAvailable ->
-                sensors to isAvailable
-            }.collect { (sensors, isAvailable) ->
+            availableSources.observe().catch { cause ->
+                appFailures.show(
+                    AppError(
+                        AppErrorCode.UNKNOWN,
+                        "Observe available recording sources",
+                        "Recording source observation failed",
+                        cause,
+                    ),
+                )
+            }.collect { sources ->
                 mutableState.value = state.value.copy(
-                    isWatchConnected = isAvailable,
-                    watchSensors = sensors.map { sensor -> sensor.toSensorDescriptor() },
+                    sensors = sources.phoneSensors,
+                    isWatchConnected = sources.isWatchConnected,
+                    watchSensors = sources.watchSensors,
                 )
             }
         }
@@ -215,10 +249,17 @@ class RecordingViewModel @Inject constructor(
             showMessage(RecordingMessage.PICK_AT_LEAST_ONE_SOURCE, AppErrorCode.VALIDATION)
             return
         }
-        if (recordingArchive.isSelected().getOrNull() != true) {
-            reduce(RecordingIntent.ChooseRecordingArchive)
-            showMessage(RecordingMessage.RECORDING_ARCHIVE_REQUIRED, AppErrorCode.STORAGE)
-            return
+        when (val selected = recordingArchive.isSelected()) {
+            is AppResult.Failure -> {
+                appFailures.show(selected.error)
+                return
+            }
+
+            is AppResult.Success -> if (!selected.value) {
+                reduce(RecordingIntent.ChooseRecordingArchive)
+                showMessage(RecordingMessage.RECORDING_ARCHIVE_REQUIRED, AppErrorCode.STORAGE)
+                return
+            }
         }
         requestMissingPermissions(request)?.let {
             mutableEffects.trySend(RecordingEffect.RequestPermissions(it))
@@ -232,6 +273,14 @@ class RecordingViewModel @Inject constructor(
         val missingPermissions = permissions.missingPermissions(request)
         return missingPermissions.takeIf(Set<String>::isNotEmpty)
     }
+
+    private fun readRecordingArchivePath(): String? = recordingArchive.path().fold(
+        onSuccess = { it },
+        onFailure = {
+            appFailures.show(it)
+            null
+        },
+    )
 
     private fun startRecordingAfterDelay(request: RecordingSetup, countdownSeconds: Int) {
         mutableState.value = RecordingReducer.recordingStartRequested(state.value, countdownSeconds)
@@ -283,17 +332,17 @@ class RecordingViewModel @Inject constructor(
     }
 
     private fun showFailure(error: AppError?) {
-        mutableState.value = state.value.copy(
-            message = when {
-                error?.code == AppErrorCode.PERMISSION && error.context["source"] == "watch" ->
-                    RecordingMessage.WATCH_PERMISSION_REQUIRED
+        when {
+            error == null -> appFailures.show(AppError(AppErrorCode.UNKNOWN, "Run recording operation"))
 
-                error?.code == AppErrorCode.PERMISSION -> RecordingMessage.PERMISSION_REQUIRED
+            error.code == AppErrorCode.PERMISSION && error.context["source"] == "watch" ->
+                showMessage(RecordingMessage.WATCH_PERMISSION_REQUIRED, AppErrorCode.PERMISSION)
 
-                else -> RecordingMessage.RECORDING_FAILED
-            },
-            errorCode = error?.code ?: AppErrorCode.UNKNOWN,
-        )
+            error.code == AppErrorCode.PERMISSION ->
+                showMessage(RecordingMessage.PERMISSION_REQUIRED, AppErrorCode.PERMISSION)
+
+            else -> appFailures.show(error)
+        }
     }
 
     private fun RecordingSetup.hasAnySource(): Boolean = sensorIds.isNotEmpty() || includesGps ||

@@ -1,14 +1,14 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
 import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveRepository
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveSelection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,9 +22,10 @@ import javax.inject.Inject
 class OnboardingViewModel @Inject constructor(
     private val preferencesRepository: AppPreferencesRepository,
     private val recordingArchive: RecordingArchiveRepository,
+    private val appFailures: AppFailureStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(
-        OnboardingState(recordingArchivePath = recordingArchive.path().getOrNull()),
+        OnboardingState(recordingArchivePath = readRecordingArchivePath()),
     )
     private val mutableEffects = Channel<OnboardingEffect>(Channel.BUFFERED)
 
@@ -56,31 +57,51 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    fun handleRecordingArchiveResult(resultIntent: Intent?) {
-        val result = resultIntent?.let(recordingArchive::select) ?: AppResult.failure(
-            AppError(AppErrorCode.STORAGE, "Select onboarding recording archive"),
-        )
+    fun handleRecordingArchiveResult(selection: RecordingArchiveSelection) {
+        if (selection is RecordingArchiveSelection.Cancelled) return
+
+        val result = recordingArchive.select(selection as RecordingArchiveSelection.Selected)
+        result.errorOrNull()?.let(appFailures::show)
         mutableState.value = state.value.copy(
-            recordingArchivePath = recordingArchive.path().getOrNull(),
+            recordingArchivePath = readRecordingArchivePath(),
             errorCode = result.errorOrNull()?.code,
         )
     }
 
+    fun reportFailure(error: com.tomasrepcik.sensorbox.core.error.AppError) {
+        appFailures.show(error)
+    }
+
     private fun completeOnboarding() {
-        if (recordingArchive.isSelected().getOrNull() != true) {
-            mutableState.value = state.value.copy(errorCode = AppErrorCode.STORAGE)
-            return
+        when (val selected = recordingArchive.isSelected()) {
+            is AppResult.Failure -> {
+                appFailures.show(selected.error)
+                return
+            }
+
+            is AppResult.Success -> if (!selected.value) {
+                mutableState.value = state.value.copy(errorCode = AppErrorCode.STORAGE)
+                return
+            }
         }
         viewModelScope.launch {
             val accepted = preferencesRepository.dispatch(AppPreferencesIntent.AcceptPolicy)
             if (accepted is AppResult.Failure) {
-                mutableState.value = state.value.copy(errorCode = accepted.error.code)
+                appFailures.show(accepted.error)
                 return@launch
             }
             when (val completed = preferencesRepository.dispatch(AppPreferencesIntent.CompleteIntro)) {
                 is AppResult.Success -> mutableEffects.send(OnboardingEffect.Navigate(MainRoute.RECORD))
-                is AppResult.Failure -> mutableState.value = state.value.copy(errorCode = completed.error.code)
+                is AppResult.Failure -> appFailures.show(completed.error)
             }
         }
     }
+
+    private fun readRecordingArchivePath(): String? = recordingArchive.path().fold(
+        onSuccess = { it },
+        onFailure = {
+            appFailures.show(it)
+            null
+        },
+    )
 }

@@ -84,6 +84,9 @@ class MeasurementBrowserScreenTest {
         )
 
         composeRule.onNodeWithText("2 chart samples").assertIsDisplayed()
+        composeRule.onNodeWithText("Sensor details").assertIsDisplayed()
+        composeRule.onNodeWithText("Bosch accelerometer").assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Zoom in"))
         composeRule.onNodeWithText("x, y, z").assertIsDisplayed()
         composeRule.onNodeWithText("Zoom out").assertIsDisplayed()
         composeRule.onNodeWithText("Show all").assertIsDisplayed()
@@ -115,7 +118,11 @@ class MeasurementBrowserScreenTest {
         composeRule.setContent {
             SensorBoxTheme {
                 MeasurementFileScreen(
-                    state = MeasurementBrowserState(selectedFile = file, selectedFileContent = content),
+                    state = MeasurementBrowserState(
+                        selectedMeasurement = details,
+                        selectedFile = file,
+                        selectedFileContent = content,
+                    ),
                     onIntent = onIntent,
                     onBack = {},
                 )
@@ -131,6 +138,12 @@ class MeasurementBrowserScreenTest {
             summary,
             listOf(MeasurementMetadataEntry("device.model", "Pixel fixture")),
             listOf(sensorFile, gpsFile),
+            sensorMetadataByFile = mapOf(
+                sensorFile.id to listOf(
+                    MeasurementMetadataEntry("sensor", "Bosch accelerometer"),
+                    MeasurementMetadataEntry("writtenSamples", "2"),
+                ),
+            ),
         )
     }
 }

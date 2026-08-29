@@ -1,14 +1,16 @@
 package com.tomasrepcik.sensorbox.presentation.main
 
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
+import com.tomasrepcik.sensorbox.domain.licenses.OpenSourceLicense
 
 data class SettingsState(
     val preferences: AppPreferences = AppPreferences(),
     val diagnosticsText: String? = null,
     val diagnosticsLoaded: Boolean = false,
-    val errorCode: AppErrorCode? = null,
+    val isBatteryOptimizationExempt: Boolean = false,
+    val openSourceLicenses: List<OpenSourceLicense> = emptyList(),
+    val selectedLicenseName: String? = null,
 )
 
 sealed interface SettingsIntent {
@@ -27,15 +29,18 @@ sealed interface SettingsIntent {
     data object CopyDiagnostics : SettingsIntent
     data object ClearDiagnostics : SettingsIntent
     data object DismissDiagnostics : SettingsIntent
+    data object RefreshBatteryOptimization : SettingsIntent
+    data class SelectOpenSourceLicense(val name: String) : SettingsIntent
+    data object DismissOpenSourceLicense : SettingsIntent
     data class Navigate(val route: MainRoute) : SettingsIntent
 }
 
 sealed interface SettingsEffect {
     data object RequestBatteryOptimizationExemption : SettingsEffect
-    data object ShareDiagnosticsText : SettingsEffect
-    data object ShareDiagnosticsFile : SettingsEffect
+    data class ShareDiagnosticsText(val text: String) : SettingsEffect
+    data class ShareDiagnosticsFile(val contentUri: String, val displayName: String, val mimeType: String) :
+        SettingsEffect
     data class CopyDiagnosticsText(val text: String) : SettingsEffect
     data object DiagnosticsCleared : SettingsEffect
-    data class DiagnosticsFailed(val code: AppErrorCode) : SettingsEffect
     data class Navigate(val route: MainRoute) : SettingsEffect
 }

@@ -1,10 +1,8 @@
 package com.tomasrepcik.sensorbox.domain.recording
 
-import android.content.Intent
 import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.InputStream
@@ -15,19 +13,22 @@ class DocumentRecordingArchiveRepositoryTest {
     fun `Given document storage When recording archive operations run Then each result is returned`() {
         val storage = FakeDocumentStorage()
         val repository = DocumentRecordingArchiveRepository(storage)
-        val intent = Intent()
+        val selection = RecordingArchiveSelection.Selected("content://fixture", 3)
 
         assertTrue(repository.isSelected().getOrNull() == true)
         assertEquals("Documents/SensorBox", repository.path().getOrNull())
-        assertTrue(repository.select(intent).isSuccess)
-        assertSame(intent, storage.persistedIntent)
+        assertTrue(repository.select(selection).isSuccess)
+        assertEquals(selection.uri, storage.persistedUri)
+        assertEquals(selection.grantFlags, storage.persistedFlags)
     }
 
     private class FakeDocumentStorage : DocumentStorage {
-        var persistedIntent: Intent? = null
+        var persistedUri: String? = null
+        var persistedFlags: Int? = null
 
-        override fun persistRootAccess(intent: Intent): AppResult<Unit> {
-            persistedIntent = intent
+        override fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit> {
+            persistedUri = uri
+            persistedFlags = grantFlags
             return AppResult.success(Unit)
         }
 

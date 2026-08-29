@@ -1,15 +1,9 @@
 package com.tomasrepcik.sensorbox.domain.paired
 
-import com.tomasrepcik.sensorbox.core.error.AppError
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
-import com.tomasrepcik.sensorbox.core.error.AppResult
 import com.tomasrepcik.sensorbox.domain.recording.RecordingSetup
 import com.tomasrepcik.sensorbox.domain.recording.StartedPhoneRecording
 import com.tomasrepcik.sensorbox.domain.recording.toWatchRecordingRequest
 import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommand
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearCommandCodec
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOperation
-import com.tomasrepcik.sensorbox.wearoslib.protocol.WearRecordingOutcome
 
 internal sealed interface PairedRecordingState {
     data object Idle : PairedRecordingState
@@ -36,25 +30,3 @@ internal fun StartedPhoneRecording.toWatchStartCommand(request: RecordingSetup) 
     sessionId = sessionId,
     request = toWatchRecordingRequest(request),
 )
-
-internal fun WearCommand.RecordingResult.toAppResult(retryCount: Int): AppResult<Unit> =
-    if (outcome == WearRecordingOutcome.SUCCEEDED) {
-        AppResult.success(Unit)
-    } else {
-        AppResult.failure(
-            AppError(
-                code = errorCode ?: AppErrorCode.UNKNOWN,
-                operation = errorOperation ?: "Handle watch $operation result",
-                diagnosticMessage = errorMessage ?: "Watch $operation failed",
-                context = errorContext + mapOf(
-                    "source" to "watch",
-                    "sessionId" to sessionId,
-                    "retryCount" to retryCount.toString(),
-                    "failureCount" to failureCount.toString(),
-                    "protocolVersion" to WearCommandCodec.PROTOCOL_VERSION.toString(),
-                ),
-            ),
-        )
-    }
-
-internal fun WearRecordingOperation.timeoutOperation(): String = "Await watch $name result"

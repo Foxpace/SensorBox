@@ -16,12 +16,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 
-class SyncWatchMeasurementsUseCase @Inject constructor(
+fun interface SyncWatchMeasurementsUseCase {
+    suspend operator fun invoke(): AppResult<Int>
+}
+
+class DefaultSyncWatchMeasurementsUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val connectionRepository: WearConnectionRepository,
     private val transferClient: WearFileTransferClient,
-) {
-    suspend operator fun invoke(): AppResult<Int> = suspendAppResult(AppErrorCode.CONNECTIVITY, "Find phone") {
+) : SyncWatchMeasurementsUseCase {
+    override suspend fun invoke(): AppResult<Int> = suspendAppResult(AppErrorCode.CONNECTIVITY, "Find phone") {
         connectionRepository.findNode(PHONE_APP_CAPABILITY)
     }.suspendFlatMap { node ->
         if (node == null) {

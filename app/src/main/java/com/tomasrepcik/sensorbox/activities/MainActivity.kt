@@ -1,6 +1,7 @@
 package com.tomasrepcik.sensorbox.activities
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -14,14 +15,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
 import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.error.appResult
-import com.tomasrepcik.sensorbox.core.error.flatMap
+import com.tomasrepcik.sensorbox.domain.recording.RecordingArchiveSelection
 import com.tomasrepcik.sensorbox.presentation.main.MainViewModel
 import com.tomasrepcik.sensorbox.presentation.main.MeasurementBrowserEffect
 import com.tomasrepcik.sensorbox.presentation.main.MeasurementBrowserViewModel
@@ -34,13 +33,9 @@ import com.tomasrepcik.sensorbox.presentation.main.SettingsEffect
 import com.tomasrepcik.sensorbox.presentation.main.SettingsViewModel
 import com.tomasrepcik.sensorbox.ui.theme.SensorBoxTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject
-    lateinit var diagnosticsStore: DiagnosticsStore
-
     private val mainViewModel: MainViewModel by viewModels()
     private val onboardingViewModel: OnboardingViewModel by viewModels()
     private val recordingViewModel: RecordingViewModel by viewModels()
@@ -48,14 +43,25 @@ class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
     private var recordingArchiveRequestOwner = RecordingArchiveRequestOwner.RECORDING
     private val directoryPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val selection = if (it.resultCode == Activity.RESULT_OK) {
+            it.data?.data?.let { uri ->
+                RecordingArchiveSelection.Selected(uri.toString(), it.data?.flags ?: 0)
+            } ?: RecordingArchiveSelection.Cancelled
+        } else {
+            RecordingArchiveSelection.Cancelled
+        }
         when (recordingArchiveRequestOwner) {
-            RecordingArchiveRequestOwner.ONBOARDING -> onboardingViewModel.handleRecordingArchiveResult(it.data)
-            RecordingArchiveRequestOwner.RECORDING -> recordingViewModel.handleRecordingArchiveResult(it.data)
+            RecordingArchiveRequestOwner.ONBOARDING -> onboardingViewModel.handleRecordingArchiveResult(selection)
+            RecordingArchiveRequestOwner.RECORDING -> recordingViewModel.handleRecordingArchiveResult(selection)
         }
     }
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         recordingViewModel.handlePermissionResult()
     }
+    private val locationPreviewPermissionRequest =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            recordingViewModel.handleLocationPreviewPermissionResult()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,6 +99,7 @@ class MainActivity : ComponentActivity() {
                     onRecordingIntent = recordingViewModel::accept,
                     onMeasurementBrowserIntent = measurementBrowserViewModel::onIntent,
                     onSettingsIntent = settingsViewModel::accept,
+                    onDismissFailure = mainViewModel::dismissFailure,
                 )
             }
         }
@@ -101,9 +108,14 @@ class MainActivity : ComponentActivity() {
     private fun handleOnboardingEffect(effect: OnboardingEffect) {
         when (effect) {
             OnboardingEffect.PickRecordingArchive -> openRecordingArchivePicker(RecordingArchiveRequestOwner.ONBOARDING)
+
             OnboardingEffect.OpenPrivacyPolicy -> openWebPage(getString(R.string.link_privacy_policy))
+
             OnboardingEffect.OpenTermsOfUse -> openWebPage(getString(R.string.link_terms))
-            OnboardingEffect.RequestBatteryOptimizationExemption -> requestBatteryOptimizationExemption()
+
+            OnboardingEffect.RequestBatteryOptimizationExemption ->
+                requestBatteryOptimizationExemption(onboardingViewModel::reportFailure)
+
             is OnboardingEffect.Navigate -> mainViewModel.navigate(effect.route)
         }
     }
@@ -116,18 +128,35 @@ class MainActivity : ComponentActivity() {
 
             is RecordingEffect.RequestPermissions -> appResult(AppErrorCode.PERMISSION, "Request app permissions") {
                 permissionRequest.launch(effect.permissions.toTypedArray())
-            }
+            }.onFailure(recordingViewModel::reportFailure)
+
+            RecordingEffect.RequestLocationPreviewPermission -> appResult(
+                AppErrorCode.PERMISSION,
+                "Request location preview permission",
+            ) {
+                locationPreviewPermissionRequest.launch(
+                    arrayOf(
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ),
+                )
+            }.onFailure(recordingViewModel::reportFailure)
         }
     }
 
     private fun handleSettingsEffect(effect: SettingsEffect) {
         when (effect) {
-            SettingsEffect.RequestBatteryOptimizationExemption -> requestBatteryOptimizationExemption()
-            SettingsEffect.ShareDiagnosticsText -> shareDiagnosticsText()
-            SettingsEffect.ShareDiagnosticsFile -> shareDiagnosticsFile()
+            SettingsEffect.RequestBatteryOptimizationExemption ->
+                requestBatteryOptimizationExemption(settingsViewModel::reportFailure)
+
+            is SettingsEffect.ShareDiagnosticsText -> shareDiagnosticsText(effect.text)
+
+            is SettingsEffect.ShareDiagnosticsFile -> shareDiagnosticsFile(effect)
+
             is SettingsEffect.CopyDiagnosticsText -> copyDiagnostics(effect.text)
+
             SettingsEffect.DiagnosticsCleared -> showToast(R.string.diagnostics_cleared)
-            is SettingsEffect.DiagnosticsFailed -> showToast(R.string.diagnostics_operation_failed)
+
             is SettingsEffect.Navigate -> mainViewModel.navigate(effect.route)
         }
     }
@@ -142,15 +171,18 @@ class MainActivity : ComponentActivity() {
         recordingArchiveRequestOwner = owner
         appResult(AppErrorCode.EXTERNAL_ACTION, "Open recording archive picker") {
             directoryPicker.launch(recordingArchiveIntent())
-        }
+        }.onFailure(::reportRecordingArchivePickerFailure)
     }
 
     private fun openWebPage(url: String) {
         launchExternalIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)), "Open web page")
+            .onFailure(onboardingViewModel::reportFailure)
     }
 
     @SuppressLint("BatteryLife")
-    private fun requestBatteryOptimizationExemption() {
+    private fun requestBatteryOptimizationExemption(
+        reportFailure: (com.tomasrepcik.sensorbox.core.error.AppError) -> Unit,
+    ) {
         val intent = Intent(
             Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
             Uri.parse("package:$packageName"),
@@ -159,39 +191,27 @@ class MainActivity : ComponentActivity() {
             launchExternalIntent(
                 Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
                 "Open battery optimization settings",
-            )
+            ).onFailure(reportFailure)
         }
     }
 
-    private fun shareDiagnosticsText() {
-        diagnosticsStore.readText().fold(
-            onSuccess = { diagnostics ->
-                val intent = Intent(Intent.ACTION_SEND)
-                    .setType("text/plain")
-                    .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
-                    .putExtra(Intent.EXTRA_TEXT, diagnostics)
-                launchShareIntent(intent).onFailure { showDiagnosticsShareFailure() }
-            },
-            onFailure = { showDiagnosticsShareFailure() },
-        )
+    private fun shareDiagnosticsText(text: String) {
+        val intent = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
+            .putExtra(Intent.EXTRA_TEXT, text)
+        launchShareIntent(intent).onFailure(settingsViewModel::reportFailure)
     }
 
-    private fun shareDiagnosticsFile() {
-        diagnosticsStore.exportFile().fold(
-            onSuccess = { file ->
-                appResult(AppErrorCode.EXTERNAL_ACTION, "Prepare diagnostics file") {
-                    val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-                    val intent = Intent(Intent.ACTION_SEND)
-                        .setType("text/plain")
-                        .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
-                        .putExtra(Intent.EXTRA_STREAM, uri)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    intent.clipData = ClipData.newUri(contentResolver, file.name, uri)
-                    intent
-                }.flatMap(::launchShareIntent).onFailure { showDiagnosticsShareFailure() }
-            },
-            onFailure = { showDiagnosticsShareFailure() },
-        )
+    private fun shareDiagnosticsFile(effect: SettingsEffect.ShareDiagnosticsFile) {
+        val uri = Uri.parse(effect.contentUri)
+        val intent = Intent(Intent.ACTION_SEND)
+            .setType(effect.mimeType)
+            .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))
+            .putExtra(Intent.EXTRA_STREAM, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.clipData = ClipData.newUri(contentResolver, effect.displayName, uri)
+        launchShareIntent(intent).onFailure(settingsViewModel::reportFailure)
     }
 
     private fun launchShareIntent(intent: Intent): AppResult<Unit> =
@@ -204,10 +224,6 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    private fun showDiagnosticsShareFailure() {
-        showToast(R.string.diagnostics_share_failed)
-    }
-
     private fun copyDiagnostics(text: String) {
         appResult(AppErrorCode.EXTERNAL_ACTION, "Copy diagnostics") {
             getSystemService(ClipboardManager::class.java).setPrimaryClip(
@@ -215,8 +231,15 @@ class MainActivity : ComponentActivity() {
             )
         }.fold(
             onSuccess = { showToast(R.string.diagnostics_copied) },
-            onFailure = { showToast(R.string.diagnostics_operation_failed) },
+            onFailure = settingsViewModel::reportFailure,
         )
+    }
+
+    private fun reportRecordingArchivePickerFailure(error: com.tomasrepcik.sensorbox.core.error.AppError) {
+        when (recordingArchiveRequestOwner) {
+            RecordingArchiveRequestOwner.ONBOARDING -> onboardingViewModel.reportFailure(error)
+            RecordingArchiveRequestOwner.RECORDING -> recordingViewModel.reportFailure(error)
+        }
     }
 
     private fun showToast(message: Int) {

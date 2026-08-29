@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.core.storage
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.tomasrepcik.sensorbox.core.error.AppError
 import com.tomasrepcik.sensorbox.core.error.AppErrorCode
@@ -12,7 +13,7 @@ import java.io.InputStream
 import java.io.OutputStream
 
 interface DocumentStorage {
-    fun persistRootAccess(intent: Intent): AppResult<Unit>
+    fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit>
 
     fun hasConfiguredDirectory(): AppResult<Boolean>
 
@@ -38,30 +39,30 @@ interface DocumentStorage {
 }
 
 class NativeDocumentStorage(private val context: Context) : DocumentStorage {
-    override fun persistRootAccess(intent: Intent): AppResult<Unit> {
-        val uri = intent.data ?: return storageFailure("Storage directory was not selected")
-        val grantFlags = intent.flags and READ_WRITE_FLAGS
-        if (grantFlags == 0) return storageFailure("Storage permission was not granted")
+    override fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit> {
+        val selectedUri = Uri.parse(uri)
+        val persistedFlags = grantFlags and READ_WRITE_FLAGS
+        if (persistedFlags == 0) return storageFailure("Storage permission was not granted")
         return appResult(AppErrorCode.STORAGE, "Persist storage permission") {
-            when (grantFlags) {
+            when (persistedFlags) {
                 Intent.FLAG_GRANT_READ_URI_PERMISSION -> context.contentResolver.takePersistableUriPermission(
-                    uri,
+                    selectedUri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
 
                 Intent.FLAG_GRANT_WRITE_URI_PERMISSION -> context.contentResolver.takePersistableUriPermission(
-                    uri,
+                    selectedUri,
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
 
-                else -> context.contentResolver.takePersistableUriPermission(uri, READ_WRITE_FLAGS)
+                else -> context.contentResolver.takePersistableUriPermission(selectedUri, READ_WRITE_FLAGS)
             }
-            DocumentFile.fromTreeUri(context, uri)
+            DocumentFile.fromTreeUri(context, selectedUri)
         }.flatMap { selectedDirectory ->
             if (selectedDirectory?.isDirectory != true) {
                 return@flatMap storageFailure("Selected storage location is not a directory")
             }
-            releaseOtherRootPermissions(context, uri)
+            releaseOtherRootPermissions(context, selectedUri)
             if (configuredDirectory() == null) {
                 storageFailure("Storage directory is unavailable")
             } else {

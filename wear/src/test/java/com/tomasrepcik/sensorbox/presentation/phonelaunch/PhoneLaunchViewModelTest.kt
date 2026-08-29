@@ -1,5 +1,7 @@
 package com.tomasrepcik.sensorbox.presentation.phonelaunch
 
+import com.tomasrepcik.sensorbox.core.error.AppFailureStore
+import com.tomasrepcik.sensorbox.core.error.DiagnosticLogger
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.FakeWearConnectionRepository
 import com.tomasrepcik.sensorbox.wearoslib.connectivity.ObserveWearCapabilityUseCase
@@ -44,5 +46,6 @@ class PhoneLaunchViewModelTest {
     private fun createViewModel(repository: FakeWearConnectionRepository) = PhoneLaunchViewModel(
         ObserveWearCapabilityUseCase(repository),
         SendWearCommandUseCase(SendWearMessageUseCase(repository)),
+        AppFailureStore(DiagnosticLogger { }),
     )
 }

@@ -5,6 +5,15 @@
     <string name="agree_and_continue">Agree and continue</string>
     <string name="back">Back</string>
     <string name="close">Close</string>
+    <string name="app_error_title">Something went wrong</string>
+    <string name="app_error_connectivity">The device connection failed. The error was saved in diagnostics.</string>
+    <string name="app_error_permission">The requested permission could not be used. The error was saved in diagnostics.</string>
+    <string name="app_error_preferences">Settings could not be loaded or saved. The error was saved in diagnostics.</string>
+    <string name="app_error_recording">The recording operation failed. The error was saved in diagnostics.</string>
+    <string name="app_error_storage">Local storage could not be read or updated. The error was saved in diagnostics.</string>
+    <string name="app_error_external_action">Android could not complete the requested action. The error was saved in diagnostics.</string>
+    <string name="app_error_timeout">The operation did not finish in time. The error was saved in diagnostics.</string>
+    <string name="app_error_unknown">The operation failed. The error was saved in diagnostics.</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="on">On</string>
@@ -119,6 +128,7 @@
     <string name="measurement_started">Started</string>
     <string name="measurement_file_count">%1$d data files</string>
     <string name="sensor_samples">Sensor samples</string>
+    <string name="sensor_details">Sensor details</string>
     <string name="gps_coordinates">GPS coordinates</string>
     <string name="text_data">Text data</string>
     <string name="loading_measurements">Loading measurements…</string>

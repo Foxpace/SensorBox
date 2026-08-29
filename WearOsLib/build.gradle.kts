@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
     testFixturesImplementation(project(":core-common"))
     testFixturesImplementation(libs.coroutines.core)
 }
