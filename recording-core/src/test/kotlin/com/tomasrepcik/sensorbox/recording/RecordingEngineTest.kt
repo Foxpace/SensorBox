@@ -5,6 +5,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
@@ -34,9 +35,14 @@ class RecordingEngineTest {
     fun `Given unordered sources When recording starts Then sources start in stable order`() = runTest {
         // Given
         val calls = mutableListOf<String>()
-        val engine = engine(
-            FakeSource(RecordingSourceType.GPS, calls),
-            FakeSource(RecordingSourceType.SENSOR, calls),
+        val engine = RecordingEngine(
+            sources = listOf(
+                FakeSource(RecordingSourceType.GPS, calls),
+                FakeSource(RecordingSourceType.SENSOR, calls),
+            ),
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
+            waitFor = { },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
         )
         val request = request(
             RecordingSourceSpec.Gps(10, 20),
@@ -48,11 +54,13 @@ class RecordingEngineTest {
 
         // Then
         assertTrue(result.isSuccess)
+        assertTrue(calls.isEmpty())
+        runCurrent()
         assertEquals(listOf("start:SENSOR", "start:GPS"), calls)
     }
 
     @Test
-    fun `Given a source start fails When recording starts Then attempted sources stop in reverse order`() = runTest {
+    fun `Given one source start fails When recording starts Then other source keeps recording`() = runTest {
         // Given
         val calls = mutableListOf<String>()
         val engine = engine(
@@ -63,16 +71,113 @@ class RecordingEngineTest {
             RecordingSourceSpec.Sensors(setOf(1), 0),
             RecordingSourceSpec.Gps(10, 20),
         )
+        val failed = async { engine.events.first { it is RecordingEvent.SourceFailed } }
+        runCurrent()
+
+        // When
+        val result = engine.start(request)
+        val event = failed.await() as RecordingEvent.SourceFailed
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(RecordingSourceType.GPS, event.sourceType)
+        assertEquals(
+            listOf("start:SENSOR", "start:GPS", "stop:GPS:SOURCE_FAILURE"),
+            calls,
+        )
+        engine.stop(RecordingStopReason.USER_REQUEST)
+    }
+
+    @Test
+    fun `Given source start never returns When recording starts Then next source still launches`() = runTest {
+        // Given
+        val calls = mutableListOf<String>()
+        val engine = engine(
+            FakeSource(RecordingSourceType.SENSOR, calls, hangOnStart = true),
+            FakeSource(RecordingSourceType.GPS, calls),
+        )
+        val request = request(
+            RecordingSourceSpec.Sensors(setOf(1), 0),
+            RecordingSourceSpec.Gps(10, 20),
+        )
 
         // When
         val result = engine.start(request)
 
         // Then
-        assertTrue(result.isFailure)
+        assertTrue(result.isSuccess)
         assertEquals(
-            listOf("stop:GPS:SOURCE_FAILURE", "stop:SENSOR:SOURCE_FAILURE"),
-            calls.takeLast(2),
+            listOf("start:SENSOR", "start:GPS"),
+            calls,
         )
+        assertTrue(engine.stop(RecordingStopReason.USER_REQUEST).isSuccess)
+    }
+
+    @Test
+    fun `Given source cleanup never returns When start fails Then failure is still published`() = runTest {
+        // Given
+        val calls = mutableListOf<String>()
+        val engine = RecordingEngine(
+            sources = listOf(
+                FakeSource(
+                    type = RecordingSourceType.SENSOR,
+                    calls = calls,
+                    startFails = true,
+                    hangOnStop = true,
+                ),
+            ),
+            scope = backgroundScope,
+            waitFor = { kotlinx.coroutines.delay(it) },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
+        )
+        val request = request(RecordingSourceSpec.Sensors(setOf(1), 0))
+        val failed = async { engine.events.first { it is RecordingEvent.SourceFailed } }
+        runCurrent()
+
+        // When
+        val result = engine.start(request)
+        runCurrent()
+        advanceTimeBy(5_000L)
+        runCurrent()
+        val event = failed.await() as RecordingEvent.SourceFailed
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(
+            listOf("start:SENSOR", "stop:SENSOR:SOURCE_FAILURE"),
+            calls,
+        )
+        assertEquals("Stop SENSOR recording source", event.stopFailure?.operation)
+        engine.stop(RecordingStopReason.USER_REQUEST)
+    }
+
+    @Test
+    fun `Given measurement metadata start fails When recording starts Then sensor still launches`() = runTest {
+        // Given
+        val calls = mutableListOf<String>()
+        val engine = engine(
+            FakeSource(RecordingSourceType.SESSION_METADATA, calls, startFails = true),
+            FakeSource(RecordingSourceType.SENSOR, calls),
+        )
+        val request = request(
+            RecordingSourceSpec.SessionMetadata,
+            RecordingSourceSpec.Sensors(setOf(1), 0),
+        )
+        val failed = async { engine.events.first { it is RecordingEvent.SourceFailed } }
+        runCurrent()
+
+        // When
+        val result = engine.start(request)
+        val event = failed.await() as RecordingEvent.SourceFailed
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(RecordingSourceType.SESSION_METADATA, event.sourceType)
+        assertEquals(
+            listOf("start:SESSION_METADATA", "stop:SESSION_METADATA:SOURCE_FAILURE", "start:SENSOR"),
+            calls,
+        )
+        engine.stop(RecordingStopReason.USER_REQUEST)
     }
 
     @Test
@@ -108,6 +213,7 @@ class RecordingEngineTest {
             sources = listOf(session, sensor),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
         )
         engine.start(request(RecordingSourceSpec.SessionMetadata, RecordingSourceSpec.Sensors(setOf(1), 0)))
         val failed = async { engine.events.first { it is RecordingEvent.SourceFailed } }
@@ -151,6 +257,7 @@ class RecordingEngineTest {
             sources = listOf(FakeSource(RecordingSourceType.SENSOR, calls, yieldOnStop = true)),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
         )
         val request = request(RecordingSourceSpec.Sensors(setOf(1), 0), durationMillis = 500L)
 
@@ -173,6 +280,7 @@ class RecordingEngineTest {
             sources = listOf(metadata, source),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
         )
         val request = request(RecordingSourceSpec.SessionMetadata, RecordingSourceSpec.Sensors(setOf(1), 0))
         engine.start(request)
@@ -198,6 +306,7 @@ class RecordingEngineTest {
             sources = listOf(sensor, gps),
             scope = backgroundScope,
             waitFor = { kotlinx.coroutines.delay(it) },
+            sourceStartDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler),
         )
         engine.start(
             request(
@@ -222,6 +331,7 @@ class RecordingEngineTest {
         sources = sources.toList(),
         scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
         waitFor = { },
+        sourceStartDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
     )
 
     private fun request(vararg sources: RecordingSourceSpec, durationMillis: Long = 0L) = RecordingRequest(
@@ -236,6 +346,8 @@ private class FakeSource(
     private val calls: MutableList<String>,
     private val startFails: Boolean = false,
     private val stopFails: Boolean = false,
+    private val hangOnStart: Boolean = false,
+    private val hangOnStop: Boolean = false,
     private val yieldOnStop: Boolean = false,
 ) : RecordingSource {
     private val mutableFailures = MutableSharedFlow<AppError>(replay = 1)
@@ -245,6 +357,7 @@ private class FakeSource(
 
     override suspend fun start(spec: RecordingSourceSpec): AppResult<Unit> {
         calls += "start:$type"
+        if (hangOnStart) awaitCancellation()
         return if (startFails) failure("Start $type") else AppResult.success(Unit)
     }
 
@@ -252,6 +365,7 @@ private class FakeSource(
         if (yieldOnStop) yield()
         stopContext = context
         calls += "stop:$type:${context.reason}"
+        if (hangOnStop) awaitCancellation()
         return if (stopFails) failure("Stop $type") else AppResult.success(Unit)
     }
 

@@ -55,6 +55,27 @@ class PhoneSensorRecordingEmulatorTest {
     }
 
     @Test
+    fun givenEveryPhoneSourceWhenRecordingStartsThenSourcesLaunchWithoutBlockingTheSession() {
+        fixture.start(
+            RecordingScenario(
+                name = "PHONE_ALL_SOURCES_RECORDING_TEST",
+                sensors = setOf(ACCELEROMETER, GYROSCOPE),
+                includesGps = true,
+                stopOnLowBattery = true,
+                useWakeLock = true,
+                gpsIntervalSeconds = 1,
+                gpsMinDistanceMeters = 0,
+                activityRecognition = true,
+                activityRecognitionPeriodSeconds = 1,
+                significantMotion = true,
+            ),
+        )
+            .waitFor(1_000)
+            .stop()
+            .assertRecorded()
+    }
+
+    @Test
     fun givenATimedRecordingWhenDurationExpiresThenSamplesAreFinalized() {
         fixture.start(
             RecordingScenario(

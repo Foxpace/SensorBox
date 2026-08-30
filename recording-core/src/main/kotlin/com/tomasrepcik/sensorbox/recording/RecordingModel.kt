@@ -66,8 +66,6 @@ data class RecordingStopContext(val reason: RecordingStopReason, val failures: L
 sealed interface RecordingEvent {
     val sessionId: RecordingSessionId
 
-    data class RecordingStarted(override val sessionId: RecordingSessionId) : RecordingEvent
-
     data class SourceFailed(
         override val sessionId: RecordingSessionId,
         val sourceType: RecordingSourceType,

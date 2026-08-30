@@ -19,21 +19,19 @@ import com.tomasrepcik.sensorbox.recording.RecordingControlUseCase
 import com.tomasrepcik.sensorbox.recording.RecordingEffect
 import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingMessage
-import com.tomasrepcik.sensorbox.recording.RecordingPermissionsUseCase
 import com.tomasrepcik.sensorbox.recording.RecordingViewModel
-import com.tomasrepcik.sensorbox.recording.active.ElapsedRealtimeClock
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveRepository
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveSelection
 import com.tomasrepcik.sensorbox.recording.preview.DevicePreviewRepository
 import com.tomasrepcik.sensorbox.recording.preview.GpsPreviewData
 import com.tomasrepcik.sensorbox.recording.preview.SensorPreviewData
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopReason
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.recording.setup.RecordingSetup
 import com.tomasrepcik.sensorbox.recording.sources.AvailableRecordingSources
 import com.tomasrepcik.sensorbox.recording.sources.AvailableRecordingSourcesUseCase
 import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
-import com.tomasrepcik.sensorbox.recording.sources.SensorReportingMode
 import com.tomasrepcik.sensorbox.settings.SettingsIntent
 import com.tomasrepcik.sensorbox.settings.SettingsViewModel
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
@@ -206,6 +204,25 @@ class FeatureViewModelTest {
     }
 
     @Test
+    fun `Given archive selected after recording state was created When refreshed Then recording uses its path`() =
+        runTest {
+            // Given
+            val archive = FakeRecordingArchiveRepository(isSelected = false)
+            val viewModel = recordingViewModel(
+                workflow = FakeRecordingWorkflow(),
+                archive = archive,
+            )
+            assertEquals(null, viewModel.state.value.recordingArchivePath)
+            archive.select(RecordingArchiveSelection.Selected("fixture", 0))
+
+            // When
+            viewModel.refreshRecordingArchive()
+
+            // Then
+            assertEquals("fixture", viewModel.state.value.recordingArchivePath)
+        }
+
+    @Test
     fun `Given watch permission rejection When recording starts Then watch guidance is shown`() = runTest {
         val workflow = FakeRecordingWorkflow().apply {
             startResult = AppResult.failure(
@@ -256,6 +273,35 @@ class FeatureViewModelTest {
         assertFalse(viewModel.state.value.isStarting)
         sessionStore.markIdle()
         runCurrent()
+    }
+
+    @Test
+    fun `Given source start failure When recording stops before running Then loading stops`() = runTest {
+        // Given
+        val sessionStore = RecordingSessionStore()
+        val appFailures = failureStore()
+        val viewModel = recordingViewModel(
+            workflow = FakeRecordingWorkflow(),
+            sessionStore = sessionStore,
+            appFailures = appFailures,
+        )
+        advanceUntilIdle()
+        viewModel.accept(RecordingIntent.ToggleSensor(1))
+        viewModel.accept(RecordingIntent.StartRecording)
+        runCurrent()
+        assertTrue(viewModel.state.value.isStarting)
+
+        // When
+        sessionStore.publishStopped(
+            sessionId = "failed-session",
+            reason = RecordingSessionStopReason.SOURCE_FAILURE,
+            result = AppResult.failure(AppError(AppErrorCode.RECORDING, "Start sensors")),
+        )
+        runCurrent()
+
+        // Then
+        assertFalse(viewModel.state.value.isStarting)
+        assertEquals(AppErrorCode.RECORDING, appFailures.visibleFailure.value?.code)
     }
 
     @Test
@@ -364,10 +410,10 @@ class FeatureViewModelTest {
         preferencesRepository = FakeAppPreferencesRepository(),
         availableSources = availableSources,
         recordingArchive = archive,
-        permissions = RecordingPermissionsUseCase { emptySet() },
+        permissions = { emptySet() },
         recording = workflow,
         sessionStore = sessionStore,
-        elapsedRealtimeClock = ElapsedRealtimeClock { 10_000L },
+        elapsedRealtimeClock = { 10_000L },
         appFailures = appFailures,
         devicePreview = FakeDevicePreviewRepository(),
     )
@@ -392,16 +438,21 @@ private class FakeAvailableRecordingSources(
 
 private class FakeRecordingArchiveRepository(
     isSelected: Boolean = true,
-    private val selectedResult: AppResult<Boolean> = AppResult.success(isSelected),
+    private val selectedResult: AppResult<Boolean>? = null,
 ) : RecordingArchiveRepository {
-    override fun isSelected(): AppResult<Boolean> = selectedResult
+    private var selected = isSelected
 
-    override fun path(): AppResult<String?> = selectedResult.fold(
-        onSuccess = { AppResult.success(if (it) "fixture" else null) },
+    override fun isSelected(): AppResult<Boolean> = selectedResult ?: AppResult.success(selected)
+
+    override fun path(): AppResult<String?> = isSelected().fold(
+        onSuccess = { AppResult.success(if (selected) "fixture" else null) },
         onFailure = { AppResult.success(null) },
     )
 
-    override fun select(selection: RecordingArchiveSelection.Selected): AppResult<Unit> = AppResult.success(Unit)
+    override fun select(selection: RecordingArchiveSelection.Selected): AppResult<Unit> {
+        selected = true
+        return AppResult.success(Unit)
+    }
 }
 
 private class FakeDiagnosticsStore(

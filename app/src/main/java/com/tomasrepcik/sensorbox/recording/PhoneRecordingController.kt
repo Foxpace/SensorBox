@@ -53,7 +53,9 @@ class AndroidPhoneRecordingController @Inject constructor(
     ) {
         val folderName = intentFactory.newFolderName(request.customName)
         val recordingRequest = request.toRecordingRequest(sessionId, folderName)
-        ContextCompat.startForegroundService(context, intentFactory.create(recordingRequest))
+        checkNotNull(ContextCompat.startForegroundService(context, intentFactory.create(recordingRequest))) {
+            "Recording foreground service is not registered"
+        }
         StartedPhoneRecording(sessionId, folderName, recordingRequest.durationMillis)
     }
 

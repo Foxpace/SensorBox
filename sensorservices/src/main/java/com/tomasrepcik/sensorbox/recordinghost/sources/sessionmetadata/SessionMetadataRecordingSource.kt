@@ -20,7 +20,7 @@ import com.tomasrepcik.sensorbox.recordinghost.storage.MeasurementStorage
 
 internal class SessionMetadataRecordingSource(
     private val request: RecordingRequest,
-    private val storage: MeasurementStorage,
+    storage: MeasurementStorage,
     clock: EpochClock,
     sensorManager: SensorManager,
 ) : RecordingSource {
@@ -31,8 +31,8 @@ internal class SessionMetadataRecordingSource(
 
     override suspend fun start(spec: RecordingSourceSpec): AppResult<Unit> =
         if (spec is RecordingSourceSpec.SessionMetadata) {
-            storage.createMeasurementDirectory(request.folderName, request.useInternalStorage)
-                .onSuccess { metadataWriter.start(request) }
+            metadataWriter.start(request)
+            AppResult.success(Unit)
         } else {
             invalidSpec(type)
         }

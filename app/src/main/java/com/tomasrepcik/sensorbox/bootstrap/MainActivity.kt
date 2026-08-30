@@ -116,7 +116,10 @@ class MainActivity : ComponentActivity() {
             OnboardingEffect.RequestBatteryOptimizationExemption ->
                 requestBatteryOptimizationExemption(onboardingViewModel::reportFailure)
 
-            is OnboardingEffect.Navigate -> mainViewModel.navigate(effect.route)
+            is OnboardingEffect.Navigate -> {
+                recordingViewModel.refreshRecordingArchive()
+                mainViewModel.navigate(effect.route)
+            }
         }
     }
 

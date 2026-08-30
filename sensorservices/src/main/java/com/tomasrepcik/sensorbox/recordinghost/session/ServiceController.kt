@@ -20,7 +20,7 @@ internal class ServiceController(
     context: Context,
     private val request: RecordingRequest,
     scope: CoroutineScope,
-    storage: MeasurementStorage,
+    private val storage: MeasurementStorage,
     diagnosticLogger: DiagnosticLogger,
     clock: EpochClock,
 ) : RecordingSessionExecution {
@@ -33,7 +33,15 @@ internal class ServiceController(
 
     override val events: SharedFlow<RecordingEvent> = engine.events
 
-    override suspend fun start(): AppResult<Unit> = engine.start(request.toEngineRequest(sessionId))
+    override suspend fun start(): AppResult<Unit> {
+        val directory = storage.createMeasurementDirectory(
+            request.folderName,
+            request.useInternalStorage,
+        )
+        if (directory is AppResult.Failure) return directory
+
+        return engine.start(request.toEngineRequest(sessionId))
+    }
 
     override suspend fun stop(reason: RecordingStopReason): AppResult<Unit> = engine.stop(reason)
 

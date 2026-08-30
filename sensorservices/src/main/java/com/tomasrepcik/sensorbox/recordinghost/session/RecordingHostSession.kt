@@ -13,6 +13,7 @@ import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopReason
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingRequest
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
@@ -66,7 +67,11 @@ internal class RecordingHostSession(
 
         observeExecution()
         val result = execution.start()
-        if (result.isFailure) finish(RecordingSessionStopReason.SOURCE_FAILURE, result)
+        if (result.isFailure) {
+            finish(RecordingSessionStopReason.SOURCE_FAILURE, result)
+        } else {
+            markRecordingAsRunning()
+        }
         return result
     }
 
@@ -103,10 +108,9 @@ internal class RecordingHostSession(
 
     private fun observeExecution() {
         eventJob?.cancel()
-        eventJob = scope.launch {
+        eventJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             execution.events.collect { event ->
                 when (event) {
-                    is RecordingEvent.RecordingStarted -> onStarted(event)
                     is RecordingEvent.SourceFailed -> recordSourceFailure(event)
                     is RecordingEvent.RecordingStopped -> finish(event.reason.toSessionReason(), event.result)
                 }
@@ -119,10 +123,10 @@ internal class RecordingHostSession(
         event.stopFailure?.let { diagnosticLogger.record(it.toDiagnosticEvent()) }
     }
 
-    private fun onStarted(event: RecordingEvent.RecordingStarted) {
+    private fun markRecordingAsRunning() {
         sessionStore.markRunning(
             RecordingSessionState.Running(
-                sessionId = event.sessionId.value,
+                sessionId = request.sessionId,
                 folderName = request.folderName,
                 startedAtElapsedRealtime = elapsedRealtimeMillis(),
                 sensorIds = request.sensorIds.toList(),

@@ -6,3 +6,4 @@ build/
 /app/*.json
 /wear/*.json
 /.codebase-memory/
+.DS_Store

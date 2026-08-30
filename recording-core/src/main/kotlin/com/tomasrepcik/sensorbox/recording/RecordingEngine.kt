@@ -4,7 +4,10 @@ import com.tomasrepcik.sensorbox.core.failure.AppError
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.combineAppResults
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -13,11 +16,15 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.yield
 
 class RecordingEngine(
     sources: List<RecordingSource>,
     private val scope: CoroutineScope,
     private val waitFor: suspend (Long) -> Unit = { delay(it) },
+    private val sourceStartDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val sourceByType = sources.associateBy(RecordingSource::type)
     private val mutableEvents = MutableSharedFlow<RecordingEvent>(extraBufferCapacity = EVENT_BUFFER_SIZE)
@@ -28,7 +35,7 @@ class RecordingEngine(
     val events: SharedFlow<RecordingEvent> = mutableEvents.asSharedFlow()
 
     @Suppress("ReturnCount")
-    suspend fun start(request: RecordingRequest): AppResult<Unit> {
+    fun start(request: RecordingRequest): AppResult<Unit> {
         if (activeRecording != null) return conflict("Start recording", request.sessionId)
 
         val validation = validate(request)
@@ -38,18 +45,11 @@ class RecordingEngine(
         lastStopResult = null
         activeRecording = recording
 
-        for (spec in request.sources.sortedBy { it.type.ordinal }) {
-            val source = checkNotNull(sourceByType[spec.type])
-            recording.startedSources += source
-
-            val result = source.start(spec)
-            if (result is AppResult.Failure) return stopFailedStart(recording, result.error)
-            if (activeRecording !== recording) return AppResult.success(Unit)
-        }
-
-        mutableEvents.tryEmit(RecordingEvent.RecordingStarted(request.sessionId))
-        scheduleDurationStop(recording)
+        val sourceSpecs = request.sources.sortedBy { it.type.ordinal }
+        recording.startedSources += sourceSpecs.map { spec -> checkNotNull(sourceByType[spec.type]) }
         observeSourceFailures(recording)
+        scheduleDurationStop(recording)
+        launchRecordingSources(recording, sourceSpecs)
         return AppResult.success(Unit)
     }
 
@@ -59,52 +59,93 @@ class RecordingEngine(
     }
 
     private suspend fun stopRecording(recording: ActiveRecording, context: RecordingStopContext): AppResult<Unit> {
-        activeRecording = null
-        recording.durationStop?.cancel()
-        recording.failureMonitor?.cancel()
-
-        val stoppedSources = stopSources(recording.startedSources, context)
+        cancelRecordingJobs(recording)
+        val stoppedSources = stopRecordingSources(recording.startedSources, context)
         val results = buildList {
             context.failures.forEach { add(AppResult.failure(it)) }
             addAll(stoppedSources)
         }
         val result = results.combineAppResults(AppErrorCode.RECORDING, "Stop recording sources")
         lastStopResult = result
+        publishRecordingStopped(recording, context.reason, result)
+        return result
+    }
+
+    private fun cancelRecordingJobs(recording: ActiveRecording) {
+        activeRecording = null
+        recording.durationStop?.cancel()
+        recording.failureMonitor?.cancel()
+        recording.sourceStartJobs.values.toList().forEach(Job::cancel)
+        recording.sourceStartJobs.clear()
+    }
+
+    private fun publishRecordingStopped(
+        recording: ActiveRecording,
+        reason: RecordingStopReason,
+        result: AppResult<Unit>,
+    ) {
         mutableEvents.tryEmit(
             RecordingEvent.RecordingStopped(
                 sessionId = recording.request.sessionId,
-                reason = context.reason,
+                reason = reason,
                 result = result,
             ),
         )
-        return result
     }
 
-    private suspend fun stopFailedStart(recording: ActiveRecording, startError: AppError): AppResult<Unit> {
-        if (activeRecording !== recording) return lastStopResult ?: AppResult.failure(startError)
-        activeRecording = null
-        val stoppedSources = stopSources(
-            recording.startedSources,
-            RecordingStopContext(RecordingStopReason.SOURCE_FAILURE, listOf(startError)),
-        )
-        val result = (listOf(AppResult.failure(startError)) + stoppedSources)
-            .combineAppResults(AppErrorCode.RECORDING, "Stop failed recording start")
-        return result
-    }
-
-    private suspend fun stopSources(
+    private suspend fun stopRecordingSources(
         sources: List<RecordingSource>,
         context: RecordingStopContext,
     ): List<AppResult<Unit>> {
         var currentContext = context
         val results = mutableListOf<AppResult<Unit>>()
         for (source in sources.asReversed()) {
-            val result = source.stop(currentContext)
+            val result = stopRecordingSource(source, currentContext)
             results += result
             result.errorOrNull()?.let { failure -> currentContext = currentContext.withFailure(failure) }
         }
         return results
     }
+
+    private suspend fun stopRecordingSource(source: RecordingSource, context: RecordingStopContext): AppResult<Unit> =
+        withTimeoutOrNull(SOURCE_STOP_TIMEOUT_MILLIS) {
+            source.stop(context)
+        } ?: sourceStopTimeout(source)
+
+    private fun sourceStopTimeout(source: RecordingSource): AppResult<Unit> = AppResult.failure(
+        AppError(
+            code = AppErrorCode.RECORDING,
+            operation = "Stop ${source.type} recording source",
+            diagnosticMessage = "Stop timed out after $SOURCE_STOP_TIMEOUT_MILLIS ms",
+            context = mapOf(
+                "sourceType" to source.type.name,
+                "timeoutMillis" to SOURCE_STOP_TIMEOUT_MILLIS.toString(),
+            ),
+            isRetryable = true,
+        ),
+    )
+
+    private fun launchRecordingSources(recording: ActiveRecording, specs: List<RecordingSourceSpec>) {
+        for (spec in specs) {
+            val source = checkNotNull(sourceByType[spec.type])
+            val job = scope.launch(start = CoroutineStart.LAZY) {
+                yield()
+                val result = startRecordingSource(source, spec)
+                recording.sourceStartJobs.remove(source)
+                if (result is AppResult.Failure && activeRecording === recording) {
+                    handleRecordingSourceFailure(recording, FailedSource(source, result.error))
+                }
+            }
+            recording.sourceStartJobs[source] = job
+            job.invokeOnCompletion { recording.sourceStartJobs.remove(source) }
+            job.start()
+        }
+    }
+
+    private suspend fun startRecordingSource(source: RecordingSource, spec: RecordingSourceSpec): AppResult<Unit> =
+        withContext(sourceStartDispatcher) {
+            source.start(spec)
+        }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun observeSourceFailures(recording: ActiveRecording) {
@@ -114,16 +155,18 @@ class RecordingEngine(
         recording.failureMonitor = scope.launch {
             merge(*failures.toTypedArray()).collect { failedSource ->
                 if (activeRecording === recording) {
-                    stopFailedSource(recording, failedSource)
+                    handleRecordingSourceFailure(recording, failedSource)
                 }
             }
         }
     }
 
-    private suspend fun stopFailedSource(recording: ActiveRecording, failedSource: FailedSource) {
+    private suspend fun handleRecordingSourceFailure(recording: ActiveRecording, failedSource: FailedSource) {
         if (!recording.startedSources.remove(failedSource.source)) return
+        recording.sourceStartJobs.remove(failedSource.source)?.cancel()
 
-        val stopResult = failedSource.source.stop(
+        val stopResult = stopRecordingSource(
+            failedSource.source,
             RecordingStopContext(RecordingStopReason.SOURCE_FAILURE, listOf(failedSource.failure)),
         )
         mutableEvents.emit(
@@ -185,6 +228,7 @@ class RecordingEngine(
     private class ActiveRecording(
         val request: RecordingRequest,
         val startedSources: MutableList<RecordingSource> = mutableListOf(),
+        val sourceStartJobs: MutableMap<RecordingSource, Job> = mutableMapOf(),
         var durationStop: Job? = null,
         var failureMonitor: Job? = null,
     )
@@ -193,5 +237,6 @@ class RecordingEngine(
 
     private companion object {
         const val EVENT_BUFFER_SIZE = 16
+        const val SOURCE_STOP_TIMEOUT_MILLIS = 5_000L
     }
 }

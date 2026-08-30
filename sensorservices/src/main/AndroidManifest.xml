@@ -12,7 +12,7 @@
         tools:ignore="HighSamplingRate" />
     <application>
         <service
-            android:name=".services.RecordingService"
+            android:name="com.tomasrepcik.sensorbox.recordinghost.session.RecordingService"
             android:foregroundServiceType="specialUse|location"
             android:enabled="true"
             android:exported="false">

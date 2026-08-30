@@ -9,8 +9,6 @@ import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
 import com.tomasrepcik.sensorbox.navigation.MainRoute
-import com.tomasrepcik.sensorbox.recording.RecordingControlUseCase
-import com.tomasrepcik.sensorbox.recording.RecordingPermissionsUseCase
 import com.tomasrepcik.sensorbox.recording.active.ElapsedRealtimeClock
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveRepository
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveSelection
@@ -57,7 +55,7 @@ class RecordingViewModel @Inject constructor(
     init {
         observePreferences()
         observeRecordingSession()
-        observeRecordingFailures()
+        observeRecordingStops()
         observeAvailableSources()
     }
 
@@ -110,6 +108,10 @@ class RecordingViewModel @Inject constructor(
 
     fun reportFailure(error: AppError) {
         appFailures.show(error)
+    }
+
+    fun refreshRecordingArchive() {
+        mutableState.value = state.value.copy(recordingArchivePath = readRecordingArchivePath())
     }
 
     fun handlePermissionResult() {
@@ -192,9 +194,13 @@ class RecordingViewModel @Inject constructor(
         }
     }
 
-    private fun observeRecordingFailures() {
+    private fun observeRecordingStops() {
         viewModelScope.launch {
             sessionStore.events.collect { event ->
+                val currentState = state.value
+                if (currentState.isStarting && currentState.session is RecordingSessionState.Idle) {
+                    mutableState.value = RecordingReducer.recordingStartFailed(currentState)
+                }
                 event.result.errorOrNull()?.let(appFailures::show)
             }
         }

@@ -5,14 +5,6 @@ import androidx.documentfile.provider.DocumentFile
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.suspendAppResult
-import com.tomasrepcik.sensorbox.measurements.storage.GpsCoordinate
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementDetails
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileContent
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileKind
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileSummary
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementRepository
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementSummary
-import com.tomasrepcik.sensorbox.measurements.storage.SensorSeriesSample
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -116,53 +108,88 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         document: DocumentFile,
         anchor: SensorTimeAnchor?,
     ): MeasurementFileContent.SensorSeries {
-        var columns = emptyList<String>()
         val samples = mutableListOf<SensorSeriesSample>()
         var totalSamples = 0
+
+        val columns = readSensorSamples(document, anchor) { sample ->
+            totalSamples += 1
+            if (samples.size < MAX_CHART_SAMPLES) samples += sample
+        }
+
+        if (totalSamples <= MAX_CHART_SAMPLES) {
+            return MeasurementFileContent.SensorSeries(columns, samples, truncated = false)
+        }
+
+        val selectedIndexes = chartSampleIndexes(totalSamples, MAX_CHART_SAMPLES)
+        samples.clear()
+        var sampleIndex = 0
+        var selectedIndex = 0
+
+        readSensorSamples(document, anchor) { sample ->
+            if (selectedIndex < selectedIndexes.size && sampleIndex == selectedIndexes[selectedIndex]) {
+                samples += sample
+                selectedIndex += 1
+            }
+            sampleIndex += 1
+        }
+
+        return MeasurementFileContent.SensorSeries(columns, samples, truncated = true)
+    }
+
+    private fun readSensorSamples(
+        document: DocumentFile,
+        anchor: SensorTimeAnchor?,
+        onSample: (SensorSeriesSample) -> Unit,
+    ): List<String> {
+        var columns = emptyList<String>()
         openDocumentStream(document).bufferedReader().useLines { lines ->
             val iterator = lines.iterator()
             if (!iterator.hasNext()) return@useLines
-            val header = iterator.next().split(DELIMITER)
-            val unixTimestampIndex = header.indexOf("t_unix").takeIf { it >= 0 }
-            val sensorTimestampIndex = header.indexOf("t_sensor").takeIf { it >= 0 }
-            val timestampIndex = unixTimestampIndex ?: sensorTimestampIndex ?: 0
-            val valueIndexes = header.indices.filter { index ->
-                index != timestampIndex && header[index] !in NON_VALUE_COLUMNS
-            }
-            columns = valueIndexes.map(header::get)
+
+            val format = sensorSeriesFormat(iterator.next().split(DELIMITER))
+            columns = format.columns
+
             while (iterator.hasNext()) {
                 parseSensorSample(
                     line = iterator.next(),
-                    timestampIndex = timestampIndex,
-                    valueIndexes = valueIndexes,
-                    sensorTimestamp = sensorTimestampIndex != null,
+                    format = format,
                     anchor = anchor,
-                )?.let { sample ->
-                    totalSamples += 1
-                    retainBounded(samples, sample, totalSamples, MAX_CHART_SAMPLES)
-                }
+                )?.let(onSample)
             }
         }
-        return MeasurementFileContent.SensorSeries(columns, samples, totalSamples > samples.size)
+        return columns
+    }
+
+    private fun sensorSeriesFormat(header: List<String>): SensorSeriesFormat {
+        val unixTimestampIndex = header.indexOf("t_unix").takeIf { it >= 0 }
+        val sensorTimestampIndex = header.indexOf("t_sensor").takeIf { it >= 0 }
+        val timestampIndex = unixTimestampIndex ?: sensorTimestampIndex ?: 0
+        val valueIndexes = header.indices.filter { index ->
+            index != timestampIndex && header[index] !in NON_VALUE_COLUMNS
+        }
+        return SensorSeriesFormat(
+            columns = valueIndexes.map(header::get),
+            timestampIndex = timestampIndex,
+            valueIndexes = valueIndexes,
+            usesSensorTimestamp = sensorTimestampIndex != null,
+        )
     }
 
     private fun parseSensorSample(
         line: String,
-        timestampIndex: Int,
-        valueIndexes: List<Int>,
-        sensorTimestamp: Boolean,
+        format: SensorSeriesFormat,
         anchor: SensorTimeAnchor?,
     ): SensorSeriesSample? {
         val fields = line.split(DELIMITER)
-        val rawTimestamp = fields.getOrNull(timestampIndex)?.toLongOrNull() ?: return null
-        val timestamp = if (sensorTimestamp) {
+        val rawTimestamp = fields.getOrNull(format.timestampIndex)?.toLongOrNull() ?: return null
+        val timestamp = if (format.usesSensorTimestamp) {
             anchor?.unixMillis?.plus((rawTimestamp - anchor.elapsedRealtimeNanos) / NANOS_PER_MILLISECOND)
-                ?: rawTimestamp / NANOS_PER_MILLISECOND
+                ?: (rawTimestamp / NANOS_PER_MILLISECOND)
         } else {
             rawTimestamp
         }
-        val values = valueIndexes.mapNotNull { fields.getOrNull(it)?.toDoubleOrNull() }
-        return values.takeIf { it.size == valueIndexes.size }?.let { SensorSeriesSample(timestamp, it) }
+        val values = format.valueIndexes.mapNotNull { fields.getOrNull(it)?.toDoubleOrNull() }
+        return values.takeIf { it.size == format.valueIndexes.size }?.let { SensorSeriesSample(timestamp, it) }
     }
 
     private fun readSensorTimeAnchor(directory: DocumentFile): SensorTimeAnchor? {
@@ -216,7 +243,7 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
                 while (remaining > 0) {
                     val count = reader.read(buffer, 0, minOf(buffer.size, remaining))
                     if (count < 0) break
-                    append(buffer, 0, count)
+                    appendRange(buffer, 0, count)
                     remaining -= count
                 }
             }
@@ -239,15 +266,6 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         .replace('_', ' ')
         .replaceFirstChar(Char::titlecase)
 
-    private fun <T> retainBounded(destination: MutableList<T>, value: T, count: Int, limit: Int) {
-        if (destination.size < limit) {
-            destination += value
-        } else if (count % SAMPLE_REPLACEMENT_INTERVAL == 0) {
-            destination.removeAt(destination.lastIndex)
-            destination += value
-        }
-    }
-
     private companion object {
         const val METADATA_FILE = "extra.json"
         const val GPS_FILE = "gps.csv"
@@ -257,11 +275,32 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         const val MAX_GPS_COORDINATES = 10_000
         const val MAX_TEXT_CHARACTERS = 100_000
         const val TEXT_BUFFER_SIZE = 4_096
-        const val SAMPLE_REPLACEMENT_INTERVAL = 100
         const val NANOS_PER_MILLISECOND = 1_000_000L
         val NON_VALUE_COLUMNS = setOf("t_sensor", "accuracy", "provider")
         val JSON = Json { ignoreUnknownKeys = true }
     }
 
     private data class SensorTimeAnchor(val unixMillis: Long, val elapsedRealtimeNanos: Long)
+
+    private data class SensorSeriesFormat(
+        val columns: List<String>,
+        val timestampIndex: Int,
+        val valueIndexes: List<Int>,
+        val usesSensorTimestamp: Boolean,
+    )
+}
+
+internal fun chartSampleIndexes(totalSamples: Int, limit: Int): IntArray {
+    require(totalSamples >= 0)
+    require(limit > 0)
+
+    val selectedSamples = minOf(totalSamples, limit)
+    if (selectedSamples == 0) return IntArray(0)
+    if (selectedSamples == 1) return intArrayOf(0)
+
+    val lastSampleIndex = totalSamples - 1L
+    val lastSelectedIndex = selectedSamples - 1L
+    return IntArray(selectedSamples) { selectedIndex ->
+        (selectedIndex * lastSampleIndex / lastSelectedIndex).toInt()
+    }
 }

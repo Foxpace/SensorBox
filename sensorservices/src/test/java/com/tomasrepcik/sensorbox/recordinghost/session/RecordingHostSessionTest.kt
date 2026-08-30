@@ -32,9 +32,6 @@ class RecordingHostSessionTest {
 
         // When
         val result = fixture.session.start()
-        runCurrent()
-        fixture.execution.emit(RecordingEvent.RecordingStarted(RecordingSessionId("session-123")))
-        runCurrent()
 
         // Then
         assertTrue(result.isSuccess)
@@ -96,9 +93,6 @@ class RecordingHostSessionTest {
         // Given
         val fixture = Fixture(backgroundScope)
         fixture.session.start()
-        runCurrent()
-        fixture.execution.emit(RecordingEvent.RecordingStarted(RecordingSessionId("session-123")))
-        runCurrent()
         val sourceFailure = AppError(AppErrorCode.RECORDING, "Record SENSOR")
         val stopFailure = AppError(AppErrorCode.RECORDING, "Stop SENSOR")
 
@@ -118,6 +112,29 @@ class RecordingHostSessionTest {
         assertTrue(fixture.store.state.value !is RecordingSessionState.Idle)
         assertEquals(0, fixture.environment.releaseCalls)
     }
+
+    @Test
+    fun `Given execution reports a source failure during start When session starts Then failure is observed`() =
+        runTest {
+            // Given
+            val sourceFailure = AppError(AppErrorCode.RECORDING, "Record SENSOR")
+            val fixture = Fixture(backgroundScope).apply {
+                execution.eventDuringStart = RecordingEvent.SourceFailed(
+                    sessionId = RecordingSessionId("session-123"),
+                    sourceType = com.tomasrepcik.sensorbox.recording.RecordingSourceType.SENSOR,
+                    failure = sourceFailure,
+                    stopFailure = null,
+                )
+            }
+
+            // When
+            val result = fixture.session.start()
+            runCurrent()
+
+            // Then
+            assertTrue(result.isSuccess)
+            assertEquals(listOf("Record SENSOR"), fixture.diagnostics.map(DiagnosticEvent::operation))
+        }
 
     @Test
     fun `Given an active host When service is destroyed Then execution and resources are released`() = runTest {
@@ -173,9 +190,13 @@ private class FakeRecordingSessionExecution : RecordingSessionExecution {
     private val mutableEvents = MutableSharedFlow<RecordingEvent>(extraBufferCapacity = 8)
     override val events: SharedFlow<RecordingEvent> = mutableEvents
     var startResult: AppResult<Unit> = AppResult.success(Unit)
+    var eventDuringStart: RecordingEvent? = null
     val stopReasons = mutableListOf<RecordingStopReason>()
 
-    override suspend fun start(): AppResult<Unit> = startResult
+    override suspend fun start(): AppResult<Unit> {
+        eventDuringStart?.let(mutableEvents::tryEmit)
+        return startResult
+    }
 
     override suspend fun stop(reason: RecordingStopReason): AppResult<Unit> {
         stopReasons += reason
