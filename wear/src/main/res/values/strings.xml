@@ -27,7 +27,6 @@
     <string name="gps" translatable="false">GPS</string>
     <string name="sources">Sources</string>
     <string name="live_values">Live values</string>
-    <string name="start_recording">Start recording</string>
     <string name="back">Back</string>
     <string name="waiting">Waiting…</string>
     <string name="sync_recordings">Sync recordings</string>
@@ -46,8 +45,6 @@
     <string name="display_stays_on">Display stays on</string>
     <string name="display_may_sleep">Display may sleep</string>
     <string name="stop_and_save">Stop &amp; save</string>
-    <string name="selected_symbol" translatable="false">✓</string>
-    <string name="unselected_symbol" translatable="false">○</string>
     <string name="message_pick_source">Pick at least one sensor or GPS</string>
     <string name="message_permission_required">Permission required</string>
     <string name="message_sensor_unavailable">Sensor unavailable</string>
@@ -67,5 +64,4 @@
 
     <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
     <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
-    <string name="open_phone_browser_failed">Could not open the phone browser. The error was saved.</string>
 </resources>

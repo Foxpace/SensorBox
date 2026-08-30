@@ -4,7 +4,6 @@ import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.DiagnosticEvent
 import com.tomasrepcik.sensorbox.core.failure.DiagnosticSeverity
 import com.tomasrepcik.sensorbox.core.time.EpochClock
-import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,6 +12,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import kotlin.time.Instant
 
 class FileDiagnosticsTest {
     @get:Rule
@@ -22,7 +22,7 @@ class FileDiagnosticsTest {
     fun `Given eight calendar days When events are recorded Then only seven dated files remain`() {
         val directory = temporaryFolder.newFolder("diagnostics")
         var currentMillis = Instant.parse("2026-08-01T12:00:00Z").toEpochMilliseconds()
-        val diagnostics = diagnostics(directory, EpochClock { currentMillis })
+        val diagnostics = diagnostics(directory) { currentMillis }
 
         repeat(8) { day ->
             diagnostics.record(event(message = "day $day"))

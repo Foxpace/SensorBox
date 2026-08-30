@@ -1,5 +1,6 @@
 package com.tomasrepcik.sensorbox.recordinghost.session
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -20,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class RecordingHostResources(
     private val service: Service,
@@ -46,7 +48,7 @@ internal class RecordingHostResources(
     override fun scheduleAlarms(offsetsSeconds: List<Int>) {
         alarmJobs = offsetsSeconds.distinct().sorted().map { seconds ->
             scope.launch {
-                delay(seconds * 1_000L)
+                delay((seconds * 1_000L).milliseconds)
                 playAlarm()
             }
         }
@@ -76,13 +78,16 @@ internal class RecordingHostResources(
         }
     }
 
+    @SuppressLint("InlinedApi")
     private fun foregroundTypes(request: RecordingRequest): Int = if (request.includesGps) {
         FOREGROUND_SERVICE_TYPE_SPECIAL_USE or FOREGROUND_SERVICE_TYPE_LOCATION
     } else {
         FOREGROUND_SERVICE_TYPE_SPECIAL_USE
     }
 
+    @SuppressLint("WakelockTimeout")
     private fun acquireWakeLock() {
+        // Recordings may be indefinite. The recording host releases this lock when its foreground session ends.
         val powerManager = service.getSystemService(PowerManager::class.java)
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply { acquire() }
     }

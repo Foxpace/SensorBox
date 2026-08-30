@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.withRotation
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.format.ValueFormats
 import kotlin.math.abs
@@ -168,10 +169,9 @@ private fun DrawScope.drawAxisTitles(plot: ChartPlot, labels: LiveChartLabels, p
         nativeCanvas.drawText(labels.timeAxis, plot.left + plot.width / 2f, size.height - 2.dp.toPx(), paint)
         val centerY = plot.top + plot.height / 2f
         val titleX = 10.dp.toPx()
-        nativeCanvas.save()
-        nativeCanvas.rotate(-90f, titleX, centerY)
-        nativeCanvas.drawText(labels.valueAxis, titleX, centerY, paint)
-        nativeCanvas.restore()
+        nativeCanvas.withRotation(-90f, titleX, centerY) {
+            drawText(labels.valueAxis, titleX, centerY, paint)
+        }
     }
 }
 

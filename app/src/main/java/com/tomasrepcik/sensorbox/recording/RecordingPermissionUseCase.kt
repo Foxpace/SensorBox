@@ -1,6 +1,7 @@
 package com.tomasrepcik.sensorbox.recording
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -22,6 +23,7 @@ class RecordingPermissionUseCase @Inject constructor(@ApplicationContext private
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }
 
+@SuppressLint("InlinedApi")
 internal fun requiredRecordingPermissions(request: RecordingSetup, sdkInt: Int): Set<String> = buildSet {
     if (sdkInt >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
     if (request.includesGps) add(Manifest.permission.ACCESS_FINE_LOCATION)

@@ -41,7 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -168,7 +168,7 @@ internal fun RecordingTimer(elapsedSeconds: Long, folderName: String) {
 @Composable
 internal fun RecordingSummary(state: RecordingState, session: RecordingSessionState.Running) {
     var expanded by remember { mutableStateOf(false) }
-    val sources = recordingSourceNames(state, session, LocalContext.current.resources)
+    val sources = recordingSourceNames(state, session, LocalResources.current)
     Column(Modifier.fillMaxWidth()) {
         SourceListToggle(sourceCount = sources.size, expanded = expanded, onClick = { expanded = !expanded })
         AnimatedVisibility(

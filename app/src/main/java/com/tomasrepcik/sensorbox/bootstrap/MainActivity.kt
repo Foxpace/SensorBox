@@ -1,11 +1,9 @@
 package com.tomasrepcik.sensorbox.bootstrap
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
@@ -15,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
@@ -43,7 +42,7 @@ class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
     private var recordingArchiveRequestOwner = RecordingArchiveRequestOwner.RECORDING
     private val directoryPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val selection = if (it.resultCode == Activity.RESULT_OK) {
+        val selection = if (it.resultCode == RESULT_OK) {
             it.data?.data?.let { uri ->
                 RecordingArchiveSelection.Selected(uri.toString(), it.data?.flags ?: 0)
             } ?: RecordingArchiveSelection.Cancelled
@@ -178,7 +177,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openWebPage(url: String) {
-        launchExternalIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)), "Open web page")
+        launchExternalIntent(Intent(Intent.ACTION_VIEW, url.toUri()), "Open web page")
             .onFailure(onboardingViewModel::reportFailure)
     }
 
@@ -188,7 +187,7 @@ class MainActivity : ComponentActivity() {
     ) {
         val intent = Intent(
             Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-            Uri.parse("package:$packageName"),
+            "package:$packageName".toUri(),
         )
         launchExternalIntent(intent, "Request battery optimization exemption").onFailure {
             launchExternalIntent(
@@ -207,7 +206,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun shareDiagnosticsFile(effect: SettingsEffect.ShareDiagnosticsFile) {
-        val uri = Uri.parse(effect.contentUri)
+        val uri = effect.contentUri.toUri()
         val intent = Intent(Intent.ACTION_SEND)
             .setType(effect.mimeType)
             .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.diagnostics_title))

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -22,7 +23,7 @@ import java.util.Date
 internal fun SensorSeriesSummary(content: MeasurementFileContent.SensorSeries) {
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(
-            stringResource(R.string.chart_sample_count, content.samples.size),
+            pluralStringResource(R.plurals.chart_sample_count, content.samples.size, content.samples.size),
             style = MaterialTheme.typography.titleMedium,
         )
         Text(content.columns.joinToString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -36,7 +37,7 @@ internal fun SensorSeriesSummary(content: MeasurementFileContent.SensorSeries) {
 internal fun CoordinateSummary(content: MeasurementFileContent.GpsCoordinates) {
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(
-            stringResource(R.string.coordinate_count, content.coordinates.size),
+            pluralStringResource(R.plurals.coordinate_count, content.coordinates.size, content.coordinates.size),
             style = MaterialTheme.typography.titleMedium,
         )
         if (content.truncated) {
