@@ -23,7 +23,7 @@ fun MeasurementDetailsScreen(
         itemSpacing = 0.dp,
     ) {
         when {
-            state.isLoading -> item { MeasurementLoading() }
+            state.isLoading -> item { MeasurementLoading(Modifier.fillParentMaxHeight()) }
             state.errorCode != null -> item { ArchiveError() }
             state.details != null -> measurementDetailsItems(state.details, onIntent)
             else -> item { ArchiveError() }

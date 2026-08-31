@@ -24,9 +24,6 @@ enum class MainRoute : NavKey {
 data class MeasurementDetailsRoute(val measurementId: String) : NavKey
 
 @Serializable
-data class MeasurementLoadingRoute(val measurementId: String, val fileId: String) : NavKey
-
-@Serializable
 data class MeasurementPreviewRoute(val measurementId: String, val fileId: String) : NavKey
 
 @Serializable
@@ -46,5 +43,4 @@ data class MainState(
     val dynamicColors: Boolean = true,
     val hasLoadedPreferences: Boolean = false,
     val visibleFailureCode: AppErrorCode? = null,
-    val replaceCurrentRoute: Boolean = false,
 )

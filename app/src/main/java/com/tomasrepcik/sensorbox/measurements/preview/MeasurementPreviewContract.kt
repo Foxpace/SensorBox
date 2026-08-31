@@ -10,6 +10,7 @@ data class MeasurementPreviewState(
     val content: MeasurementFileContent? = null,
     val sensorMetadata: List<MeasurementMetadataEntry> = emptyList(),
     val sensorChartTimeWindow: SensorChartTimeWindow = SensorChartTimeWindow(),
+    val progress: Float = 0f,
     val isLoading: Boolean = false,
     val errorCode: AppErrorCode? = null,
 )
@@ -20,13 +21,6 @@ data class SensorChartTimeWindow(val startFraction: Float = 0f, val endFraction:
 
 sealed interface MeasurementPreviewIntent {
     data class Load(val measurementId: String, val fileId: String) : MeasurementPreviewIntent
-
-    data class Show(
-        val file: MeasurementFileSummary,
-        val content: MeasurementFileContent,
-        val sensorMetadata: List<MeasurementMetadataEntry>,
-    ) : MeasurementPreviewIntent
-
     data class ZoomSensorChartTimeWindow(val zoomFactor: Float, val focalPointFraction: Float) :
         MeasurementPreviewIntent
 
@@ -34,26 +28,44 @@ sealed interface MeasurementPreviewIntent {
     data object ShowEntireSensorChartTimeRange : MeasurementPreviewIntent
 }
 
+internal sealed interface MeasurementPreviewResult {
+    data object Loading : MeasurementPreviewResult
+
+    data class FileFound(val file: MeasurementFileSummary, val sensorMetadata: List<MeasurementMetadataEntry>) :
+        MeasurementPreviewResult
+
+    data class Progress(val progress: Float) : MeasurementPreviewResult
+    data class Loaded(val content: MeasurementFileContent) : MeasurementPreviewResult
+    data class LoadFailed(val errorCode: AppErrorCode) : MeasurementPreviewResult
+}
+
 internal object MeasurementPreviewReducer {
-    fun startLoading(state: MeasurementPreviewState): MeasurementPreviewState = state.copy(
-        isLoading = true,
-        errorCode = null,
-    )
+    fun reduce(state: MeasurementPreviewState, result: MeasurementPreviewResult): MeasurementPreviewState =
+        when (result) {
+            MeasurementPreviewResult.Loading -> MeasurementPreviewState(isLoading = true)
 
-    fun show(state: MeasurementPreviewState, intent: MeasurementPreviewIntent.Show): MeasurementPreviewState =
-        state.copy(
-            file = intent.file,
-            content = intent.content,
-            sensorMetadata = intent.sensorMetadata,
-            sensorChartTimeWindow = SensorChartTimeWindow(),
-            isLoading = false,
-            errorCode = null,
-        )
+            is MeasurementPreviewResult.FileFound -> state.copy(
+                file = result.file,
+                sensorMetadata = result.sensorMetadata,
+            )
 
-    fun failLoading(state: MeasurementPreviewState, errorCode: AppErrorCode): MeasurementPreviewState = state.copy(
-        isLoading = false,
-        errorCode = errorCode,
-    )
+            is MeasurementPreviewResult.Progress -> state.copy(
+                progress = result.progress.coerceIn(0f, 1f),
+            )
+
+            is MeasurementPreviewResult.Loaded -> state.copy(
+                content = result.content,
+                sensorChartTimeWindow = SensorChartTimeWindow(),
+                progress = 1f,
+                isLoading = false,
+                errorCode = null,
+            )
+
+            is MeasurementPreviewResult.LoadFailed -> state.copy(
+                isLoading = false,
+                errorCode = result.errorCode,
+            )
+        }
 
     fun zoomSensorChartTimeWindow(
         state: MeasurementPreviewState,

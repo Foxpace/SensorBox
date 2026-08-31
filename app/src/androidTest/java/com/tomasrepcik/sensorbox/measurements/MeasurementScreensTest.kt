@@ -11,9 +11,6 @@ import com.tomasrepcik.sensorbox.design.SensorBoxTheme
 import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsIntent
 import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsScreen
 import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsState
-import com.tomasrepcik.sensorbox.measurements.loading.MeasurementLoadingRequest
-import com.tomasrepcik.sensorbox.measurements.loading.MeasurementLoadingScreen
-import com.tomasrepcik.sensorbox.measurements.loading.MeasurementLoadingState
 import com.tomasrepcik.sensorbox.measurements.list.MeasurementsIntent
 import com.tomasrepcik.sensorbox.measurements.list.MeasurementsScreen
 import com.tomasrepcik.sensorbox.measurements.list.MeasurementsState
@@ -78,12 +75,12 @@ class MeasurementScreensTest {
     }
 
     @Test
-    fun givenLargeMeasurementWhenLoadingThenProgressHasItsOwnScreen() {
+    fun givenLargeCsvWhenPreviewIsLoadingThenProgressIsShownOnThePreviewScreen() {
         composeRule.setContent {
             SensorBoxTheme {
-                MeasurementLoadingScreen(
-                    state = MeasurementLoadingState(
-                        request = MeasurementLoadingRequest(summary.id, sensorFile, sensorMetadata),
+                MeasurementPreviewScreen(
+                    state = MeasurementPreviewState(
+                        file = sensorFile,
                         progress = 0.42f,
                         isLoading = true,
                     ),

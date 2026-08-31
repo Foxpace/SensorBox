@@ -21,11 +21,11 @@ import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileSummary
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementMetadataEntry
 
 @Composable
-internal fun MeasurementLoading() {
+internal fun MeasurementLoading(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        modifier = modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
         CircularProgressIndicator()
         Text(stringResource(R.string.loading_measurements))

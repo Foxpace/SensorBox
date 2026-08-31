@@ -53,19 +53,13 @@ fun SensorBoxRoot(showPrivacyRationale: Boolean, viewModel: MainViewModel = hilt
         SensorBoxApp(
             mainState = state,
             onNavigate = viewModel::navigate,
-            onReplaceRoute = viewModel::replaceCurrentRoute,
             onDismissFailure = viewModel::dismissFailure,
         )
     }
 }
 
 @Composable
-fun SensorBoxApp(
-    mainState: MainState,
-    onNavigate: (NavKey) -> Unit,
-    onReplaceRoute: (NavKey) -> Unit,
-    onDismissFailure: () -> Unit,
-) {
+fun SensorBoxApp(mainState: MainState, onNavigate: (NavKey) -> Unit, onDismissFailure: () -> Unit) {
     if (!mainState.hasLoadedPreferences) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
         return
@@ -78,15 +72,14 @@ fun SensorBoxApp(
     SensorBoxNavHost(
         mainState = mainState,
         onNavigate = onNavigate,
-        onReplaceRoute = onReplaceRoute,
     )
 }
 
 @Composable
-private fun SensorBoxNavHost(mainState: MainState, onNavigate: (NavKey) -> Unit, onReplaceRoute: (NavKey) -> Unit) {
+private fun SensorBoxNavHost(mainState: MainState, onNavigate: (NavKey) -> Unit) {
     val backStack = rememberNavBackStack(mainState.route)
     val displayedRoute = mainState.displayedRoute()
-    SynchronizeBackStack(backStack, displayedRoute, mainState.replaceCurrentRoute)
+    SynchronizeBackStack(backStack, displayedRoute)
     val navigateBack = { navigateBack(mainState, backStack, onNavigate) }
 
     NavDisplay(
@@ -104,7 +97,6 @@ private fun SensorBoxNavHost(mainState: MainState, onNavigate: (NavKey) -> Unit,
                 RouteContent(
                     route = route,
                     onNavigate = onNavigate,
-                    onReplaceRoute = onReplaceRoute,
                     onBack = navigateBack,
                 )
             }
@@ -118,13 +110,10 @@ private fun SensorBoxNavHost(mainState: MainState, onNavigate: (NavKey) -> Unit,
                 RecordingDestinationContent(route, onNavigate, navigateBack)
             }
             entry<MeasurementDetailsRoute> { route ->
-                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
-            }
-            entry<MeasurementLoadingRoute> { route ->
-                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
+                MeasurementDestinationContent(route, onNavigate, navigateBack)
             }
             entry<MeasurementPreviewRoute> { route ->
-                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
+                MeasurementDestinationContent(route, onNavigate, navigateBack)
             }
         },
     )
@@ -137,17 +126,12 @@ private fun MainState.displayedRoute() = if (session is RecordingSessionState.Ru
 }
 
 @Composable
-private fun SynchronizeBackStack(
-    backStack: NavBackStack<NavKey>,
-    displayedRoute: NavKey,
-    replaceCurrentRoute: Boolean,
-) {
-    LaunchedEffect(displayedRoute, replaceCurrentRoute) {
+private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute: NavKey) {
+    LaunchedEffect(displayedRoute) {
         if (displayedRoute != MainRoute.ACTIVE_RECORDING && backStack.lastOrNull() == MainRoute.ACTIVE_RECORDING) {
             backStack.removeLastOrNull()
         }
         if (backStack.lastOrNull() != displayedRoute) {
-            if (replaceCurrentRoute && displayedRoute != MainRoute.ACTIVE_RECORDING) backStack.removeLastOrNull()
             if (displayedRoute.isRootDestination()) backStack.clear()
             backStack.add(displayedRoute)
         }

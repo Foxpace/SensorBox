@@ -32,12 +32,7 @@ class MainViewModel @Inject constructor(
 
     fun navigate(route: NavKey) {
         hasChosenInitialRoute = true
-        mutableState.value = state.value.copy(route = route, replaceCurrentRoute = false)
-    }
-
-    fun replaceCurrentRoute(route: NavKey) {
-        hasChosenInitialRoute = true
-        mutableState.value = state.value.copy(route = route, replaceCurrentRoute = true)
+        mutableState.value = state.value.copy(route = route)
     }
 
     fun showPrivacyRationale() {

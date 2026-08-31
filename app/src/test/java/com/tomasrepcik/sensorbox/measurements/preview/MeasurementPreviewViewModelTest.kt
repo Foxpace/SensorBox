@@ -4,10 +4,15 @@ import com.tomasrepcik.sensorbox.measurements.FakeMeasurementRepository
 import com.tomasrepcik.sensorbox.measurements.MeasurementTestFixtures
 import com.tomasrepcik.sensorbox.measurements.measurementFailureStore
 import com.tomasrepcik.sensorbox.testing.MainDispatcherRule
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -17,55 +22,7 @@ class MeasurementPreviewViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `Given loaded sensor content When shown Then preview owns the chart data`() {
-        // Given
-        val viewModel = viewModel()
-
-        // When
-        viewModel.accept(
-            MeasurementPreviewIntent.Show(
-                MeasurementTestFixtures.sensorFile,
-                MeasurementTestFixtures.sensorContent,
-                MeasurementTestFixtures.sensorMetadata,
-            ),
-        )
-
-        // Then
-        assertEquals(MeasurementTestFixtures.sensorFile, viewModel.state.value.file)
-        assertEquals(MeasurementTestFixtures.sensorContent, viewModel.state.value.content)
-        assertEquals(MeasurementTestFixtures.sensorMetadata, viewModel.state.value.sensorMetadata)
-    }
-
-    @Test
-    fun `Given loading completed When preview opens Then cached chart data is shown`() {
-        // Given
-        val previewStore = MeasurementPreviewStore().apply {
-            put(
-                MeasurementTestFixtures.summary.id,
-                MeasurementTestFixtures.sensorFile.id,
-                MeasurementPreviewData(
-                    MeasurementTestFixtures.sensorFile,
-                    MeasurementTestFixtures.sensorContent,
-                    MeasurementTestFixtures.sensorMetadata,
-                ),
-            )
-        }
-        val viewModel = viewModel(previewStore)
-
-        // When
-        viewModel.accept(
-            MeasurementPreviewIntent.Load(
-                MeasurementTestFixtures.summary.id,
-                MeasurementTestFixtures.sensorFile.id,
-            ),
-        )
-
-        // Then
-        assertEquals(MeasurementTestFixtures.sensorContent, viewModel.state.value.content)
-    }
-
-    @Test
-    fun `Given restored preview route When cache is empty Then chart data is loaded again`() = runTest {
+    fun `Given a preview route When opened Then CSV data and metadata are loaded`() = runTest {
         // Given
         val viewModel = viewModel()
 
@@ -79,13 +36,53 @@ class MeasurementPreviewViewModelTest {
         advanceUntilIdle()
 
         // Then
+        assertEquals(MeasurementTestFixtures.sensorFile, viewModel.state.value.file)
+        assertEquals(MeasurementTestFixtures.sensorContent, viewModel.state.value.content)
+        assertEquals(MeasurementTestFixtures.sensorMetadata, viewModel.state.value.sensorMetadata)
+    }
+
+    @Test
+    fun `Given a large CSV When preview opens Then progress is shown on that screen`() = runTest {
+        // Given
+        val repository = FakeMeasurementRepository().apply {
+            fileLoadGate = CompletableDeferred()
+            fileProgress = listOf(0.21f, 0.42f)
+        }
+        val viewModel = viewModel(repository)
+
+        // When
+        viewModel.accept(
+            MeasurementPreviewIntent.Load(
+                MeasurementTestFixtures.summary.id,
+                MeasurementTestFixtures.sensorFile.id,
+            ),
+        )
+        runCurrent()
+
+        // Then
+        assertTrue(viewModel.state.value.isLoading)
+        assertEquals(0.42f, viewModel.state.value.progress)
+        assertEquals(MeasurementTestFixtures.sensorFile, viewModel.state.value.file)
+        assertNull(viewModel.state.value.content)
+
+        repository.fileLoadGate?.complete(Unit)
+        advanceUntilIdle()
+        assertFalse(viewModel.state.value.isLoading)
+        assertEquals(1f, viewModel.state.value.progress)
         assertEquals(MeasurementTestFixtures.sensorContent, viewModel.state.value.content)
     }
 
     @Test
-    fun `Given a chart When zoomed at its center Then preview halves the visible time`() {
+    fun `Given a chart When zoomed at its center Then preview halves the visible time`() = runTest {
         // Given
         val viewModel = viewModel()
+        viewModel.accept(
+            MeasurementPreviewIntent.Load(
+                MeasurementTestFixtures.summary.id,
+                MeasurementTestFixtures.sensorFile.id,
+            ),
+        )
+        advanceUntilIdle()
 
         // When
         viewModel.accept(MeasurementPreviewIntent.ZoomSensorChartTimeWindow(2f, 0.5f))
@@ -95,10 +92,9 @@ class MeasurementPreviewViewModelTest {
     }
 
     private fun viewModel(
-        previewStore: MeasurementPreviewStore = MeasurementPreviewStore(),
+        repository: FakeMeasurementRepository = FakeMeasurementRepository(),
     ): MeasurementPreviewViewModel = MeasurementPreviewViewModel(
-        repository = FakeMeasurementRepository(),
+        repository = repository,
         appFailures = measurementFailureStore(),
-        previewStore = previewStore,
     )
 }

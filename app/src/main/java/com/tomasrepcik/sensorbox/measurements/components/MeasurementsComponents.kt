@@ -21,7 +21,9 @@ import com.tomasrepcik.sensorbox.measurements.storage.MeasurementSummary
 
 internal fun LazyListScope.measurementArchiveItems(state: MeasurementsState, onIntent: (MeasurementsIntent) -> Unit) {
     when {
-        state.isLoading && state.measurements.isEmpty() -> item { MeasurementLoading() }
+        state.isLoading && state.measurements.isEmpty() -> item {
+            MeasurementLoading(Modifier.fillParentMaxHeight())
+        }
 
         state.errorCode != null -> item { ArchiveError() }
 

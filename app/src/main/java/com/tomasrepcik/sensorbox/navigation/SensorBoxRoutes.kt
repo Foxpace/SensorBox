@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
 import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsRoot
 import com.tomasrepcik.sensorbox.measurements.list.MeasurementsRoot
-import com.tomasrepcik.sensorbox.measurements.loading.MeasurementLoadingRoot
 import com.tomasrepcik.sensorbox.measurements.preview.MeasurementPreviewRoot
 import com.tomasrepcik.sensorbox.onboarding.OnboardingRoot
 import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingRoot
@@ -15,12 +14,7 @@ import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupRoot
 import com.tomasrepcik.sensorbox.settings.SettingsRoot
 
 @Composable
-internal fun RouteContent(
-    route: MainRoute,
-    onNavigate: (NavKey) -> Unit,
-    onReplaceRoute: (NavKey) -> Unit,
-    onBack: () -> Unit,
-) {
+internal fun RouteContent(route: MainRoute, onNavigate: (NavKey) -> Unit, onBack: () -> Unit) {
     when (route) {
         MainRoute.ONBOARDING -> OnboardingRoot(onNavigate)
 
@@ -28,7 +22,7 @@ internal fun RouteContent(
 
         MainRoute.RECORD -> RecordRoot(onNavigate)
 
-        MainRoute.MEASUREMENTS -> MeasurementRouteContent(route, onNavigate, onReplaceRoute, onBack)
+        MainRoute.MEASUREMENTS -> MeasurementRouteContent(route, onNavigate, onBack)
 
         MainRoute.SETTINGS,
         MainRoute.DIAGNOSTICS,
@@ -64,12 +58,7 @@ internal fun RecordingDestinationContent(route: NavKey, onNavigate: (NavKey) -> 
 }
 
 @Composable
-private fun MeasurementRouteContent(
-    route: NavKey,
-    onNavigate: (NavKey) -> Unit,
-    onReplaceRoute: (NavKey) -> Unit,
-    onBack: () -> Unit,
-) {
+private fun MeasurementRouteContent(route: NavKey, onNavigate: (NavKey) -> Unit, onBack: () -> Unit) {
     FullScreen { modifier ->
         when (route) {
             MainRoute.MEASUREMENTS -> MeasurementsRoot(
@@ -81,17 +70,7 @@ private fun MeasurementRouteContent(
             is MeasurementDetailsRoute -> MeasurementDetailsRoot(
                 measurementId = route.measurementId,
                 onOpenFile = { measurementId, fileId ->
-                    onNavigate(MeasurementLoadingRoute(measurementId, fileId))
-                },
-                onBack = onBack,
-                modifier = modifier,
-            )
-
-            is MeasurementLoadingRoute -> MeasurementLoadingRoot(
-                measurementId = route.measurementId,
-                fileId = route.fileId,
-                onOpenPreview = { measurementId, fileId ->
-                    onReplaceRoute(MeasurementPreviewRoute(measurementId, fileId))
+                    onNavigate(MeasurementPreviewRoute(measurementId, fileId))
                 },
                 onBack = onBack,
                 modifier = modifier,
@@ -110,11 +89,6 @@ private fun MeasurementRouteContent(
 }
 
 @Composable
-internal fun MeasurementDestinationContent(
-    route: NavKey,
-    onNavigate: (NavKey) -> Unit,
-    onReplaceRoute: (NavKey) -> Unit,
-    onBack: () -> Unit,
-) {
-    MeasurementRouteContent(route, onNavigate, onReplaceRoute, onBack)
+internal fun MeasurementDestinationContent(route: NavKey, onNavigate: (NavKey) -> Unit, onBack: () -> Unit) {
+    MeasurementRouteContent(route, onNavigate, onBack)
 }
