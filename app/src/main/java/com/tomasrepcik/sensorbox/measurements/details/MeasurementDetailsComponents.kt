@@ -10,19 +10,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsSection
-import com.tomasrepcik.sensorbox.measurements.browser.ArchiveError
-import com.tomasrepcik.sensorbox.measurements.browser.DetailValueRow
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserIntent
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserState
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementFileRow
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementLoading
-import com.tomasrepcik.sensorbox.measurements.browser.MetadataRow
+import com.tomasrepcik.sensorbox.measurements.components.DetailValueRow
+import com.tomasrepcik.sensorbox.measurements.components.MeasurementFileRow
+import com.tomasrepcik.sensorbox.measurements.components.MetadataRow
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementDetails
 
 internal fun LazyListScope.measurementDetailsItems(
     details: MeasurementDetails,
-    state: MeasurementBrowserState,
-    onIntent: (MeasurementBrowserIntent) -> Unit,
+    onIntent: (MeasurementDetailsIntent) -> Unit,
 ) {
     item { SensorBoxSettingsSection(stringResource(R.string.measurement_summary)) }
     item { MeasurementSummaryRows(details) }
@@ -37,11 +32,9 @@ internal fun LazyListScope.measurementDetailsItems(
         item { Text(stringResource(R.string.measurement_files_empty), Modifier.padding(vertical = 16.dp)) }
     } else {
         details.files.forEach { file ->
-            item { MeasurementFileRow(file) { onIntent(MeasurementBrowserIntent.OpenMeasurementFile(file.id)) } }
+            item { MeasurementFileRow(file) { onIntent(MeasurementDetailsIntent.OpenFile(file.id)) } }
         }
     }
-    if (state.isLoading) item { MeasurementLoading() }
-    if (state.errorCode != null) item { ArchiveError() }
 }
 
 @Composable

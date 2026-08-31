@@ -7,13 +7,16 @@ import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxBackScreen
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsSection
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingMessageText
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.settings.SamplingSetting
 
 @Composable
-internal fun RecordingSetupContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit, onBack: () -> Unit) {
+internal fun RecordingSetupContent(
+    state: RecordingState,
+    onIntent: (RecordingSetupIntent) -> Unit,
+    onBack: () -> Unit,
+) {
     SensorBoxBackScreen(
         title = stringResource(R.string.recording_setup),
         onBack = onBack,
@@ -30,42 +33,49 @@ internal fun RecordingSetupContent(state: RecordingState, onIntent: (RecordingIn
     }
 }
 
-private fun LazyListScope.storageSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.storageSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.setup_storage_category)) }
-    item { RecordingArchivePanel(state.recordingArchivePath) { onIntent(RecordingIntent.ChooseRecordingArchive) } }
+    item {
+        RecordingArchivePanel(state.recordingArchivePath) {
+            onIntent(RecordingSetupIntent.ChooseRecordingArchive)
+        }
+    }
 }
 
-private fun LazyListScope.measurementDetailsSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.measurementDetailsSetupItems(
+    state: RecordingState,
+    onIntent: (RecordingSetupIntent) -> Unit,
+) {
     item { SensorBoxSettingsSection(stringResource(R.string.setup_details_category)) }
     item { MeasurementNameSetup(state, onIntent) }
     item { NotesSetup(state, onIntent) }
     item { AlarmsSetup(state, onIntent) }
 }
 
-private fun LazyListScope.timingSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.timingSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.setup_timing_category)) }
     item { RecordingTimingSetup(state, onIntent) }
 }
 
-private fun LazyListScope.sourceSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.sourceSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.setup_sources_category)) }
     item {
         SamplingSetting(state.preferences.recording.sensorSamplingPeriod) { index ->
-            onIntent(RecordingIntent.SetSamplingPeriod(index))
+            onIntent(RecordingSetupIntent.SetSamplingPeriod(index))
         }
     }
     item { ActivityRecognitionSetup(state, onIntent) }
     item { SignificantMotionSetup(state, onIntent) }
 }
 
-private fun LazyListScope.recordingOptionSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.recordingOptionSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.settings_recording_category)) }
     item { BatterySetup(state, onIntent) }
     item { WakeLockSetup(state, onIntent) }
     item { KeepScreenAwakeSetup(state, onIntent) }
 }
 
-private fun LazyListScope.locationSetupItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.locationSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.settings_location_category)) }
     item { GpsIntervalSetup(state, onIntent) }
     item { GpsDistanceSetup(state, onIntent) }

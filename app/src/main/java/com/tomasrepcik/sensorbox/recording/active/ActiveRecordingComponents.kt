@@ -53,12 +53,11 @@ import com.tomasrepcik.sensorbox.design.SensorBoxDangerButton
 import com.tomasrepcik.sensorbox.design.SensorBoxPrimaryButton
 import com.tomasrepcik.sensorbox.design.SensorBoxRecording
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsDivider
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 
 @Composable
-internal fun AnnotationEditor(onIntent: (RecordingIntent) -> Unit) {
+internal fun AnnotationEditor(onIntent: (ActiveRecordingIntent) -> Unit) {
     var annotation by remember { mutableStateOf("") }
     Column(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -80,7 +79,7 @@ internal fun AnnotationEditor(onIntent: (RecordingIntent) -> Unit) {
             enabled = annotation.isNotBlank(),
             onClick = {
                 annotation.trim().takeIf(String::isNotEmpty)?.let {
-                    onIntent(RecordingIntent.AddAnnotation(it))
+                    onIntent(ActiveRecordingIntent.AddAnnotation(it))
                     annotation = ""
                 }
             },
@@ -237,14 +236,14 @@ private fun recordingSourceNames(
 }
 
 @Composable
-internal fun ActiveRecordingTopBar(onIntent: (RecordingIntent) -> Unit) {
+internal fun ActiveRecordingTopBar(onIntent: (ActiveRecordingIntent) -> Unit) {
     Box(
         Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         SensorBoxDangerButton(
             label = stringResource(R.string.stop_and_save),
-            onClick = { onIntent(RecordingIntent.StopRecording) },
+            onClick = { onIntent(ActiveRecordingIntent.StopRecording) },
             modifier = Modifier.widthIn(min = 176.dp, max = 240.dp),
         )
     }

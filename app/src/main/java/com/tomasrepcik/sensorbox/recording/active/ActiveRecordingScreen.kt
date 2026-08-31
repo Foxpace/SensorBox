@@ -14,12 +14,15 @@ import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsDivider
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsSection
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 
 @Composable
-fun ActiveRecordingScreen(state: RecordingState, onIntent: (RecordingIntent) -> Unit, modifier: Modifier = Modifier) {
+fun ActiveRecordingScreen(
+    state: RecordingState,
+    onIntent: (ActiveRecordingIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val session = state.session as? RecordingSessionState.Running ?: return
     Column(modifier.fillMaxSize()) {
         RecordingHeader(Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp))

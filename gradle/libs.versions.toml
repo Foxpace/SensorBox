@@ -10,6 +10,7 @@ documentFile = "1.1.0"
 detekt = "2.0.0-alpha.6"
 espresso = "3.7.0"
 hilt = "2.60.1"
+hiltAndroidx = "1.4.0"
 kotlin = "2.4.10"
 kotlinxDatetime = "0.8.0"
 kotlinxSerialization = "1.11.0"
@@ -45,6 +46,7 @@ androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-ru
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 androidx-wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
@@ -59,6 +61,7 @@ espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref =
 google-material = { module = "com.google.android.material:material", version.ref = "material" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hiltAndroidx" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

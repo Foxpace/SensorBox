@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.recording.RecordingDevice
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 
 @Composable
@@ -17,7 +16,7 @@ fun SensorDetailsScreen(
     state: RecordingState,
     onBack: () -> Unit,
     onPreview: () -> Unit,
-    onIntent: (RecordingIntent) -> Unit,
+    onIntent: (SensorDetailsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sensor = selectedDetailsSensor(state)

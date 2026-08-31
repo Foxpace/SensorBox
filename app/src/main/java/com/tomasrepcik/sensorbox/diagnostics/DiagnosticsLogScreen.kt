@@ -4,7 +4,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -13,13 +12,7 @@ import com.tomasrepcik.sensorbox.design.SensorBoxBackScreen
 import com.tomasrepcik.sensorbox.settings.SettingsState
 
 @Composable
-fun DiagnosticsLogScreen(
-    state: SettingsState,
-    onBack: () -> Unit,
-    onRefresh: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LaunchedEffect(Unit) { onRefresh() }
+fun DiagnosticsLogScreen(state: SettingsState, onBack: () -> Unit, modifier: Modifier = Modifier) {
     SensorBoxBackScreen(
         title = stringResource(R.string.diagnostics_logs_title),
         onBack = onBack,

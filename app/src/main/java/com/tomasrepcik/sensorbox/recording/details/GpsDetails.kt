@@ -13,15 +13,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxSecondaryButton
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.preview.GpsPreviewData
 
 @Composable
-internal fun GpsDetails(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun GpsDetails(state: RecordingState, onIntent: (SensorDetailsIntent) -> Unit) {
     DisposableEffect(Unit) {
-        onIntent(RecordingIntent.StartGpsPreview)
-        onDispose { onIntent(RecordingIntent.StopPreview) }
+        onIntent(SensorDetailsIntent.StartGpsPreview)
+        onDispose { onIntent(SensorDetailsIntent.StopPreview) }
     }
     val details = state.gpsPreview
     val unavailableValue = stringResource(if (details.hasPermission) R.string.waiting else R.string.unavailable)
@@ -30,7 +29,7 @@ internal fun GpsDetails(state: RecordingState, onIntent: (RecordingIntent) -> Un
         GpsPositionRows(details, unavailableValue)
         GpsRecordingRows(state)
         if (!details.hasPermission) {
-            GpsPermissionButton { onIntent(RecordingIntent.RequestLocationPreviewPermission) }
+            GpsPermissionButton { onIntent(SensorDetailsIntent.RequestLocationPreviewPermission) }
         }
     }
 }

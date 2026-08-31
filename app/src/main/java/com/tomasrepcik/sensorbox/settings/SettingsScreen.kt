@@ -2,12 +2,9 @@ package com.tomasrepcik.sensorbox.settings
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxBackScreen
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsSection
@@ -25,8 +22,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = { onIntent(SettingsIntent.Navigate(MainRoute.RECORD)) },
 ) {
-    LaunchedEffect(Unit) { onIntent(SettingsIntent.ViewDiagnostics) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { onIntent(SettingsIntent.RefreshBatteryOptimization) }
     SensorBoxBackScreen(
         title = stringResource(R.string.recording_settings),
         onBack = onBack,

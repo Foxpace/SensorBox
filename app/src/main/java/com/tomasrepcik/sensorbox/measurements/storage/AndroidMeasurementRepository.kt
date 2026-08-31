@@ -15,6 +15,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.longOrNull
+import java.io.FilterInputStream
+import java.io.InputStream
 import javax.inject.Inject
 
 class AndroidMeasurementRepository @Inject constructor(@ApplicationContext private val context: Context) :
@@ -51,23 +53,26 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
             }
         }
 
-    override suspend fun loadMeasurementFile(measurementId: String, fileId: String): AppResult<MeasurementFileContent> =
-        withContext(Dispatchers.IO) {
-            suspendAppResult(AppErrorCode.STORAGE, "Read measurement file") {
-                val directory = measurementDirectory(measurementId)
-                val document = directory.findFile(fileId)
-                    ?.takeIf(DocumentFile::isFile)
-                    ?: error("Measurement file is unavailable")
-                when {
-                    document.name.equals(GPS_FILE, ignoreCase = true) -> parseGpsCoordinates(document)
+    override suspend fun loadMeasurementFile(
+        measurementId: String,
+        fileId: String,
+        onProgress: (Float) -> Unit,
+    ): AppResult<MeasurementFileContent> = withContext(Dispatchers.IO) {
+        suspendAppResult(AppErrorCode.STORAGE, "Read measurement file") {
+            val directory = measurementDirectory(measurementId)
+            val document = directory.findFile(fileId)
+                ?.takeIf(DocumentFile::isFile)
+                ?: error("Measurement file is unavailable")
+            when {
+                document.name.equals(GPS_FILE, ignoreCase = true) -> parseGpsCoordinates(document, onProgress)
 
-                    document.name.orEmpty().endsWith(CSV_EXTENSION, ignoreCase = true) ->
-                        parseSensorSeries(document, readSensorTimeAnchor(directory))
+                document.name.orEmpty().endsWith(CSV_EXTENSION, ignoreCase = true) ->
+                    parseSensorSeries(document, readSensorTimeAnchor(directory), onProgress)
 
-                    else -> parseTextFile(document)
-                }
+                else -> parseTextFile(document, onProgress)
             }
         }
+    }
 
     private fun selectedMeasurementsDirectory(): DocumentFile {
         val permission = context.contentResolver.persistedUriPermissions
@@ -107,16 +112,23 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
     private fun parseSensorSeries(
         document: DocumentFile,
         anchor: SensorTimeAnchor?,
+        onProgress: (Float) -> Unit,
     ): MeasurementFileContent.SensorSeries {
         val samples = mutableListOf<SensorSeriesSample>()
         var totalSamples = 0
 
-        val columns = readSensorSamples(document, anchor) { sample ->
-            totalSamples += 1
-            if (samples.size < MAX_CHART_SAMPLES) samples += sample
-        }
+        val columns = readSensorSamples(
+            document = document,
+            anchor = anchor,
+            onProgress = { progress -> onProgress(progress / 2f) },
+            onSample = { sample ->
+                totalSamples += 1
+                if (samples.size < MAX_CHART_SAMPLES) samples += sample
+            },
+        )
 
         if (totalSamples <= MAX_CHART_SAMPLES) {
+            onProgress(1f)
             return MeasurementFileContent.SensorSeries(columns, samples, truncated = false)
         }
 
@@ -125,13 +137,19 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         var sampleIndex = 0
         var selectedIndex = 0
 
-        readSensorSamples(document, anchor) { sample ->
-            if (selectedIndex < selectedIndexes.size && sampleIndex == selectedIndexes[selectedIndex]) {
-                samples += sample
-                selectedIndex += 1
-            }
-            sampleIndex += 1
-        }
+        readSensorSamples(
+            document = document,
+            anchor = anchor,
+            onProgress = { progress -> onProgress(0.5f + progress / 2f) },
+            onSample = { sample ->
+                if (selectedIndex < selectedIndexes.size && sampleIndex == selectedIndexes[selectedIndex]) {
+                    samples += sample
+                    selectedIndex += 1
+                }
+                sampleIndex += 1
+            },
+        )
+        onProgress(1f)
 
         return MeasurementFileContent.SensorSeries(columns, samples, truncated = true)
     }
@@ -139,10 +157,11 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
     private fun readSensorSamples(
         document: DocumentFile,
         anchor: SensorTimeAnchor?,
+        onProgress: (Float) -> Unit,
         onSample: (SensorSeriesSample) -> Unit,
     ): List<String> {
         var columns = emptyList<String>()
-        openDocumentStream(document).bufferedReader().useLines { lines ->
+        openDocumentStream(document, onProgress).bufferedReader().useLines { lines ->
             val iterator = lines.iterator()
             if (!iterator.hasNext()) return@useLines
 
@@ -209,10 +228,13 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         ?.takeIf(String::isNotBlank)
         ?.let(::parseMetadataObject)
 
-    private fun parseGpsCoordinates(document: DocumentFile): MeasurementFileContent.GpsCoordinates {
+    private fun parseGpsCoordinates(
+        document: DocumentFile,
+        onProgress: (Float) -> Unit,
+    ): MeasurementFileContent.GpsCoordinates {
         val coordinates = mutableListOf<GpsCoordinate>()
         var totalCoordinates = 0
-        openDocumentStream(document).bufferedReader().useLines { lines ->
+        openDocumentStream(document, onProgress).bufferedReader().useLines { lines ->
             lines.drop(1).forEach { line ->
                 val fields = line.split(DELIMITER)
                 val coordinate = GpsCoordinate(
@@ -229,14 +251,15 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
                 if (coordinates.size < MAX_GPS_COORDINATES) coordinates += coordinate
             }
         }
+        onProgress(1f)
         return MeasurementFileContent.GpsCoordinates(
             coordinates,
             truncated = totalCoordinates > coordinates.size,
         )
     }
 
-    private fun parseTextFile(document: DocumentFile): MeasurementFileContent.Text {
-        val text = openDocumentStream(document).bufferedReader().use { reader ->
+    private fun parseTextFile(document: DocumentFile, onProgress: (Float) -> Unit): MeasurementFileContent.Text {
+        val text = openDocumentStream(document, onProgress).bufferedReader().use { reader ->
             buildString {
                 val buffer = CharArray(TEXT_BUFFER_SIZE)
                 var remaining = MAX_TEXT_CHARACTERS
@@ -248,6 +271,7 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
                 }
             }
         }
+        onProgress(1f)
         return MeasurementFileContent.Text(text, truncated = document.length() > text.length)
     }
 
@@ -255,8 +279,16 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         .bufferedReader()
         .use { it.readText() }
 
-    private fun openDocumentStream(document: DocumentFile) = context.contentResolver.openInputStream(document.uri)
-        ?: throw IllegalStateException("Measurement file cannot be opened")
+    private fun openDocumentStream(document: DocumentFile, onProgress: ((Float) -> Unit)? = null): InputStream {
+        val stream = context.contentResolver.openInputStream(document.uri)
+            ?: throw IllegalStateException("Measurement file cannot be opened")
+        val sizeBytes = document.length()
+        return if (onProgress != null && sizeBytes > 0L) {
+            ProgressInputStream(stream, sizeBytes, onProgress)
+        } else {
+            stream
+        }
+    }
 
     private fun parseMetadataObject(value: String): JsonObject = JSON.parseToJsonElement(value).jsonObject
 
@@ -288,6 +320,37 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         val valueIndexes: List<Int>,
         val usesSensorTimestamp: Boolean,
     )
+}
+
+private class ProgressInputStream(
+    input: InputStream,
+    private val sizeBytes: Long,
+    private val onProgress: (Float) -> Unit,
+) : FilterInputStream(input) {
+    private var readBytes = 0L
+    private var reportedPercent = -1
+
+    override fun read(): Int {
+        val value = super.read()
+        if (value >= 0) reportBytesRead(1)
+        return value
+    }
+
+    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        val count = super.read(buffer, offset, length)
+        if (count > 0) reportBytesRead(count)
+        return count
+    }
+
+    private fun reportBytesRead(count: Int) {
+        readBytes += count
+        val progress = (readBytes.toFloat() / sizeBytes).coerceIn(0f, 1f)
+        val percent = (progress * 100).toInt()
+        if (percent > reportedPercent) {
+            reportedPercent = percent
+            onProgress(progress)
+        }
+    }
 }
 
 internal fun chartSampleIndexes(totalSamples: Int, limit: Int): IntArray {

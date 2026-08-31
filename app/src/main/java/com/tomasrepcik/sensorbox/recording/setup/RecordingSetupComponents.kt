@@ -19,16 +19,15 @@ import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxSecondaryButton
 import com.tomasrepcik.sensorbox.design.SensorBoxSettingsDivider
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.settings.BooleanSetting
 import com.tomasrepcik.sensorbox.settings.StepSetting
 
 @Composable
-internal fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     OutlinedTextField(
         value = state.customMeasurementName,
-        onValueChange = { onIntent(RecordingIntent.SetCustomMeasurementName(it)) },
+        onValueChange = { onIntent(RecordingSetupIntent.SetCustomMeasurementName(it)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         label = { Text(stringResource(R.string.custom_measurement_name)) },
         supportingText = { Text(stringResource(R.string.custom_measurement_name_description)) },
@@ -38,7 +37,7 @@ internal fun MeasurementNameSetup(state: RecordingState, onIntent: (RecordingInt
 }
 
 @Composable
-internal fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     Column {
         StepSetting(
             stringResource(R.string.start_delay),
@@ -46,22 +45,22 @@ internal fun RecordingTimingSetup(state: RecordingState, onIntent: (RecordingInt
             pluralStringResource(R.plurals.seconds_count, state.startDelaySeconds, state.startDelaySeconds),
             0,
             86_400,
-        ) { onIntent(RecordingIntent.SetStartDelay(it)) }
+        ) { onIntent(RecordingSetupIntent.SetStartDelay(it)) }
         StepSetting(
             stringResource(R.string.recording_duration),
             state.durationSeconds,
             pluralStringResource(R.plurals.seconds_count, state.durationSeconds, state.durationSeconds),
             0,
             86_400,
-        ) { onIntent(RecordingIntent.SetDuration(it)) }
+        ) { onIntent(RecordingSetupIntent.SetDuration(it)) }
     }
 }
 
 @Composable
-internal fun NotesSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun NotesSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     OutlinedTextField(
         value = state.notes,
-        onValueChange = { onIntent(RecordingIntent.SetNotes(it)) },
+        onValueChange = { onIntent(RecordingSetupIntent.SetNotes(it)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         label = { Text(stringResource(R.string.recording_notes)) },
         supportingText = { Text(stringResource(R.string.recording_notes_description)) },
@@ -71,10 +70,10 @@ internal fun NotesSetup(state: RecordingState, onIntent: (RecordingIntent) -> Un
 }
 
 @Composable
-internal fun AlarmsSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun AlarmsSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     OutlinedTextField(
         value = state.alarmOffsets,
-        onValueChange = { onIntent(RecordingIntent.SetAlarmOffsets(it)) },
+        onValueChange = { onIntent(RecordingSetupIntent.SetAlarmOffsets(it)) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         label = { Text(stringResource(R.string.audible_alarm_offsets)) },
         supportingText = { Text(stringResource(R.string.audible_alarm_offsets_description)) },
@@ -84,12 +83,12 @@ internal fun AlarmsSetup(state: RecordingState, onIntent: (RecordingIntent) -> U
 }
 
 @Composable
-internal fun ActivityRecognitionSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun ActivityRecognitionSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.activity_recognition),
         description = stringResource(R.string.activity_recognition_description),
         checked = state.activityRecognition,
-    ) { onIntent(RecordingIntent.SetActivityRecognition(it)) }
+    ) { onIntent(RecordingSetupIntent.SetActivityRecognition(it)) }
     if (state.activityRecognition) {
         StepSetting(
             stringResource(R.string.activity_recognition_period),
@@ -101,17 +100,17 @@ internal fun ActivityRecognitionSetup(state: RecordingState, onIntent: (Recordin
             ),
             1,
             3_600,
-        ) { onIntent(RecordingIntent.SetActivityRecognitionPeriod(it)) }
+        ) { onIntent(RecordingSetupIntent.SetActivityRecognitionPeriod(it)) }
     }
 }
 
 @Composable
-internal fun SignificantMotionSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun SignificantMotionSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.significant_motion),
         description = stringResource(R.string.significant_motion_description),
         checked = state.significantMotion,
-    ) { onIntent(RecordingIntent.SetSignificantMotionRecording(it)) }
+    ) { onIntent(RecordingSetupIntent.SetSignificantMotionRecording(it)) }
 }
 
 @Composable
@@ -134,34 +133,34 @@ internal fun RecordingArchivePanel(path: String?, onChoose: () -> Unit) {
 }
 
 @Composable
-internal fun BatterySetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun BatterySetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.battery_guard),
         description = stringResource(R.string.battery_guard_setup_description),
         checked = state.preferences.recording.stopRecordingOnLowBattery,
-    ) { onIntent(RecordingIntent.SetStopOnLowBattery(it)) }
+    ) { onIntent(RecordingSetupIntent.SetStopOnLowBattery(it)) }
 }
 
 @Composable
-internal fun WakeLockSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun WakeLockSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_cpu_awake),
         description = stringResource(R.string.keep_cpu_awake_setup_description),
         checked = state.preferences.recording.useWakeLock,
-    ) { onIntent(RecordingIntent.SetWakeLock(it)) }
+    ) { onIntent(RecordingSetupIntent.SetWakeLock(it)) }
 }
 
 @Composable
-internal fun KeepScreenAwakeSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun KeepScreenAwakeSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     BooleanSetting(
         title = stringResource(R.string.keep_screen_awake),
         description = stringResource(R.string.keep_screen_awake_setup_description),
         checked = state.preferences.display.keepPhoneDisplayOn,
-    ) { onIntent(RecordingIntent.SetKeepScreenAwake(it)) }
+    ) { onIntent(RecordingSetupIntent.SetKeepScreenAwake(it)) }
 }
 
 @Composable
-internal fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     val seconds = state.preferences.recording.gpsIntervalSeconds
     StepSetting(
         stringResource(R.string.gps_interval),
@@ -169,11 +168,11 @@ internal fun GpsIntervalSetup(state: RecordingState, onIntent: (RecordingIntent)
         pluralStringResource(R.plurals.seconds_count, seconds, seconds),
         1,
         3_600,
-    ) { onIntent(RecordingIntent.SetGpsInterval(it)) }
+    ) { onIntent(RecordingSetupIntent.SetGpsInterval(it)) }
 }
 
 @Composable
-internal fun GpsDistanceSetup(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun GpsDistanceSetup(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     val meters = state.preferences.recording.gpsMinDistanceMeters
     StepSetting(
         stringResource(R.string.gps_minimum_distance),
@@ -181,5 +180,5 @@ internal fun GpsDistanceSetup(state: RecordingState, onIntent: (RecordingIntent)
         pluralStringResource(R.plurals.meters_count, meters, meters),
         0,
         10_000,
-    ) { onIntent(RecordingIntent.SetGpsDistance(it)) }
+    ) { onIntent(RecordingSetupIntent.SetGpsDistance(it)) }
 }

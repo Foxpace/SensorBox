@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.navigation.MainRoute
 import com.tomasrepcik.sensorbox.recording.RecordingDevice
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingMessageText
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.setup.GpsRow
@@ -27,14 +26,14 @@ import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-internal fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+internal fun RecordContent(state: RecordingState, onIntent: (RecordIntent) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 24.dp)) {
         stickyHeader {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Column {
                     RecordHeader(
-                        onMeasurements = { onIntent(RecordingIntent.Navigate(MainRoute.MEASUREMENTS)) },
-                        onOptions = { onIntent(RecordingIntent.Navigate(MainRoute.SETTINGS)) },
+                        onMeasurements = { onIntent(RecordIntent.Navigate(MainRoute.MEASUREMENTS)) },
+                        onOptions = { onIntent(RecordIntent.Navigate(MainRoute.SETTINGS)) },
                     )
                     Spacer(Modifier.height(18.dp))
                 }
@@ -46,12 +45,12 @@ internal fun RecordContent(state: RecordingState, onIntent: (RecordingIntent) ->
     }
 }
 
-private fun LazyListScope.phoneSourceItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.phoneSourceItems(state: RecordingState, onIntent: (RecordIntent) -> Unit) {
     item {
         GpsRow(
             selected = state.includesGps,
-            onToggle = { onIntent(RecordingIntent.ToggleGps) },
-            onInfo = { onIntent(RecordingIntent.OpenSensorDetails(null)) },
+            onToggle = { onIntent(RecordIntent.ToggleGps) },
+            onInfo = { onIntent(RecordIntent.OpenSensorDetails(null)) },
         )
     }
     item { SourceDivider() }
@@ -59,18 +58,18 @@ private fun LazyListScope.phoneSourceItems(state: RecordingState, onIntent: (Rec
         SensorSourceItem(
             sensor = sensor,
             selected = sensor.type in state.selectedSensorIds,
-            onToggle = { onIntent(RecordingIntent.ToggleSensor(sensor.type)) },
-            onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type)) },
+            onToggle = { onIntent(RecordIntent.ToggleSensor(sensor.type)) },
+            onInfo = { onIntent(RecordIntent.OpenSensorDetails(sensor.type)) },
         )
     }
 }
 
-private fun LazyListScope.watchSourceItems(state: RecordingState, onIntent: (RecordingIntent) -> Unit) {
+private fun LazyListScope.watchSourceItems(state: RecordingState, onIntent: (RecordIntent) -> Unit) {
     item { WearSectionHeader() }
     item {
         GpsRow(
             selected = state.watchIncludesGps,
-            onToggle = { onIntent(RecordingIntent.ToggleWatchGps) },
+            onToggle = { onIntent(RecordIntent.ToggleWatchGps) },
         )
     }
     item { SourceDivider() }
@@ -78,8 +77,8 @@ private fun LazyListScope.watchSourceItems(state: RecordingState, onIntent: (Rec
         SensorSourceItem(
             sensor = sensor,
             selected = sensor.type in state.selectedWatchSensorIds,
-            onToggle = { onIntent(RecordingIntent.ToggleWatchSensor(sensor.type)) },
-            onInfo = { onIntent(RecordingIntent.OpenSensorDetails(sensor.type, RecordingDevice.WATCH)) },
+            onToggle = { onIntent(RecordIntent.ToggleWatchSensor(sensor.type)) },
+            onInfo = { onIntent(RecordIntent.OpenSensorDetails(sensor.type, RecordingDevice.WATCH)) },
         )
     }
 }

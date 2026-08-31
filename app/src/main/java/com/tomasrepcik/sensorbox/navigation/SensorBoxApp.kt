@@ -21,39 +21,49 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.tomasrepcik.sensorbox.design.SensorBoxTheme
 import com.tomasrepcik.sensorbox.diagnostics.AppErrorScreen
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserIntent
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserState
-import com.tomasrepcik.sensorbox.onboarding.OnboardingIntent
-import com.tomasrepcik.sensorbox.onboarding.OnboardingState
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
-import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
-import com.tomasrepcik.sensorbox.settings.SettingsIntent
-import com.tomasrepcik.sensorbox.settings.SettingsState
+
+@Composable
+fun SensorBoxRoot(showPrivacyRationale: Boolean, viewModel: MainViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel, showPrivacyRationale) {
+        if (showPrivacyRationale) viewModel.showPrivacyRationale()
+    }
+    SensorBoxTheme(
+        themeMode = state.themeMode,
+        dynamicColor = state.dynamicColors,
+    ) {
+        SensorBoxApp(
+            mainState = state,
+            onNavigate = viewModel::navigate,
+            onReplaceRoute = viewModel::replaceCurrentRoute,
+            onDismissFailure = viewModel::dismissFailure,
+        )
+    }
+}
 
 @Composable
 fun SensorBoxApp(
     mainState: MainState,
-    onboardingState: OnboardingState,
-    recordingState: RecordingState,
-    measurementBrowserState: MeasurementBrowserState,
-    settingsState: SettingsState,
-    onNavigate: (MainRoute) -> Unit,
-    onOnboardingIntent: (OnboardingIntent) -> Unit,
-    onRecordingIntent: (RecordingIntent) -> Unit,
-    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
-    onSettingsIntent: (SettingsIntent) -> Unit,
+    onNavigate: (NavKey) -> Unit,
+    onReplaceRoute: (NavKey) -> Unit,
     onDismissFailure: () -> Unit,
 ) {
     if (!mainState.hasLoadedPreferences) {
@@ -67,34 +77,16 @@ fun SensorBoxApp(
     if (mainState.keepScreenAwake && mainState.session is RecordingSessionState.Running) KeepScreenAwake()
     SensorBoxNavHost(
         mainState = mainState,
-        onboardingState = onboardingState,
-        recordingState = recordingState,
-        measurementBrowserState = measurementBrowserState,
-        settingsState = settingsState,
         onNavigate = onNavigate,
-        onOnboardingIntent = onOnboardingIntent,
-        onRecordingIntent = onRecordingIntent,
-        onMeasurementBrowserIntent = onMeasurementBrowserIntent,
-        onSettingsIntent = onSettingsIntent,
+        onReplaceRoute = onReplaceRoute,
     )
 }
 
 @Composable
-private fun SensorBoxNavHost(
-    mainState: MainState,
-    onboardingState: OnboardingState,
-    recordingState: RecordingState,
-    measurementBrowserState: MeasurementBrowserState,
-    settingsState: SettingsState,
-    onNavigate: (MainRoute) -> Unit,
-    onOnboardingIntent: (OnboardingIntent) -> Unit,
-    onRecordingIntent: (RecordingIntent) -> Unit,
-    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
-    onSettingsIntent: (SettingsIntent) -> Unit,
-) {
+private fun SensorBoxNavHost(mainState: MainState, onNavigate: (NavKey) -> Unit, onReplaceRoute: (NavKey) -> Unit) {
     val backStack = rememberNavBackStack(mainState.route)
     val displayedRoute = mainState.displayedRoute()
-    SynchronizeBackStack(backStack, displayedRoute)
+    SynchronizeBackStack(backStack, displayedRoute, mainState.replaceCurrentRoute)
     val navigateBack = { navigateBack(mainState, backStack, onNavigate) }
 
     NavDisplay(
@@ -103,20 +95,36 @@ private fun SensorBoxNavHost(
         transitionSpec = { forwardScreenTransition() },
         popTransitionSpec = { backwardScreenTransition() },
         predictivePopTransitionSpec = { backwardScreenTransition() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
         entryProvider = entryProvider {
             entry<MainRoute> { route ->
                 RouteContent(
                     route = route,
-                    onboardingState = onboardingState,
-                    recordingState = recordingState,
-                    measurementBrowserState = measurementBrowserState,
-                    settingsState = settingsState,
-                    onOnboardingIntent = onOnboardingIntent,
-                    onRecordingIntent = onRecordingIntent,
-                    onMeasurementBrowserIntent = onMeasurementBrowserIntent,
-                    onSettingsIntent = onSettingsIntent,
+                    onNavigate = onNavigate,
+                    onReplaceRoute = onReplaceRoute,
                     onBack = navigateBack,
                 )
+            }
+            entry<SensorDetailsRoute> { route ->
+                RecordingDestinationContent(route, onNavigate, navigateBack)
+            }
+            entry<SensorPreviewRoute> { route ->
+                RecordingDestinationContent(route, onNavigate, navigateBack)
+            }
+            entry<RecordingSetupRoute> { route ->
+                RecordingDestinationContent(route, onNavigate, navigateBack)
+            }
+            entry<MeasurementDetailsRoute> { route ->
+                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
+            }
+            entry<MeasurementLoadingRoute> { route ->
+                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
+            }
+            entry<MeasurementPreviewRoute> { route ->
+                MeasurementDestinationContent(route, onNavigate, onReplaceRoute, navigateBack)
             }
         },
     )
@@ -129,43 +137,31 @@ private fun MainState.displayedRoute() = if (session is RecordingSessionState.Ru
 }
 
 @Composable
-private fun SynchronizeBackStack(backStack: NavBackStack<NavKey>, displayedRoute: MainRoute) {
-    LaunchedEffect(displayedRoute) {
+private fun SynchronizeBackStack(
+    backStack: NavBackStack<NavKey>,
+    displayedRoute: NavKey,
+    replaceCurrentRoute: Boolean,
+) {
+    LaunchedEffect(displayedRoute, replaceCurrentRoute) {
         if (displayedRoute != MainRoute.ACTIVE_RECORDING && backStack.lastOrNull() == MainRoute.ACTIVE_RECORDING) {
             backStack.removeLastOrNull()
         }
         if (backStack.lastOrNull() != displayedRoute) {
+            if (replaceCurrentRoute && displayedRoute != MainRoute.ACTIVE_RECORDING) backStack.removeLastOrNull()
             if (displayedRoute.isRootDestination()) backStack.clear()
             backStack.add(displayedRoute)
         }
     }
 }
 
-private fun navigateBack(state: MainState, backStack: NavBackStack<NavKey>, onNavigate: (MainRoute) -> Unit) {
+private fun navigateBack(state: MainState, backStack: NavBackStack<NavKey>, onNavigate: (NavKey) -> Unit) {
     if (state.session is RecordingSessionState.Running) return
     if (backStack.size > 1) backStack.removeLastOrNull()
-    val destination = backStack.lastOrNull() as? MainRoute ?: MainRoute.RECORD
+    val destination = backStack.lastOrNull() ?: MainRoute.RECORD
     if (destination != MainRoute.ACTIVE_RECORDING) onNavigate(destination)
 }
 
-private fun MainRoute.isRootDestination() = when (this) {
-    MainRoute.ONBOARDING,
-    MainRoute.RECORD,
-    -> true
-
-    MainRoute.ACTIVE_RECORDING,
-    MainRoute.SENSOR_DETAILS,
-    MainRoute.SENSOR_PREVIEW,
-    MainRoute.RECORDING_SETUP,
-    MainRoute.MEASUREMENTS,
-    MainRoute.MEASUREMENT_DETAILS,
-    MainRoute.MEASUREMENT_FILE,
-    MainRoute.SETTINGS,
-    MainRoute.DIAGNOSTICS,
-    MainRoute.LICENSES,
-    MainRoute.PRIVACY,
-    -> false
-}
+private fun NavKey.isRootDestination() = this == MainRoute.ONBOARDING || this == MainRoute.RECORD
 
 private fun forwardScreenTransition(): ContentTransform =
     (slideInHorizontally(screenTween()) { width -> width / SCREEN_SLIDE_DIVISOR } + fadeIn(screenFadeInTween()))

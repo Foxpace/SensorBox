@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation3.runtime.NavKey
 import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
@@ -29,9 +30,14 @@ class MainViewModel @Inject constructor(
         observeFailures()
     }
 
-    fun navigate(route: MainRoute) {
+    fun navigate(route: NavKey) {
         hasChosenInitialRoute = true
-        mutableState.value = state.value.copy(route = route)
+        mutableState.value = state.value.copy(route = route, replaceCurrentRoute = false)
+    }
+
+    fun replaceCurrentRoute(route: NavKey) {
+        hasChosenInitialRoute = true
+        mutableState.value = state.value.copy(route = route, replaceCurrentRoute = true)
     }
 
     fun showPrivacyRationale() {
@@ -61,6 +67,8 @@ class MainViewModel @Inject constructor(
                         mutableState.value = state.value.copy(
                             route = route,
                             keepScreenAwake = preferences.display.keepPhoneDisplayOn,
+                            themeMode = preferences.display.themeMode,
+                            dynamicColors = preferences.display.dynamicColors,
                             hasLoadedPreferences = true,
                         )
                     },

@@ -7,13 +7,12 @@ import androidx.compose.ui.res.stringResource
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxBackScreen
 import com.tomasrepcik.sensorbox.recording.RecordingDevice
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 
 @Composable
 fun SensorPreviewScreen(
     state: RecordingState,
-    onIntent: (RecordingIntent) -> Unit,
+    onIntent: (SensorPreviewIntent) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -37,8 +36,8 @@ fun SensorPreviewScreen(
         } else if (sensor != null) {
             item {
                 DisposableEffect(sensor.type) {
-                    onIntent(RecordingIntent.StartSensorPreview(sensor.type))
-                    onDispose { onIntent(RecordingIntent.StopPreview) }
+                    onIntent(SensorPreviewIntent.StartSensorPreview(sensor.type))
+                    onDispose { onIntent(SensorPreviewIntent.StopPreview) }
                 }
                 HardwareSensorPreview(sensor, state.sensorPreview)
             }

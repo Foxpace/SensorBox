@@ -113,6 +113,7 @@
     <string name="gps_coordinates">GPS coordinates</string>
     <string name="text_data">Text data</string>
     <string name="loading_measurements">Loading measurements…</string>
+    <string name="loading_measurement_file_progress">Loading measurement… %1$d%%</string>
     <string name="measurements_read_failed">The recording archive could not be read.</string>
     <string name="measurements_empty">No measurements were found in the recording archive.</string>
     <plurals name="chart_sample_count">

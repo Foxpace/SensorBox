@@ -1,139 +1,120 @@
 package com.tomasrepcik.sensorbox.navigation
 
 import androidx.compose.runtime.Composable
-import com.tomasrepcik.sensorbox.about.OpenSourceLicensesScreen
-import com.tomasrepcik.sensorbox.about.PrivacyScreen
-import com.tomasrepcik.sensorbox.diagnostics.DiagnosticsLogScreen
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserIntent
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementBrowserState
-import com.tomasrepcik.sensorbox.measurements.browser.MeasurementsScreen
-import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsScreen
-import com.tomasrepcik.sensorbox.measurements.details.MeasurementFileScreen
-import com.tomasrepcik.sensorbox.onboarding.OnboardingIntent
-import com.tomasrepcik.sensorbox.onboarding.OnboardingScreen
-import com.tomasrepcik.sensorbox.onboarding.OnboardingState
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
-import com.tomasrepcik.sensorbox.recording.RecordingState
-import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingScreen
-import com.tomasrepcik.sensorbox.recording.active.RecordScreen
-import com.tomasrepcik.sensorbox.recording.details.SensorDetailsScreen
-import com.tomasrepcik.sensorbox.recording.preview.SensorPreviewScreen
-import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupScreen
-import com.tomasrepcik.sensorbox.settings.SettingsIntent
-import com.tomasrepcik.sensorbox.settings.SettingsScreen
-import com.tomasrepcik.sensorbox.settings.SettingsState
+import androidx.navigation3.runtime.NavKey
+import com.tomasrepcik.sensorbox.measurements.details.MeasurementDetailsRoot
+import com.tomasrepcik.sensorbox.measurements.list.MeasurementsRoot
+import com.tomasrepcik.sensorbox.measurements.loading.MeasurementLoadingRoot
+import com.tomasrepcik.sensorbox.measurements.preview.MeasurementPreviewRoot
+import com.tomasrepcik.sensorbox.onboarding.OnboardingRoot
+import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingRoot
+import com.tomasrepcik.sensorbox.recording.active.RecordRoot
+import com.tomasrepcik.sensorbox.recording.details.SensorDetailsRoot
+import com.tomasrepcik.sensorbox.recording.preview.SensorPreviewRoot
+import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupRoot
+import com.tomasrepcik.sensorbox.settings.SettingsRoot
 
 @Composable
 internal fun RouteContent(
     route: MainRoute,
-    onboardingState: OnboardingState,
-    recordingState: RecordingState,
-    measurementBrowserState: MeasurementBrowserState,
-    settingsState: SettingsState,
-    onOnboardingIntent: (OnboardingIntent) -> Unit,
-    onRecordingIntent: (RecordingIntent) -> Unit,
-    onMeasurementBrowserIntent: (MeasurementBrowserIntent) -> Unit,
-    onSettingsIntent: (SettingsIntent) -> Unit,
+    onNavigate: (NavKey) -> Unit,
+    onReplaceRoute: (NavKey) -> Unit,
     onBack: () -> Unit,
 ) {
     when (route) {
-        MainRoute.ONBOARDING -> OnboardingScreen(onboardingState, onOnboardingIntent)
+        MainRoute.ONBOARDING -> OnboardingRoot(onNavigate)
 
-        MainRoute.ACTIVE_RECORDING,
-        MainRoute.SENSOR_DETAILS,
-        MainRoute.SENSOR_PREVIEW,
-        MainRoute.RECORDING_SETUP,
-        MainRoute.RECORD,
-        -> RecordingRouteContent(route, recordingState, onRecordingIntent, onBack)
+        MainRoute.ACTIVE_RECORDING -> ActiveRecordingRoot(onNavigate)
 
-        MainRoute.MEASUREMENTS,
-        MainRoute.MEASUREMENT_DETAILS,
-        MainRoute.MEASUREMENT_FILE,
-        -> MeasurementBrowserRoute(route, measurementBrowserState, onMeasurementBrowserIntent, onBack)
+        MainRoute.RECORD -> RecordRoot(onNavigate)
+
+        MainRoute.MEASUREMENTS -> MeasurementRouteContent(route, onNavigate, onReplaceRoute, onBack)
 
         MainRoute.SETTINGS,
         MainRoute.DIAGNOSTICS,
         MainRoute.LICENSES,
         MainRoute.PRIVACY,
-        -> SettingsRouteContent(route, settingsState, onSettingsIntent, onBack)
+        -> SettingsRoot(route, onNavigate, onBack)
     }
 }
 
 @Composable
-private fun RecordingRouteContent(
-    route: MainRoute,
-    state: RecordingState,
-    onIntent: (RecordingIntent) -> Unit,
-    onBack: () -> Unit,
-) {
-    FullScreen { modifier ->
-        when (route) {
-            MainRoute.ACTIVE_RECORDING -> ActiveRecordingScreen(state, onIntent, modifier)
+internal fun RecordingDestinationContent(route: NavKey, onNavigate: (NavKey) -> Unit, onBack: () -> Unit) {
+    when (route) {
+        is SensorDetailsRoute -> SensorDetailsRoot(
+            sensorType = route.sensorType,
+            device = route.device,
+            onNavigate = onNavigate,
+            onBack = onBack,
+        )
 
-            MainRoute.SENSOR_DETAILS -> SensorDetailsScreen(
-                state,
-                onBack,
-                { onIntent(RecordingIntent.Navigate(MainRoute.SENSOR_PREVIEW)) },
-                onIntent,
-                modifier,
-            )
+        is SensorPreviewRoute -> SensorPreviewRoot(
+            sensorType = route.sensorType,
+            device = route.device,
+            onBack = onBack,
+        )
 
-            MainRoute.SENSOR_PREVIEW -> SensorPreviewScreen(state, onIntent, onBack, modifier)
+        is RecordingSetupRoute -> RecordingSetupRoot(
+            draft = route.draft,
+            onBack = onBack,
+        )
 
-            MainRoute.RECORDING_SETUP -> RecordingSetupScreen(
-                state = state,
-                onIntent = onIntent,
-                modifier = modifier,
-                onBack = { onIntent(RecordingIntent.ReturnToSensorSelection) },
-            )
-
-            MainRoute.RECORD -> RecordScreen(state, onIntent, modifier)
-
-            else -> error("Not a recording route")
-        }
+        else -> error("Not a recording route")
     }
 }
 
 @Composable
-private fun MeasurementBrowserRoute(
-    route: MainRoute,
-    state: MeasurementBrowserState,
-    onIntent: (MeasurementBrowserIntent) -> Unit,
+private fun MeasurementRouteContent(
+    route: NavKey,
+    onNavigate: (NavKey) -> Unit,
+    onReplaceRoute: (NavKey) -> Unit,
     onBack: () -> Unit,
 ) {
     FullScreen { modifier ->
         when (route) {
-            MainRoute.MEASUREMENTS -> MeasurementsScreen(state, onIntent, onBack, modifier)
-            MainRoute.MEASUREMENT_DETAILS -> MeasurementDetailsScreen(state, onIntent, onBack, modifier)
-            MainRoute.MEASUREMENT_FILE -> MeasurementFileScreen(state, onIntent, onBack, modifier)
-            else -> error("Not a measurement browser route")
-        }
-    }
-}
-
-@Composable
-private fun SettingsRouteContent(
-    route: MainRoute,
-    state: SettingsState,
-    onIntent: (SettingsIntent) -> Unit,
-    onBack: () -> Unit,
-) {
-    FullScreen { modifier ->
-        when (route) {
-            MainRoute.SETTINGS -> SettingsScreen(state, onIntent, modifier, onBack)
-
-            MainRoute.DIAGNOSTICS -> DiagnosticsLogScreen(
-                state = state,
+            MainRoute.MEASUREMENTS -> MeasurementsRoot(
+                onOpenDetails = { measurementId -> onNavigate(MeasurementDetailsRoute(measurementId)) },
                 onBack = onBack,
-                onRefresh = { onIntent(SettingsIntent.ViewDiagnostics) },
                 modifier = modifier,
             )
 
-            MainRoute.LICENSES -> OpenSourceLicensesScreen(state, onIntent, onBack, modifier)
+            is MeasurementDetailsRoute -> MeasurementDetailsRoot(
+                measurementId = route.measurementId,
+                onOpenFile = { measurementId, fileId ->
+                    onNavigate(MeasurementLoadingRoute(measurementId, fileId))
+                },
+                onBack = onBack,
+                modifier = modifier,
+            )
 
-            MainRoute.PRIVACY -> PrivacyScreen(onBack, modifier)
+            is MeasurementLoadingRoute -> MeasurementLoadingRoot(
+                measurementId = route.measurementId,
+                fileId = route.fileId,
+                onOpenPreview = { measurementId, fileId ->
+                    onReplaceRoute(MeasurementPreviewRoute(measurementId, fileId))
+                },
+                onBack = onBack,
+                modifier = modifier,
+            )
 
-            else -> error("Not a settings route")
+            is MeasurementPreviewRoute -> MeasurementPreviewRoot(
+                measurementId = route.measurementId,
+                fileId = route.fileId,
+                onBack = onBack,
+                modifier = modifier,
+            )
+
+            else -> error("Not a measurement route")
         }
     }
+}
+
+@Composable
+internal fun MeasurementDestinationContent(
+    route: NavKey,
+    onNavigate: (NavKey) -> Unit,
+    onReplaceRoute: (NavKey) -> Unit,
+    onBack: () -> Unit,
+) {
+    MeasurementRouteContent(route, onNavigate, onReplaceRoute, onBack)
 }

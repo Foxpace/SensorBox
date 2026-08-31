@@ -13,13 +13,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxPrimaryButton
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 
 @Composable
 internal fun RecordingSetupTopBar(
     state: RecordingState,
-    onIntent: (RecordingIntent) -> Unit,
+    onIntent: (RecordingSetupIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sourceCount = setupSourceCount(state)
@@ -36,7 +35,7 @@ internal fun RecordingSetupTopBar(
                 label = state.startCountdownSeconds?.let { seconds ->
                     pluralStringResource(R.plurals.starting_in_seconds, seconds, seconds)
                 } ?: stringResource(if (state.isStarting) R.string.starting_recording else R.string.start_recording),
-                onClick = { onIntent(RecordingIntent.StartRecording) },
+                onClick = { onIntent(RecordingSetupIntent.StartRecording) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state.recordingArchivePath != null && sourceCount > 0 && !state.isStarting,
                 loading = state.isStarting,

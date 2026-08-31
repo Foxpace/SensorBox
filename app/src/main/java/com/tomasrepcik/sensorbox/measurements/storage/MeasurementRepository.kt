@@ -7,7 +7,11 @@ interface MeasurementRepository {
 
     suspend fun loadMeasurementDetails(measurementId: String): AppResult<MeasurementDetails>
 
-    suspend fun loadMeasurementFile(measurementId: String, fileId: String): AppResult<MeasurementFileContent>
+    suspend fun loadMeasurementFile(
+        measurementId: String,
+        fileId: String,
+        onProgress: (Float) -> Unit,
+    ): AppResult<MeasurementFileContent>
 }
 
 data class MeasurementSummary(

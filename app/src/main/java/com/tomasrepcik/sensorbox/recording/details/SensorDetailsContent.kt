@@ -15,7 +15,6 @@ import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxBackScreen
 import com.tomasrepcik.sensorbox.design.SensorBoxPrimaryButton
 import com.tomasrepcik.sensorbox.recording.RecordingDevice
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 
@@ -34,7 +33,7 @@ internal fun SensorDetailsList(
     sensor: SensorDescriptor?,
     title: String,
     showPreview: Boolean,
-    onIntent: (RecordingIntent) -> Unit,
+    onIntent: (SensorDetailsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
     SensorBoxBackScreen(

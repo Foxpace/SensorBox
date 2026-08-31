@@ -16,10 +16,12 @@ import com.tomasrepcik.sensorbox.onboarding.OnboardingEffect
 import com.tomasrepcik.sensorbox.onboarding.OnboardingIntent
 import com.tomasrepcik.sensorbox.onboarding.OnboardingViewModel
 import com.tomasrepcik.sensorbox.recording.RecordingControlUseCase
-import com.tomasrepcik.sensorbox.recording.RecordingEffect
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
+import com.tomasrepcik.sensorbox.recording.RecordingDraft
 import com.tomasrepcik.sensorbox.recording.RecordingMessage
-import com.tomasrepcik.sensorbox.recording.RecordingViewModel
+import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingEffect
+import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingIntent
+import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingViewModel
+import com.tomasrepcik.sensorbox.recording.active.RecordViewModel
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveRepository
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveSelection
 import com.tomasrepcik.sensorbox.recording.preview.DevicePreviewRepository
@@ -29,6 +31,9 @@ import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStopReason
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.recording.setup.RecordingSetup
+import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupEffect
+import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupIntent
+import com.tomasrepcik.sensorbox.recording.setup.RecordingSetupViewModel
 import com.tomasrepcik.sensorbox.recording.sources.AvailableRecordingSources
 import com.tomasrepcik.sensorbox.recording.sources.AvailableRecordingSourcesUseCase
 import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
@@ -171,10 +176,10 @@ class FeatureViewModelTest {
 
     @Test
     fun `Given no selected source When recording starts Then recording exposes validation code`() = runTest {
-        val viewModel = recordingViewModel(FakeRecordingWorkflow())
+        val viewModel = recordingSetupViewModel(FakeRecordingWorkflow())
         advanceUntilIdle()
 
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.StartRecording)
 
         assertEquals(RecordingMessage.PICK_AT_LEAST_ONE_SOURCE, viewModel.state.value.message)
         assertEquals(AppErrorCode.VALIDATION, viewModel.state.value.errorCode)
@@ -187,16 +192,16 @@ class FeatureViewModelTest {
         val archive = FakeRecordingArchiveRepository(
             selectedResult = AppResult.failure(AppError(AppErrorCode.STORAGE, "Check fixture archive")),
         )
-        val viewModel = recordingViewModel(
+        val viewModel = recordingSetupViewModel(
             workflow = FakeRecordingWorkflow(),
             archive = archive,
             appFailures = appFailures,
         )
         advanceUntilIdle()
-        viewModel.accept(RecordingIntent.ToggleSensor(1))
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
 
         // When
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.StartRecording)
 
         // Then
         assertEquals(AppErrorCode.STORAGE, appFailures.visibleFailure.value?.code)
@@ -208,7 +213,7 @@ class FeatureViewModelTest {
         runTest {
             // Given
             val archive = FakeRecordingArchiveRepository(isSelected = false)
-            val viewModel = recordingViewModel(
+            val viewModel = recordingSetupViewModel(
                 workflow = FakeRecordingWorkflow(),
                 archive = archive,
             )
@@ -234,11 +239,11 @@ class FeatureViewModelTest {
                 ),
             )
         }
-        val viewModel = recordingViewModel(workflow)
+        val viewModel = recordingSetupViewModel(workflow)
         advanceUntilIdle()
 
-        viewModel.accept(RecordingIntent.ToggleWatchSensor(1))
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedWatchSensorIds = setOf(1))))
+        viewModel.accept(RecordingSetupIntent.StartRecording)
         advanceUntilIdle()
 
         assertEquals(RecordingMessage.WATCH_PERMISSION_REQUIRED, viewModel.state.value.message)
@@ -250,15 +255,15 @@ class FeatureViewModelTest {
         val startGate = CompletableDeferred<Unit>()
         val workflow = FakeRecordingWorkflow().apply { this.startGate = startGate }
         val sessionStore = RecordingSessionStore()
-        val viewModel = recordingViewModel(workflow, sessionStore = sessionStore)
+        val viewModel = recordingSetupViewModel(workflow, sessionStore = sessionStore)
         advanceUntilIdle()
 
-        viewModel.accept(RecordingIntent.ToggleSensor(1))
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
+        viewModel.accept(RecordingSetupIntent.StartRecording)
         runCurrent()
 
         assertTrue(viewModel.state.value.isStarting)
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.StartRecording)
         assertEquals(1, workflow.startCalls)
 
         startGate.complete(Unit)
@@ -280,14 +285,14 @@ class FeatureViewModelTest {
         // Given
         val sessionStore = RecordingSessionStore()
         val appFailures = failureStore()
-        val viewModel = recordingViewModel(
+        val viewModel = recordingSetupViewModel(
             workflow = FakeRecordingWorkflow(),
             sessionStore = sessionStore,
             appFailures = appFailures,
         )
         advanceUntilIdle()
-        viewModel.accept(RecordingIntent.ToggleSensor(1))
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
+        viewModel.accept(RecordingSetupIntent.StartRecording)
         runCurrent()
         assertTrue(viewModel.state.value.isStarting)
 
@@ -308,13 +313,13 @@ class FeatureViewModelTest {
     fun `Given a start delay When recording starts Then ViewModel counts down before execution`() = runTest {
         // Given
         val recording = FakeRecordingWorkflow()
-        val viewModel = recordingViewModel(recording)
+        val viewModel = recordingSetupViewModel(recording)
         advanceUntilIdle()
-        viewModel.accept(RecordingIntent.ToggleSensor(1))
-        viewModel.accept(RecordingIntent.SetStartDelay(2))
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
+        viewModel.accept(RecordingSetupIntent.SetStartDelay(2))
 
         // When
-        viewModel.accept(RecordingIntent.StartRecording)
+        viewModel.accept(RecordingSetupIntent.StartRecording)
         runCurrent()
 
         // Then
@@ -332,29 +337,34 @@ class FeatureViewModelTest {
 
     @Test
     fun `Given recording archive intent When chosen Then recording emits only its picker effect`() = runTest {
-        val viewModel = recordingViewModel(FakeRecordingWorkflow())
+        val viewModel = recordingSetupViewModel(FakeRecordingWorkflow())
         val effect = async { viewModel.effects.first() }
 
-        viewModel.accept(RecordingIntent.ChooseRecordingArchive)
+        viewModel.accept(RecordingSetupIntent.ChooseRecordingArchive)
 
-        assertEquals(RecordingEffect.PickRecordingArchive, effect.await())
+        assertEquals(RecordingSetupEffect.PickRecordingArchive, effect.await())
     }
 
     @Test
     fun `Given an active recording When stopped Then recording navigates to the main screen`() = runTest {
-        val viewModel = recordingViewModel(FakeRecordingWorkflow())
+        val viewModel = ActiveRecordingViewModel(
+            recording = FakeRecordingWorkflow(),
+            sessionStore = RecordingSessionStore(),
+            elapsedRealtimeClock = { 10_000L },
+            appFailures = failureStore(),
+        )
         val effect = async { viewModel.effects.first() }
 
-        viewModel.accept(RecordingIntent.StopRecording)
+        viewModel.accept(ActiveRecordingIntent.StopRecording)
         advanceUntilIdle()
 
-        assertEquals(RecordingEffect.Navigate(MainRoute.RECORD), effect.await())
+        assertEquals(ActiveRecordingEffect.RecordingStopped, effect.await())
     }
 
     @Test
     fun `Given available watch sources When observed Then every sensor detail is retained`() = runTest {
         val sources = FakeAvailableRecordingSources()
-        val viewModel = recordingViewModel(FakeRecordingWorkflow(), sources)
+        val viewModel = RecordViewModel(sources, failureStore())
         advanceUntilIdle()
 
         sources.update(
@@ -400,22 +410,18 @@ class FeatureViewModelTest {
         )
     }
 
-    private fun recordingViewModel(
+    private fun recordingSetupViewModel(
         workflow: RecordingControlUseCase,
-        availableSources: AvailableRecordingSourcesUseCase = FakeAvailableRecordingSources(),
         sessionStore: RecordingSessionStore = RecordingSessionStore(),
         archive: RecordingArchiveRepository = FakeRecordingArchiveRepository(isSelected = true),
         appFailures: AppFailureStore = failureStore(),
-    ): RecordingViewModel = RecordingViewModel(
+    ): RecordingSetupViewModel = RecordingSetupViewModel(
         preferencesRepository = FakeAppPreferencesRepository(),
-        availableSources = availableSources,
         recordingArchive = archive,
         permissions = { emptySet() },
         recording = workflow,
         sessionStore = sessionStore,
-        elapsedRealtimeClock = { 10_000L },
         appFailures = appFailures,
-        devicePreview = FakeDevicePreviewRepository(),
     )
 
     private fun failureStore() = AppFailureStore(DiagnosticLogger { })

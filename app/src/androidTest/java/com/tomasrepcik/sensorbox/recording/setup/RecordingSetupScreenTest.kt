@@ -4,7 +4,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.tomasrepcik.sensorbox.design.SensorBoxTheme
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingMessage
 import com.tomasrepcik.sensorbox.recording.RecordingMessageText
 import com.tomasrepcik.sensorbox.recording.RecordingState
@@ -18,14 +17,14 @@ class RecordingSetupScreenTest {
 
     @Test
     fun givenConfiguredSetupWhenStartIsTappedThenRecordingRequestIsSent() {
-        var actualIntent: RecordingIntent? = null
+        var actualIntent: RecordingSetupIntent? = null
         RecordingSetupScreenRobot(composeRule)
             .givenRecordingSetup { actualIntent = it }
             .thenFolderAndSettingsAreVisible()
             .whenStartRecordingIsTapped()
 
         composeRule.runOnIdle {
-            assertEquals(RecordingIntent.StartRecording, actualIntent)
+            assertEquals(RecordingSetupIntent.StartRecording, actualIntent)
         }
     }
 
@@ -54,6 +53,7 @@ class RecordingSetupScreenTest {
                         isStarting = true,
                     ),
                     onIntent = { },
+                    onBack = {},
                 )
             }
         }

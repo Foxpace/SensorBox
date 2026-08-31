@@ -5,12 +5,11 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.tomasrepcik.sensorbox.design.SensorBoxTheme
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 
 class RecordingSetupScreenRobot(private val rule: ComposeContentTestRule) {
-    fun givenRecordingSetup(onIntent: (RecordingIntent) -> Unit = {}) = apply {
+    fun givenRecordingSetup(onIntent: (RecordingSetupIntent) -> Unit = {}) = apply {
         rule.setContent {
             SensorBoxTheme {
                 RecordingSetupScreen(
@@ -20,6 +19,7 @@ class RecordingSetupScreenRobot(private val rule: ComposeContentTestRule) {
                         recordingArchivePath = "Fixture/SensorBox",
                     ),
                     onIntent = onIntent,
+                    onBack = {},
                 )
             }
         }

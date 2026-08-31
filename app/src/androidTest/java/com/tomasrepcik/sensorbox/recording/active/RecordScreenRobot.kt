@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.tomasrepcik.sensorbox.design.SensorBoxTheme
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 
@@ -16,7 +15,7 @@ class RecordScreenRobot(private val rule: ComposeContentTestRule) {
         selected: Boolean = false,
         gpsSelected: Boolean = false,
         watchConnected: Boolean = false,
-        onIntent: (RecordingIntent) -> Unit = {},
+        onIntent: (RecordIntent) -> Unit = {},
     ) = apply {
         rule.setContent {
             SensorBoxTheme {

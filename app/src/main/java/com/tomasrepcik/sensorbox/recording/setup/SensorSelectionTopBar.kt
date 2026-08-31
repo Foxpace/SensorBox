@@ -12,13 +12,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.SensorBoxPrimaryButton
-import com.tomasrepcik.sensorbox.recording.RecordingIntent
 import com.tomasrepcik.sensorbox.recording.RecordingState
+import com.tomasrepcik.sensorbox.recording.active.RecordIntent
 
 @Composable
 internal fun SensorSelectionTopBar(
     state: RecordingState,
-    onIntent: (RecordingIntent) -> Unit,
+    onIntent: (RecordIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sensorCount = selectedSourceCount(state)
@@ -33,7 +33,7 @@ internal fun SensorSelectionTopBar(
         ) {
             SensorBoxPrimaryButton(
                 label = stringResource(R.string.continue_action),
-                onClick = { onIntent(RecordingIntent.OpenRecordingSetup) },
+                onClick = { onIntent(RecordIntent.OpenRecordingSetup) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = sensorCount > 0,
             )
