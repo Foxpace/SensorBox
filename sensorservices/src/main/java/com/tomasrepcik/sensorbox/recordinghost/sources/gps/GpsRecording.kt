@@ -9,7 +9,6 @@ import com.tomasrepcik.sensorbox.core.failure.combineAppResults
 import com.tomasrepcik.sensorbox.core.failure.flatMap
 import com.tomasrepcik.sensorbox.core.failure.withAppError
 import com.tomasrepcik.sensorbox.core.time.EpochClock
-import com.tomasrepcik.sensorbox.recordinghost.sources.gps.GPSHandler
 import com.tomasrepcik.sensorbox.recordinghost.storage.MeasurementStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -44,7 +43,7 @@ internal class GpsRecording(
         val streamResult = storage.openMeasurementFile(
             folderName = folderName,
             mimeType = "text/csv",
-            fileName = "gps.csv",
+            fileName = "GPS.csv",
             useInternalStorage = useInternalStorage,
         )
         val output = streamResult.getOrNull()

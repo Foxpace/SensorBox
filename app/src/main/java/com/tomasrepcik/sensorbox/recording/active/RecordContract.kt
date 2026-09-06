@@ -14,6 +14,7 @@ sealed interface RecordIntent {
     data class ToggleWatchSensor(val sensorId: Int) : RecordIntent
     data class OpenSensorDetails(val sensorType: Int?, val device: RecordingDevice = RecordingDevice.PHONE) :
         RecordIntent
+    data object ToggleAllSensors : RecordIntent
     data object ToggleGps : RecordIntent
     data object ToggleWatchGps : RecordIntent
     data object OpenRecordingSetup : RecordIntent
@@ -44,6 +45,8 @@ object RecordReducer {
 
         RecordIntent.ClearMessage -> RecordNext(state.copy(message = RecordingMessage.NONE, errorCode = null))
 
+        RecordIntent.ToggleAllSensors -> RecordNext(state.toggleAllSensors())
+
         RecordIntent.ToggleGps -> RecordNext(state.copy(includesGps = !state.includesGps))
 
         RecordIntent.ToggleWatchGps -> RecordNext(state.copy(watchIncludesGps = !state.watchIncludesGps))
@@ -64,4 +67,25 @@ object RecordReducer {
         if (!updated.add(sensorId)) updated.remove(sensorId)
         return copy(selectedWatchSensorIds = updated, message = RecordingMessage.NONE, errorCode = null)
     }
+
+    private fun RecordingState.toggleAllSensors(): RecordingState {
+        val selectAll = !areAllSensorsSelected
+        return copy(
+            selectedSensorIds = if (selectAll) sensors.map { it.type }.toSet() else emptySet(),
+            includesGps = selectAll,
+            watchIncludesGps = if (isWatchConnected) selectAll else watchIncludesGps,
+            selectedWatchSensorIds = if (isWatchConnected) {
+                if (selectAll) watchSensors.map { it.type }.toSet() else emptySet()
+            } else {
+                selectedWatchSensorIds
+            },
+            message = RecordingMessage.NONE,
+            errorCode = null,
+        )
+    }
 }
+
+internal val RecordingState.areAllSensorsSelected: Boolean
+    get() = includesGps &&
+        sensors.all { it.type in selectedSensorIds } &&
+        (!isWatchConnected || watchIncludesGps && watchSensors.all { it.type in selectedWatchSensorIds })

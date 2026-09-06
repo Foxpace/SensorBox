@@ -106,7 +106,8 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
             name.endsWith(CSV_EXTENSION, ignoreCase = true) -> MeasurementFileKind.SENSOR
             else -> MeasurementFileKind.TEXT
         }
-        return MeasurementFileSummary(name, formatFileDisplayName(name), kind, document.length())
+        val displayName = if (kind == MeasurementFileKind.GPS) "GPS" else formatFileDisplayName(name)
+        return MeasurementFileSummary(name, displayName, kind, document.length())
     }
 
     private fun parseSensorSeries(
@@ -177,38 +178,6 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
             }
         }
         return columns
-    }
-
-    private fun sensorSeriesFormat(header: List<String>): SensorSeriesFormat {
-        val unixTimestampIndex = header.indexOf("t_unix").takeIf { it >= 0 }
-        val sensorTimestampIndex = header.indexOf("t_sensor").takeIf { it >= 0 }
-        val timestampIndex = unixTimestampIndex ?: sensorTimestampIndex ?: 0
-        val valueIndexes = header.indices.filter { index ->
-            index != timestampIndex && header[index] !in NON_VALUE_COLUMNS
-        }
-        return SensorSeriesFormat(
-            columns = valueIndexes.map(header::get),
-            timestampIndex = timestampIndex,
-            valueIndexes = valueIndexes,
-            usesSensorTimestamp = sensorTimestampIndex != null,
-        )
-    }
-
-    private fun parseSensorSample(
-        line: String,
-        format: SensorSeriesFormat,
-        anchor: SensorTimeAnchor?,
-    ): SensorSeriesSample? {
-        val fields = line.split(DELIMITER)
-        val rawTimestamp = fields.getOrNull(format.timestampIndex)?.toLongOrNull() ?: return null
-        val timestamp = if (format.usesSensorTimestamp) {
-            anchor?.unixMillis?.plus((rawTimestamp - anchor.elapsedRealtimeNanos) / NANOS_PER_MILLISECOND)
-                ?: (rawTimestamp / NANOS_PER_MILLISECOND)
-        } else {
-            rawTimestamp
-        }
-        val values = format.valueIndexes.mapNotNull { fields.getOrNull(it)?.toDoubleOrNull() }
-        return values.takeIf { it.size == format.valueIndexes.size }?.let { SensorSeriesSample(timestamp, it) }
     }
 
     private fun readSensorTimeAnchor(directory: DocumentFile): SensorTimeAnchor? {
@@ -300,26 +269,15 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
 
     private companion object {
         const val METADATA_FILE = "extra.json"
-        const val GPS_FILE = "gps.csv"
+        const val GPS_FILE = "GPS.csv"
         const val CSV_EXTENSION = ".csv"
         const val DELIMITER = ';'
         const val MAX_CHART_SAMPLES = 2_000
         const val MAX_GPS_COORDINATES = 10_000
         const val MAX_TEXT_CHARACTERS = 100_000
         const val TEXT_BUFFER_SIZE = 4_096
-        const val NANOS_PER_MILLISECOND = 1_000_000L
-        val NON_VALUE_COLUMNS = setOf("t_sensor", "accuracy", "provider")
         val JSON = Json { ignoreUnknownKeys = true }
     }
-
-    private data class SensorTimeAnchor(val unixMillis: Long, val elapsedRealtimeNanos: Long)
-
-    private data class SensorSeriesFormat(
-        val columns: List<String>,
-        val timestampIndex: Int,
-        val valueIndexes: List<Int>,
-        val usesSensorTimestamp: Boolean,
-    )
 }
 
 private class ProgressInputStream(

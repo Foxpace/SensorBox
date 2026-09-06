@@ -4,10 +4,65 @@ import com.tomasrepcik.sensorbox.recording.RecordingDevice
 import com.tomasrepcik.sensorbox.recording.RecordingStateFixtures
 import com.tomasrepcik.sensorbox.recording.toDraft
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RecordReducerTest {
+    @Test
+    fun `Given phone and connected watch When selecting all Then every sensor is selected`() {
+        // Given
+        val state = RecordingStateFixtures.state().copy(
+            isWatchConnected = true,
+            watchSensors = RecordingStateFixtures.state().sensors.map { it.copy(type = 4) },
+        )
+
+        // When
+        val selected = RecordReducer.reduce(state, RecordIntent.ToggleAllSensors).state
+
+        // Then
+        assertEquals(setOf(1), selected.selectedSensorIds)
+        assertEquals(setOf(4), selected.selectedWatchSensorIds)
+        assertTrue(selected.includesGps)
+        assertTrue(selected.watchIncludesGps)
+        assertTrue(selected.areAllSensorsSelected)
+    }
+
+    @Test
+    fun `Given every phone and connected watch sensor selected When toggling all Then every sensor is deselected`() {
+        // Given
+        val selected = RecordingStateFixtures.state(includesGps = true).copy(
+            selectedSensorIds = setOf(1),
+            isWatchConnected = true,
+            watchSensors = RecordingStateFixtures.state().sensors.map { it.copy(type = 4) },
+            selectedWatchSensorIds = setOf(4),
+            watchIncludesGps = true,
+        )
+
+        // When
+        val deselected = RecordReducer.reduce(selected, RecordIntent.ToggleAllSensors).state
+
+        // Then
+        assertTrue(deselected.selectedSensorIds.isEmpty())
+        assertTrue(deselected.selectedWatchSensorIds.isEmpty())
+        assertFalse(deselected.includesGps)
+        assertFalse(deselected.watchIncludesGps)
+        assertFalse(deselected.areAllSensorsSelected)
+    }
+
+    @Test
+    fun `Given disconnected watch When selecting all Then watch selection is preserved`() {
+        // Given
+        val state = RecordingStateFixtures.state().copy(selectedWatchSensorIds = setOf(4))
+
+        // When
+        val selected = RecordReducer.reduce(state, RecordIntent.ToggleAllSensors).state
+
+        // Then
+        assertEquals(setOf(1), selected.selectedSensorIds)
+        assertEquals(setOf(4), selected.selectedWatchSensorIds)
+    }
+
     @Test
     fun `Given an unselected sensor When toggled Then it becomes selected`() {
         val givenState = RecordingStateFixtures.state()

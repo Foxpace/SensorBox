@@ -1,12 +1,13 @@
 package com.tomasrepcik.sensorbox.measurements.storage
 
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementMetadataEntry
+import com.tomasrepcik.sensorbox.recordinghost.sources.sensor.SensorSpec
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 
 internal object MeasurementMetadataParser {
@@ -24,16 +25,20 @@ internal object MeasurementMetadataParser {
     private fun sensorMetadata(root: JsonObject): Map<String, List<MeasurementMetadataEntry>> {
         val ranges = root[RANGES_KEY] as? JsonArray ?: JsonArray(emptyList())
         val sensorFiles = root[SENSOR_FILES_KEY] as? JsonArray ?: JsonArray(emptyList())
-        return sensorFiles.mapIndexedNotNull { index, element ->
-            val file = element as? JsonObject ?: return@mapIndexedNotNull null
-            val fileName = (file[FILE_NAME_KEY] as? JsonPrimitive)?.contentOrNull
-                ?: return@mapIndexedNotNull null
-            val details = buildList {
-                ranges.getOrNull(index)?.let { addAll(flatten(it)) }
-                addAll(flatten(JsonObject(file.filterKeys { key -> key != FILE_NAME_KEY })))
-            }
-            fileName to details
+        val rangesByFile = ranges.mapNotNull { element ->
+            val range = element as? JsonObject ?: return@mapNotNull null
+            val type = (range["type"] as? JsonPrimitive)?.intOrNull ?: return@mapNotNull null
+            val name = SensorSpec.fromType(type)?.fileName ?: return@mapNotNull null
+            name to flatten(range)
         }.toMap()
+        val detailsByFile = rangesByFile.toMutableMap()
+        sensorFiles.forEach { element ->
+            val file = element as? JsonObject ?: return@forEach
+            val fileName = (file[FILE_NAME_KEY] as? JsonPrimitive)?.contentOrNull ?: return@forEach
+            detailsByFile[fileName] = rangesByFile[fileName].orEmpty() +
+                flatten(JsonObject(file.filterKeys { key -> key != FILE_NAME_KEY }))
+        }
+        return detailsByFile
     }
 
     private fun flatten(element: JsonElement): List<MeasurementMetadataEntry> = buildList {

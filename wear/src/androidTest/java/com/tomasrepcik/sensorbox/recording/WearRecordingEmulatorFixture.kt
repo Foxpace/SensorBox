@@ -9,7 +9,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.RecordingPreferences
 import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
-import com.tomasrepcik.sensorbox.recording.DefaultWatchRecordingControlUseCase
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingIntentFactory
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -168,16 +167,6 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
         )
     }
 
-    private fun rows(scenario: WearRecordingScenario, sensor: WearRecordedSensor): List<String> {
-        val output = File(measurementDirectory(scenario.name), sensor.fileName)
-        repeat(FILE_WAIT_ATTEMPTS) {
-            val rows = output.takeIf(File::isFile)?.readLines().orEmpty()
-            if (rows.isNotEmpty()) return rows
-            Thread.sleep(FILE_WAIT_INTERVAL_MILLIS)
-        }
-        return output.takeIf(File::isFile)?.readLines().orEmpty()
-    }
-
     private fun awaitMetadata(directory: File): JSONObject {
         val output = File(directory, METADATA_FILE)
         repeat(FILE_WAIT_ATTEMPTS) {
@@ -207,12 +196,6 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
             fixture.setBatteryLevel(level)
         }
 
-        fun assertOnlyHeaders(): ActiveWearRecording = apply {
-            scenario.sensors.forEach { sensor ->
-                assertEquals(listOf(sensor.header), fixture.rows(scenario, sensor))
-            }
-        }
-
         fun stop(): WearRecordingOutput {
             fixture.controller.stop().getOrThrow()
             return fixture.complete(scenario, scheduledStartMillis)
@@ -234,13 +217,6 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
             if (scenario.includesGps) assertGpsCsv(files.getValue(GPS_FILE))
         }
 
-        fun assertCancelledBeforeStart(): WearRecordingOutput = apply {
-            assertSessionMetadata()
-            assertExactFiles()
-            scenario.sensors.forEach { sensor ->
-                assertEquals(listOf(sensor.header), files.getValue(sensor.fileName).readLines())
-            }
-        }
 
         private fun assertSessionMetadata() {
             assertEquals(scenario.name, metadata.getString("folder"))
@@ -299,7 +275,7 @@ internal class WearRecordingEmulatorFixture(private val context: Context) {
             Manifest.permission.POST_NOTIFICATIONS,
         )
         const val METADATA_FILE = "extra.json"
-        const val GPS_FILE = "gps.csv"
+        const val GPS_FILE = "GPS.csv"
         const val GPS_HEADER = "time_millis;latitude;longitude;altitude;accuracy;speed;bearing;provider"
         const val GPS_COLUMN_COUNT = 8
         const val MINIMUM_ROWS = 2

@@ -274,4 +274,25 @@
     <string name="diagnostics_clear_confirmation">Delete both retained diagnostic log files? This cannot be undone.</string>
     <string name="diagnostics_copied">Diagnostics copied.</string>
     <string name="diagnostics_cleared">Diagnostics cleared.</string>
+    <string name="select_all_sensors">Select all sensors</string>
+    <string name="deselect_all_sensors">Deselect all sensors</string>
+    <string name="preview_step_detected">Step detected</string>
+    <string name="preview_motion_detected">Significant motion detected</string>
+    <string name="preview_no_events">No events recorded</string>
+    <string name="preview_event_count">%1$d recorded events</string>
+    <string name="preview_activity_confidence">%1$s: %2$d%% confidence</string>
+    <string name="preview_shown_event_count">%1$d events shown</string>
+    <string name="preview_sampled_events_notice">This preview shows events sampled across the recording. The saved file contains all events. Numbers refer to the displayed events.</string>
+    <string name="preview_step_number">Step detected · %1$d</string>
+    <string name="preview_activity_started">%1$s started</string>
+    <string name="preview_activity_ended">%1$s ended</string>
+    <string name="preview_unknown_transition">%1$s · Unrecognized transition %2$s</string>
+    <string name="preview_activity_still">Still</string>
+    <string name="preview_activity_on_foot">On foot</string>
+    <string name="preview_activity_walking">Walking</string>
+    <string name="preview_activity_running">Running</string>
+    <string name="preview_activity_vehicle">In vehicle</string>
+    <string name="preview_activity_bike">Cycling</string>
+    <string name="preview_activity_tilting">Tilting</string>
+    <string name="preview_activity_unknown">Unknown activity</string>
 </resources>

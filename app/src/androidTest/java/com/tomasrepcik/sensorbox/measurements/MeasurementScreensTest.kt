@@ -137,6 +137,69 @@ class MeasurementScreensTest {
         composeRule.onNodeWithText("48.148596 , 17.107748").assertIsDisplayed()
     }
 
+    @Test
+    fun givenActivityTransitionsWhenOpenedThenNamedEventsReplaceTheChart() {
+        // Given
+        val content = MeasurementFileContent.SensorSeries(
+            columns = listOf("activity", "enter_exit"),
+            samples = listOf(
+                SensorSeriesSample(1_725_000_000_000, listOf(7.0, 0.0)),
+                SensorSeriesSample(1_725_000_001_000, listOf(7.0, 1.0)),
+            ),
+            truncated = false,
+        )
+
+        // When
+        showPreview(sensorFile.copy(id = "activity_transitions.csv", name = "Activity transitions"), content)
+
+        // Then
+        composeRule.onNodeWithText("Walking started").assertIsDisplayed()
+        composeRule.onNodeWithText("Walking ended").assertIsDisplayed()
+        composeRule.onNodeWithText("2 recorded events").assertIsDisplayed()
+        composeRule.onNodeWithText("2 chart samples").assertDoesNotExist()
+        composeRule.onNodeWithText("Zoom in").assertDoesNotExist()
+    }
+
+    @Test
+    fun givenDetectedStepsWhenOpenedThenNumberedEventsReplaceTheChart() {
+        // Given
+        val content = MeasurementFileContent.SensorSeries(
+            columns = listOf("step"),
+            samples = listOf(SensorSeriesSample(1_725_000_000_000, listOf(1.0))),
+            truncated = false,
+        )
+
+        // When
+        showPreview(sensorFile.copy(id = "step_detector.csv", name = "Step detector"), content)
+
+        // Then
+        composeRule.onNodeWithText("Step detected · 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Zoom in").assertDoesNotExist()
+    }
+
+    @Test
+    fun givenActivityUpdatesWhenOpenedThenTheChartHasReadableLegendLabels() {
+        // Given
+        val content = MeasurementFileContent.SensorSeries(
+            columns = listOf("still", "on_foot", "walking", "running", "vehicle", "bike", "unknown", "tilting"),
+            samples = listOf(
+                SensorSeriesSample(1_725_000_000_000, listOf(20.0, 80.0, 80.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
+            ),
+            truncated = false,
+        )
+
+        // When
+        showPreview(sensorFile.copy(id = "activity_updates.csv", name = "Activity updates"), content)
+
+        // Then
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Walking"))
+        composeRule.onNodeWithText("Walking").assertIsDisplayed()
+        composeRule.onNodeWithText("Still").assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Tilting"))
+        composeRule.onNodeWithText("Tilting").assertIsDisplayed()
+        composeRule.onNodeWithText("Cycling").assertIsDisplayed()
+    }
+
     private fun showPreview(
         file: MeasurementFileSummary,
         content: MeasurementFileContent,
@@ -161,7 +224,7 @@ class MeasurementScreensTest {
     private companion object {
         val summary = MeasurementSummary("session-1", "Morning walk", 1_725_000_000_000, "2026-08-25", 2)
         val sensorFile = MeasurementFileSummary("accelerometer.csv", "Accelerometer", MeasurementFileKind.SENSOR, 256)
-        val gpsFile = MeasurementFileSummary("gps.csv", "Gps", MeasurementFileKind.GPS, 128)
+        val gpsFile = MeasurementFileSummary("GPS.csv", "GPS", MeasurementFileKind.GPS, 128)
         val sensorMetadata = listOf(MeasurementMetadataEntry("sensor", "Bosch accelerometer"))
         val details = MeasurementDetails(
             summary,

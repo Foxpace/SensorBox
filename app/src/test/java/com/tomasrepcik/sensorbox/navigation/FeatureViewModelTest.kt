@@ -6,7 +6,6 @@ import com.tomasrepcik.sensorbox.core.failure.AppError
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
-import com.tomasrepcik.sensorbox.core.failure.DiagnosticLogger
 import com.tomasrepcik.sensorbox.core.failure.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
 import com.tomasrepcik.sensorbox.core.testing.FakeAppPreferencesRepository
@@ -21,6 +20,7 @@ import com.tomasrepcik.sensorbox.recording.RecordingMessage
 import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingEffect
 import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingIntent
 import com.tomasrepcik.sensorbox.recording.active.ActiveRecordingViewModel
+import com.tomasrepcik.sensorbox.recording.active.RecordIntent
 import com.tomasrepcik.sensorbox.recording.active.RecordViewModel
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveRepository
 import com.tomasrepcik.sensorbox.recording.archive.RecordingArchiveSelection
@@ -55,11 +55,35 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeatureViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun `Given available sensors When selecting all Then the ViewModel publishes their selection`() = runTest {
+        // Given
+        val sources = FakeAvailableRecordingSources(
+            AvailableRecordingSources(
+                phoneSensors = listOf(SensorDescriptor(type = 1, name = "Accelerometer", vendor = "Fixture")),
+                watchSensors = listOf(SensorDescriptor(type = 4, name = "Gyroscope", vendor = "Fixture")),
+                isWatchConnected = true,
+            ),
+        )
+        val viewModel = RecordViewModel(sources, failureStore())
+        advanceUntilIdle()
+
+        // When
+        viewModel.accept(RecordIntent.ToggleAllSensors)
+
+        // Then
+        assertEquals(setOf(1), viewModel.state.value.selectedSensorIds)
+        assertEquals(setOf(4), viewModel.state.value.selectedWatchSensorIds)
+        assertTrue(viewModel.state.value.includesGps)
+        assertTrue(viewModel.state.value.watchIncludesGps)
+    }
 
     @Test
     fun `Given onboarding recording archive When completed Then state and navigation effect are owned by onboarding`() =
@@ -325,11 +349,11 @@ class FeatureViewModelTest {
         // Then
         assertEquals(2, viewModel.state.value.startCountdownSeconds)
         assertEquals(0, recording.startCalls)
-        advanceTimeBy(1_000L)
+        advanceTimeBy(1_000L.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.state.value.startCountdownSeconds)
         assertEquals(0, recording.startCalls)
-        advanceTimeBy(1_000L)
+        advanceTimeBy(1_000L.milliseconds)
         runCurrent()
         assertEquals(null, viewModel.state.value.startCountdownSeconds)
         assertEquals(1, recording.startCalls)
@@ -424,7 +448,7 @@ class FeatureViewModelTest {
         appFailures = appFailures,
     )
 
-    private fun failureStore() = AppFailureStore(DiagnosticLogger { })
+    private fun failureStore() = AppFailureStore { }
 }
 
 private class FakeAvailableRecordingSources(

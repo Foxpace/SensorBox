@@ -240,16 +240,6 @@ internal class RecordingEmulatorFixture(private val context: Context) {
         )
     }
 
-    private fun rows(scenario: RecordingScenario, sensor: RecordedSensor): List<String> {
-        val output = File(measurementDirectory(scenario.name), sensor.fileName)
-        repeat(FILE_WAIT_ATTEMPTS) {
-            val rows = output.takeIf(File::isFile)?.readLines().orEmpty()
-            if (rows.isNotEmpty()) return rows
-            Thread.sleep(FILE_WAIT_INTERVAL_MILLIS)
-        }
-        return output.takeIf(File::isFile)?.readLines().orEmpty()
-    }
-
     private fun awaitMetadata(measurementName: String): JSONObject {
         val output = File(measurementDirectory(measurementName), METADATA_FILE)
         repeat(FILE_WAIT_ATTEMPTS) {
@@ -289,12 +279,6 @@ internal class RecordingEmulatorFixture(private val context: Context) {
             fixture.annotate(text)
         }
 
-        fun assertOnlyHeaders(): ActiveRecording = apply {
-            scenario.sensors.forEach { sensor ->
-                assertEquals(listOf(sensor.header), fixture.rows(scenario, sensor))
-            }
-        }
-
         fun stop(): RecordingOutput {
             fixture.stopAnyRecording()
             return fixture.complete(scenario, scheduledStartMillis, expectedRecordedTypes)
@@ -323,14 +307,6 @@ internal class RecordingEmulatorFixture(private val context: Context) {
             if (scenario.includesGps) assertGpsCsv(files.getValue(GPS_FILE), scenario.expectGpsSamples)
             if (scenario.activityRecognition) assertActivityFiles()
             if (scenario.significantMotion) assertHeader(files.getValue(SIGNIFICANT_MOTION_FILE), SIGNIFICANT_HEADER)
-        }
-
-        fun assertCancelledBeforeStart(): RecordingOutput = apply {
-            assertSessionMetadata()
-            assertExactFiles()
-            scenario.sensors.forEach { sensor ->
-                assertEquals(listOf(sensor.header), files.getValue(sensor.fileName).readLines())
-            }
         }
 
         fun assertAnnotation(expected: String): RecordingOutput = apply {
@@ -422,7 +398,7 @@ internal class RecordingEmulatorFixture(private val context: Context) {
             Manifest.permission.POST_NOTIFICATIONS,
         )
         const val METADATA_FILE = "extra.json"
-        const val GPS_FILE = "gps.csv"
+        const val GPS_FILE = "GPS.csv"
         const val GPS_HEADER = "time_millis;latitude;longitude;altitude;accuracy;speed;bearing;provider"
         const val GPS_COLUMN_COUNT = 8
         const val ACTIVITY_UPDATES_FILE = "activity_updates.csv"

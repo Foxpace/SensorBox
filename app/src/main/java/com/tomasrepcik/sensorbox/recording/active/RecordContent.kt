@@ -10,9 +10,13 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.navigation.MainRoute
 import com.tomasrepcik.sensorbox.recording.RecordingDevice
 import com.tomasrepcik.sensorbox.recording.RecordingMessageText
@@ -37,6 +41,19 @@ internal fun RecordContent(state: RecordingState, onIntent: (RecordIntent) -> Un
                     )
                     Spacer(Modifier.height(18.dp))
                 }
+            }
+        }
+        item {
+            TextButton(onClick = { onIntent(RecordIntent.ToggleAllSensors) }) {
+                Text(
+                    stringResource(
+                        if (state.areAllSensorsSelected) {
+                            R.string.deselect_all_sensors
+                        } else {
+                            R.string.select_all_sensors
+                        },
+                    ),
+                )
             }
         }
         phoneSourceItems(state, onIntent)

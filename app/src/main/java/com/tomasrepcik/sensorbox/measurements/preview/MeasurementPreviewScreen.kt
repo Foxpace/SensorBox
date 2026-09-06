@@ -95,8 +95,12 @@ private fun LazyListScope.sensorSeriesItems(
         item { SensorBoxSettingsSection(stringResource(R.string.sensor_details)) }
         metadata.forEach { entry -> item { MetadataRow(entry) } }
     }
-    item { SensorSeriesSummary(content) }
-    item { StoredSensorChart(content.columns, content.samples, timeWindow, onIntent) }
+    if (recordedEventKind(content.columns) != null) {
+        recordedEventItems(content)
+    } else {
+        item { SensorSeriesSummary(content) }
+        item { StoredSensorChart(content.columns, content.samples, timeWindow, onIntent) }
+    }
 }
 
 private fun LazyListScope.gpsCoordinateItems(content: MeasurementFileContent.GpsCoordinates) {

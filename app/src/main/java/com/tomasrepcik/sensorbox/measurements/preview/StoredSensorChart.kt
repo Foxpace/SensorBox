@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -61,7 +63,11 @@ private fun storedChartColors(): List<Color> = listOf(
     MaterialTheme.colorScheme.primary,
     MaterialTheme.colorScheme.tertiary,
     MaterialTheme.colorScheme.error,
-    MaterialTheme.colorScheme.secondary,
+    Color(0xFF00897B),
+    Color(0xFFFB8C00),
+    Color(0xFF8E24AA),
+    Color(0xFF039BE5),
+    Color(0xFF7CB342),
 )
 
 @Composable
@@ -156,12 +162,17 @@ private fun StoredChartTimeSummary(viewport: StoredChartViewport) {
 
 @Composable
 private fun StoredChartLegend(columns: List<String>, colors: List<Color>) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         columns.forEachIndexed { index, column ->
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(Modifier.size(10.dp).background(colors[index % colors.size]))
                 Spacer(Modifier.size(4.dp))
-                Text(column, style = MaterialTheme.typography.bodySmall)
+                val label = if (isActivityColumn(column)) stringResource(activityNameResource(column)) else column
+                Text(label, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

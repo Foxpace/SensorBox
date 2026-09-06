@@ -1,11 +1,41 @@
 package com.tomasrepcik.sensorbox.measurements.storage
 
-import com.tomasrepcik.sensorbox.measurements.storage.MeasurementMetadataEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class MeasurementMetadataParserTest {
+    @Test
+    fun `Given ranges in a different order When parsed Then details match the sensor file`() {
+        // Given
+        val metadata = """
+            {
+              "ranges": [
+                {"sensor": "Gyroscope", "type": 4, "range": 35},
+                {"sensor": "Motion", "type": 17, "range": 1},
+                {"sensor": "Accelerometer", "type": 1, "range": 78}
+              ],
+              "sensorFiles": [
+                {"fileName": "accelerometer.csv", "writtenSamples": 12},
+                {"fileName": "gyroscope.csv", "writtenSamples": 10},
+                {"fileName": "custom.csv", "writtenSamples": 3}
+              ]
+            }
+        """.trimIndent()
+
+        // When
+        val parsed = MeasurementMetadataParser.parse(metadata)
+
+        // Then
+        assertEquals("Accelerometer", parsed.bySensorFile.getValue("accelerometer.csv").first().value)
+        assertEquals("Gyroscope", parsed.bySensorFile.getValue("gyroscope.csv").first().value)
+        assertEquals("Motion", parsed.bySensorFile.getValue("significant_motion.csv").first().value)
+        assertEquals(
+            listOf(MeasurementMetadataEntry("writtenSamples", "3")),
+            parsed.bySensorFile.getValue("custom.csv"),
+        )
+    }
+
     @Test
     fun `Given several sensors When metadata is parsed Then sensor details leave the session summary`() {
         // Given

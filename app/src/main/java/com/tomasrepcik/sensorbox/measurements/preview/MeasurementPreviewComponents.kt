@@ -26,7 +26,10 @@ internal fun SensorSeriesSummary(content: MeasurementFileContent.SensorSeries) {
             pluralStringResource(R.plurals.chart_sample_count, content.samples.size, content.samples.size),
             style = MaterialTheme.typography.titleMedium,
         )
-        Text(content.columns.joinToString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val labels = content.columns.map { column ->
+            if (isActivityColumn(column)) stringResource(activityNameResource(column)) else column
+        }
+        Text(labels.joinToString(), color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (content.truncated) {
             Text(stringResource(R.string.chart_sampled_notice), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
