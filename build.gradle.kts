@@ -11,7 +11,59 @@ plugins {
     alias(libs.plugins.screenshot) apply false
 }
 
+val checkSourceStructure = tasks.register("checkSourceStructure") {
+    group = "verification"
+    description = "Checks that production source packages stay feature-first and navigable."
+
+    val productionKotlin = fileTree(rootDir) {
+        include("*/src/main/**/*.kt")
+        exclude("*/build/**")
+    }
+    inputs.files(productionKotlin)
+
+    doLast {
+        val packageRoot = "/com/tomasrepcik/sensorbox/"
+        val forbiddenSegments = setOf(
+            "activities",
+            "data",
+            "di",
+            "domain",
+            "handlers",
+            "main",
+            "presentation",
+            "servicecontroller",
+            "services",
+            "types",
+        )
+        val filesByPackage = productionKotlin.files.groupBy { sourceFile ->
+            val sourcePath = sourceFile.relativeTo(rootDir).invariantSeparatorsPath
+            val module = sourcePath.substringBefore('/')
+            val packagePath = sourcePath.substringAfter(packageRoot).substringBeforeLast('/')
+            "$module/$packagePath"
+        }
+
+        val technicalPackages = filesByPackage.keys.filter { packagePath ->
+            packagePath.split('/').any { segment -> segment.lowercase() in forbiddenSegments }
+        }
+        require(technicalPackages.isEmpty()) {
+            "Production code uses forbidden technical packages: ${technicalPackages.sorted().joinToString()}"
+        }
+
+        val crowdedPackages = filesByPackage.filterValues { files -> files.size > 12 }
+        require(crowdedPackages.isEmpty()) {
+            "Production packages exceed 12 Kotlin files: " +
+                crowdedPackages.entries.sortedBy { entry -> entry.key }.joinToString { (path, files) ->
+                    "$path (${files.size})"
+                }
+        }
+    }
+}
+
 subprojects {
+    tasks.matching { it.name == "check" }.configureEach {
+        dependsOn(checkSourceStructure)
+    }
+
     plugins.withId("dev.detekt") {
         extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
             buildUponDefaultConfig = true

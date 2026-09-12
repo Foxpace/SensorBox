@@ -7,10 +7,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.tomasrepcik.sensorbox.core.error.AppError
-import com.tomasrepcik.sensorbox.core.error.AppErrorCode
-import com.tomasrepcik.sensorbox.core.error.AppResult
-import com.tomasrepcik.sensorbox.core.error.suspendAppResult
+import com.tomasrepcik.sensorbox.core.failure.AppError
+import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
+import com.tomasrepcik.sensorbox.core.failure.AppResult
+import com.tomasrepcik.sensorbox.core.failure.suspendAppResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map

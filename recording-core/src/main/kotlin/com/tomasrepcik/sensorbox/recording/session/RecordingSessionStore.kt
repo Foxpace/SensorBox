@@ -1,11 +1,12 @@
 package com.tomasrepcik.sensorbox.recording.session
 
-import com.tomasrepcik.sensorbox.core.error.AppResult
+import com.tomasrepcik.sensorbox.core.failure.AppResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
 class RecordingSessionStore {
     private val mutableState = MutableStateFlow<RecordingSessionState>(RecordingSessionState.Idle)
     private val mutableEvents = MutableSharedFlow<RecordingSessionStopped>(extraBufferCapacity = EVENT_BUFFER_SIZE)

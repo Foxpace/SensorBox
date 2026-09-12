@@ -26,20 +26,20 @@ The root UI sends intents to `RecordingViewModel`. The ViewModel owns the countd
 
 The useful seams injected into the ViewModel are small and named by intent:
 
-- `AvailableSensorsUseCase`
+- `AvailableRecordingSourcesUseCase`
 - `RecordingPermissionsUseCase`
 - `RecordingArchiveRepository`
 - `RecordingControlUseCase`
-- `SendWearCommandUseCase`
 
 Check that these interfaces isolate real side effects or a module boundary. There is no general-purpose workflow gateway.
+
+`AvailableRecordingSourcesUseCase` owns the combined phone and watch source view. Its implementation observes watch connectivity, requests the watch catalog, clears stale watch sources after disconnect, and accepts catalog replies through the separate `ReceiveWatchSensorsUseCase` caller interface.
 
 ## 3. Follow phone recording coordination
 
 Read:
 
 - `../app/src/main/java/com/tomasrepcik/sensorbox/domain/recording/RecordingControlUseCase.kt`
-- `../app/src/main/java/com/tomasrepcik/sensorbox/domain/paired/PairedRecordingCoordinator.kt`
 - `../app/src/main/java/com/tomasrepcik/sensorbox/domain/paired/PairedRecordingModel.kt`
 - `../app/src/main/java/com/tomasrepcik/sensorbox/domain/recording/PhoneRecordingController.kt`
 
@@ -48,12 +48,11 @@ The execution path is:
 ```text
 RecordingViewModel
   -> RecordingControlUseCase
-  -> PairedRecordingCoordinator
        -> PhoneRecordingController
-       -> SendWearCommandUseCase (only when watch sources are selected)
+       -> RecordingCommandSender (only when watch sources are selected)
 ```
 
-`PairedRecordingCoordinator` owns one small state gate. It starts the phone first, sends a direct watch start command, and cleans up both sides if the watch fails. It has no prepare/commit/rollback protocol and no mutex. Model-to-command conversions live beside the models in `PairedRecordingModel.kt`.
+`DefaultRecordingControlUseCase` owns one small state gate. It starts the phone first, sends a direct watch start command, and cleans up both sides if the watch fails. The same stateful implementation exposes `PhoneRecordingSessionControl` and `PeerRecordingControl`, giving automatic-stop observation and received watch commands only the operations they need. It has no prepare/commit/rollback protocol and no mutex. Model-to-command conversions live beside the models in `PairedRecordingModel.kt`.
 
 Check the stale-command rule: a stop received from the watch only affects the matching active recording session.
 
@@ -65,9 +64,10 @@ Read:
 
 - `../WearOsLib/src/main/java/com/tomasrepcik/sensorbox/wearoslib/protocol/WearCommand.kt`
 - `../WearOsLib/src/main/java/com/tomasrepcik/sensorbox/wearoslib/protocol/WearCommandCodec.kt`
+- `../WearOsLib/src/main/java/com/tomasrepcik/sensorbox/wearoslib/protocol/RecordingCommandExchange.kt`
 - `../WearOsLib/src/main/java/com/tomasrepcik/sensorbox/wearoslib/protocol/SendWearCommandUseCase.kt`
 
-Commands are serializable data classes inside a versioned JSON envelope. Sensor discovery is explicit: phone sends `RequestAvailableSensors`, and Wear replies with `AvailableSensors`. Start and stop are also direct commands. No caller should build an ad-hoc payload.
+Commands are serializable data classes inside a versioned JSON envelope. Sensor discovery is explicit: phone sends `RequestAvailableSensors`, and Wear replies with `AvailableSensors`. Start and stop use `RecordingCommandExchange`, which owns result correlation, bounded retries, timeout reporting, and peer-error mapping on both devices. Other commands remain one-way. No caller should build an ad-hoc payload.
 
 ## 5. Follow commands received on each device
 
@@ -75,7 +75,7 @@ Phone side:
 
 - `../app/src/main/java/com/tomasrepcik/sensorbox/domain/paired/PhoneWatchMessageDispatcher.kt`
 - `../app/src/main/java/com/tomasrepcik/sensorbox/domain/paired/PhoneWatchCommandHandler.kt`
-- `../app/src/main/java/com/tomasrepcik/sensorbox/domain/paired/WatchRecordingResultInbox.kt`
+- `../app/src/main/java/com/tomasrepcik/sensorbox/domain/sensors/RecordingSourceAvailability.kt`
 
 Wear side:
 
@@ -92,14 +92,15 @@ Dispatchers decode and route. Handlers state-gate commands and execute them. On 
 Read:
 
 - `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/services/RecordingService.kt`
+- `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/services/RecordingHostSession.kt`
 - `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/services/RecordingHostResources.kt`
-- `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/serviceController/ServiceControllerFactory.kt`
+- `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/services/RecordingHostSessionFactory.kt`
 - `../sensorservices/src/main/java/com/tomasrepcik/sensorbox/sensorservices/serviceController/ServiceController.kt`
 - `../recording-core/src/main/kotlin/com/tomasrepcik/sensorbox/recording/RecordingEngine.kt`
 - `../recording-core/src/main/kotlin/com/tomasrepcik/sensorbox/recording/RecordingSource.kt`
 - `../recording-core/src/main/kotlin/com/tomasrepcik/sensorbox/recording/RecordingModel.kt`
 
-`RecordingService` routes lifecycle and intents. `RecordingHostResources` owns Android host concerns such as notification, wake lock, receiver, and alarm. The factory assembles a controller. The controller translates the platform recording request into the engine recording request. The engine then starts or stops ordered `RecordingSource` instances and knows nothing about Android.
+`RecordingService` only routes lifecycle and intents. `RecordingHostSession` owns the stateful start, stop, event, and cleanup sequence. `RecordingHostResources` owns Android host concerns such as notification, wake lock, receiver, and alarm. The factory assembles the host session and controller. The controller translates the platform recording request into the engine recording request. The engine then starts or stops ordered `RecordingSource` instances and knows nothing about Android.
 
 The key engine seam is `RecordingSource`. It is intentionally small: `start(spec)` and `stop(context)`.
 
@@ -134,7 +135,10 @@ Read:
 Read these after the production path so each fake has an obvious purpose:
 
 - `../recording-core/src/test/kotlin/com/tomasrepcik/sensorbox/recording/RecordingEngineTest.kt`
-- `../app/src/test/java/com/tomasrepcik/sensorbox/domain/paired/PairedRecordingCoordinatorTest.kt`
+- `../WearOsLib/src/test/java/com/tomasrepcik/sensorbox/wearoslib/protocol/RecordingCommandExchangeTest.kt`
+- `../app/src/test/java/com/tomasrepcik/sensorbox/domain/recording/RecordingControlUseCaseTest.kt`
+- `../app/src/test/java/com/tomasrepcik/sensorbox/domain/sensors/RecordingSourceAvailabilityTest.kt`
+- `../sensorservices/src/test/java/com/tomasrepcik/sensorbox/sensorservices/services/RecordingHostSessionTest.kt`
 - `../wear/src/test/java/com/tomasrepcik/sensorbox/communication/WearCommandHandlerTest.kt`
 - `../app/src/test/java/com/tomasrepcik/sensorbox/presentation/main/FeatureViewModelTest.kt`
 - `../WearOsLib/src/test/java/com/tomasrepcik/sensorbox/wearoslib/protocol/WearCommandCodecTest.kt`

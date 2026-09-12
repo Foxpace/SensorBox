@@ -3,10 +3,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 adb_bin="${ANDROID_HOME:?ANDROID_HOME must point to the Android SDK}/platform-tools/adb"
-phone_test="com.tomasrepcik.sensorbox.emulator.WearToPhoneSyncReceiverEmulatorTest"
-wear_test="com.tomasrepcik.sensorbox.emulator.WearToPhoneSyncSenderEmulatorTest"
+phone_test="com.tomasrepcik.sensorbox.measurements.sync.WearToPhoneSyncReceiverEmulatorTest"
+wear_test="com.tomasrepcik.sensorbox.sync.WearToPhoneSyncSenderEmulatorTest"
 runner="com.tomasrepcik.sensorbox.test/androidx.test.runner.AndroidJUnitRunner"
 result_directory="$(mktemp -d -t sensorbox-wear-sync.XXXXXX)"
+# Select a dedicated recording folder in the phone app before running this script.
 scenarios=(
     single_csv
     mixed_formats
@@ -85,15 +86,16 @@ run_scenario() {
     local wear_result="$result_directory/$scenario-wear.txt"
 
     echo "Running paired sync scenario: $scenario"
-    "$adb_bin" -s "$phone_serial" shell pm clear com.tomasrepcik.sensorbox >/dev/null
-    "$adb_bin" -s "$wear_serial" shell pm clear com.tomasrepcik.sensorbox >/dev/null
-    "$adb_bin" -s "$phone_serial" shell am instrument -w -r \
-        -e syncScenario "$scenario" -e class "$phone_test" "$runner" >"$phone_result" &
+    # Keep the phone's selected archive permission, just as normal app sync does.
+    "$adb_bin" -s "$phone_serial" shell am force-stop com.tomasrepcik.sensorbox >/dev/null
+    "$adb_bin" -s "$wear_serial" shell am force-stop com.tomasrepcik.sensorbox >/dev/null
+    "$adb_bin" -s "$wear_serial" shell am instrument -w -r \
+        -e syncScenario "$scenario" -e class "$wear_test" "$runner" >"$wear_result" &
     phone_test_pid=$!
     sleep 2
 
-    "$adb_bin" -s "$wear_serial" shell am instrument -w -r \
-        -e syncScenario "$scenario" -e class "$wear_test" "$runner" >"$wear_result"
+    "$adb_bin" -s "$phone_serial" shell am instrument -w -r \
+        -e syncScenario "$scenario" -e class "$phone_test" "$runner" >"$phone_result"
     wait "$phone_test_pid"
     phone_test_pid=""
 
