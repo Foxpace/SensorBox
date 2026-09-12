@@ -3,12 +3,12 @@ package com.tomasrepcik.sensorbox.recordinghost.storage
 import android.content.ContextWrapper
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.MeasurementImport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.io.OutputStream
 
 class StorageHandlerTest {
@@ -32,6 +32,8 @@ class StorageHandlerTest {
     }
 
     private class FakeDocumentStorage : DocumentStorage {
+        override fun beginMeasurementImport(measurementName: String): AppResult<MeasurementImport> = error("Not used")
+
         val output = ByteArrayOutputStream()
         var createdMeasurement: String? = null
         var openedFile: String? = null
@@ -51,19 +53,11 @@ class StorageHandlerTest {
             measurementName: String,
             mimeType: String,
             fileName: String,
-            replaceExisting: Boolean,
         ): AppResult<OutputStream> {
             openedFile = fileName
             return AppResult.success(output)
         }
 
         override fun deleteMeasurement(measurementName: String): AppResult<Unit> = AppResult.success(Unit)
-
-        override fun copyToMeasurement(
-            input: InputStream,
-            measurementName: String,
-            fileName: String,
-            mimeType: String,
-        ): AppResult<Unit> = AppResult.success(Unit)
     }
 }

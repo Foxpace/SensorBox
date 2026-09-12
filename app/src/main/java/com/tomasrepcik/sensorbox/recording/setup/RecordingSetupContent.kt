@@ -36,7 +36,7 @@ internal fun RecordingSetupContent(
 private fun LazyListScope.storageSetupItems(state: RecordingState, onIntent: (RecordingSetupIntent) -> Unit) {
     item { SensorBoxSettingsSection(stringResource(R.string.setup_storage_category)) }
     item {
-        RecordingArchivePanel(state.recordingArchivePath) {
+        RecordingArchivePanel(state.recordingArchivePath, enabled = !state.isSyncingWatch) {
             onIntent(RecordingSetupIntent.ChooseRecordingArchive)
         }
     }

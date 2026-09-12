@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
-import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.OutlinedButton
@@ -15,23 +14,6 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
-
-@Composable
-internal fun TransformingLazyColumnItemScope.WearPrimaryButton(
-    label: String,
-    transformation: TransformationSpec,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.fillMaxWidth().transformedHeight(this, transformation),
-        transformation = SurfaceTransformation(transformation),
-    ) {
-        Text(label)
-    }
-}
 
 @Composable
 internal fun TransformingLazyColumnItemScope.WearSecondaryButton(

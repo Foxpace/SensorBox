@@ -8,6 +8,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.recording.RecordingControlUseCase
 import com.tomasrepcik.sensorbox.recording.RecordingMessage
 import com.tomasrepcik.sensorbox.recording.RecordingPermissionsUseCase
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class RecordingSetupViewModel @Inject constructor(
@@ -36,6 +38,7 @@ class RecordingSetupViewModel @Inject constructor(
     private val recording: RecordingControlUseCase,
     private val sessionStore: RecordingSessionStore,
     private val appFailures: AppFailureStore,
+    private val syncLock: MeasurementSyncLock = MeasurementSyncLock(),
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(RecordingState(recordingArchivePath = readRecordingArchivePath()))
     private val mutableEffects = Channel<RecordingSetupEffect>(Channel.BUFFERED)
@@ -48,9 +51,20 @@ class RecordingSetupViewModel @Inject constructor(
         observePreferences()
         observeRecordingSession()
         observeRecordingStops()
+        viewModelScope.launch {
+            syncLock.busy.collect { busy ->
+                mutableState.value = state.value.copy(isSyncingWatch = busy)
+            }
+        }
     }
 
     fun accept(intent: RecordingSetupIntent) {
+        if ((intent == RecordingSetupIntent.StartRecording || intent == RecordingSetupIntent.ChooseRecordingArchive) &&
+            syncLock.busy.value
+        ) {
+            appFailures.show(AppError(AppErrorCode.CONFLICT, "Wait for watch sync to finish first"))
+            return
+        }
         intent.toPreferencesIntent()?.let {
             updatePreference(it)
             return
@@ -67,6 +81,10 @@ class RecordingSetupViewModel @Inject constructor(
 
     fun handleRecordingArchiveResult(selection: RecordingArchiveSelection) {
         if (selection is RecordingArchiveSelection.Cancelled) return
+        if (syncLock.busy.value) {
+            appFailures.show(AppError(AppErrorCode.CONFLICT, "Wait for watch sync before changing the archive"))
+            return
+        }
 
         val persisted = recordingArchive.select(selection as RecordingArchiveSelection.Selected)
         persisted.errorOrNull()?.let(appFailures::show)
@@ -180,7 +198,11 @@ class RecordingSetupViewModel @Inject constructor(
         mutableState.value = RecordingSetupReducer.recordingStartRequested(state.value, countdownSeconds)
         startJob = viewModelScope.launch {
             waitForStartCountdown(countdownSeconds)
-            val result = recording.start(request)
+            val result = if (syncLock.busy.value) {
+                AppResult.failure(AppError(AppErrorCode.CONFLICT, "Wait for watch sync to finish first"))
+            } else {
+                recording.start(request)
+            }
             if (result.isFailure) {
                 mutableState.value = RecordingSetupReducer.recordingStartFailed(state.value)
                 showFailure(result.errorOrNull())
@@ -191,7 +213,7 @@ class RecordingSetupViewModel @Inject constructor(
     private suspend fun waitForStartCountdown(seconds: Int) {
         for (remaining in seconds downTo 1) {
             mutableState.value = RecordingSetupReducer.recordingCountdownChanged(state.value, remaining)
-            delay(1_000L)
+            delay(1_000L.milliseconds)
         }
         mutableState.value = RecordingSetupReducer.recordingCountdownChanged(state.value, null)
     }

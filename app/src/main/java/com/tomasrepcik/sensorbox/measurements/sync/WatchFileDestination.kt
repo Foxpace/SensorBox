@@ -1,80 +1,56 @@
 package com.tomasrepcik.sensorbox.measurements.sync
 
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import com.tomasrepcik.sensorbox.core.failure.AppError
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
-import com.tomasrepcik.sensorbox.core.failure.flatMap
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.MeasurementImport
 import com.tomasrepcik.sensorbox.wearoslib.sync.WearFileMetadata
-import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
 import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class WatchFileDestination @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val documentStorage: DocumentStorage,
+    private val sync: WatchSyncRepo,
 ) {
-    fun isReady(): AppResult<Boolean> = hasConfiguredDirectory().map { configured -> configured || isDebugBuild() }
+    private val pending = mutableMapOf<Pair<String, String>, MeasurementImport>()
 
-    fun copy(metadata: WearFileMetadata, input: InputStream): AppResult<Unit> {
-        val measurementName = "WEAR_${metadata.measurementName}"
-        val configuredResult = hasConfiguredDirectory()
-        val configured = configuredResult.getOrNull() ?: return AppResult.failure(
-            checkNotNull(configuredResult.errorOrNull()),
-        )
-        return if (configured) {
-            copyToConfiguredDirectory(measurementName, metadata.fileName, input)
-        } else {
-            copyToDebugDirectory(measurementName, metadata.fileName, input)
-        }
-    }
-
-    private fun copyToConfiguredDirectory(
-        measurementName: String,
-        fileName: String,
-        input: InputStream,
-    ): AppResult<Unit> = documentStorage.copyToMeasurement(
-        input = input,
-        measurementName = measurementName,
-        fileName = fileName,
-        mimeType = mimeType(fileName),
-    )
-
-    private fun copyToDebugDirectory(measurementName: String, fileName: String, input: InputStream): AppResult<Unit> {
-        if (!isDebugBuild()) return AppResult.failure(AppError(AppErrorCode.STORAGE, "Copy debug watch file"))
-        return appResult(AppErrorCode.STORAGE, "Prepare debug watch directory") {
-            val directory = File(context.filesDir, "$APP_DIRECTORY/$measurementName")
-            directory to (directory.isDirectory || directory.mkdirs())
-        }.flatMap { (directory, ready) ->
-            if (!ready) {
-                AppResult.failure(AppError(AppErrorCode.STORAGE, "Prepare debug watch directory"))
-            } else {
-                appResult(AppErrorCode.STORAGE, "Copy debug watch file") {
-                    File(directory, fileName).outputStream().use(input::copyTo)
-                    Unit
+    @Synchronized
+    fun copy(metadata: WearFileMetadata, input: InputStream): AppResult<Unit> =
+        appResult(AppErrorCode.STORAGE, "Receive watch measurement") {
+            check(sync.accepts(metadata.requestId)) { "Watch sync request expired" }
+            val key = metadata.requestId to metadata.measurementName
+            if (metadata.isCommit) {
+                val bytes = ByteArray(64)
+                java.io.DataInputStream(input).readFully(bytes)
+                check(input.read() == -1) { "Invalid measurement commit length" }
+                val fingerprint = bytes.decodeToString()
+                check(fingerprint.matches(Regex("[a-f0-9]{64}"))) { "Invalid measurement fingerprint" }
+                val staged = checkNotNull(pending[key]) { "No staged watch measurement" }
+                sync.syncLock.whileActive(metadata.requestId) {
+                    check(sync.accepts(metadata.requestId))
+                    staged.commit(fingerprint).getOrThrow()
                 }
+                pending.remove(key)
+            } else {
+                val staged = pending.getOrPut(key) {
+                    documentStorage.beginMeasurementImport("WEAR_${metadata.measurementName}").getOrThrow()
+                }
+                staged.copy(metadata.fileName, mimeType(metadata.fileName), input).getOrThrow()
             }
         }
+
+    @Synchronized
+    fun discard(requestId: String) {
+        pending.keys.filter { it.first == requestId }.forEach { key -> pending.remove(key)?.discard() }
     }
-
-    private fun hasConfiguredDirectory(): AppResult<Boolean> = documentStorage.hasConfiguredDirectory()
-
-    private fun isDebugBuild(): Boolean = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
     private fun mimeType(fileName: String): String = when (fileName.substringAfterLast('.').lowercase()) {
         "csv" -> "text/csv"
         "json" -> "application/json"
         "txt" -> "text/plain"
         else -> "application/octet-stream"
-    }
-
-    private companion object {
-        const val APP_DIRECTORY = "SensorBox"
     }
 }

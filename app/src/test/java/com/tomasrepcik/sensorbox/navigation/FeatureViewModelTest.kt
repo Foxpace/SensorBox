@@ -8,6 +8,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.DiagnosticsStore
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.core.testing.FakeAppPreferencesRepository
 import com.tomasrepcik.sensorbox.diagnostics.DiagnosticsShareFile
 import com.tomasrepcik.sensorbox.diagnostics.DiagnosticsShareFilePreparer
@@ -434,11 +435,68 @@ class FeatureViewModelTest {
         )
     }
 
+    @Test
+    fun `Given active sync When recording starts Then no recording is requested`() = runTest {
+        // Given
+        val lock = MeasurementSyncLock()
+        val recording = FakeRecordingWorkflow()
+        val viewModel = recordingSetupViewModel(recording, syncLock = lock)
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
+        lock.begin("request")
+        runCurrent()
+
+        // When
+        viewModel.accept(RecordingSetupIntent.StartRecording)
+        advanceUntilIdle()
+
+        // Then
+        assertTrue(viewModel.state.value.isSyncingWatch)
+        assertEquals(0, recording.startCalls)
+    }
+
+    @Test
+    fun `Given a countdown When sync starts before it ends Then recording is not started`() = runTest {
+        // Given
+        val lock = MeasurementSyncLock()
+        val recording = FakeRecordingWorkflow()
+        val viewModel = recordingSetupViewModel(recording, syncLock = lock)
+        viewModel.accept(RecordingSetupIntent.LoadDraft(RecordingDraft(selectedSensorIds = setOf(1))))
+        viewModel.accept(RecordingSetupIntent.SetStartDelay(2))
+        viewModel.accept(RecordingSetupIntent.StartRecording)
+        runCurrent()
+
+        // When
+        lock.begin("request")
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(0, recording.startCalls)
+        assertFalse(viewModel.state.value.isStarting)
+    }
+
+    @Test
+    fun `Given an open folder picker When sync starts before selection returns Then the archive is unchanged`() =
+        runTest {
+            // Given
+            val lock = MeasurementSyncLock()
+            val archive = FakeRecordingArchiveRepository(isSelected = false)
+            val viewModel = recordingSetupViewModel(FakeRecordingWorkflow(), archive = archive, syncLock = lock)
+            viewModel.accept(RecordingSetupIntent.ChooseRecordingArchive)
+            lock.begin("request")
+
+            // When
+            viewModel.handleRecordingArchiveResult(RecordingArchiveSelection.Selected("content://new", 3))
+
+            // Then
+            assertFalse(archive.isSelected().getOrThrow())
+        }
+
     private fun recordingSetupViewModel(
         workflow: RecordingControlUseCase,
         sessionStore: RecordingSessionStore = RecordingSessionStore(),
         archive: RecordingArchiveRepository = FakeRecordingArchiveRepository(isSelected = true),
         appFailures: AppFailureStore = failureStore(),
+        syncLock: MeasurementSyncLock = MeasurementSyncLock(),
     ): RecordingSetupViewModel = RecordingSetupViewModel(
         preferencesRepository = FakeAppPreferencesRepository(),
         recordingArchive = archive,
@@ -446,6 +504,7 @@ class FeatureViewModelTest {
         recording = workflow,
         sessionStore = sessionStore,
         appFailures = appFailures,
+        syncLock = syncLock,
     )
 
     private fun failureStore() = AppFailureStore { }

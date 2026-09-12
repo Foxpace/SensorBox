@@ -5,6 +5,8 @@ import androidx.documentfile.provider.DocumentFile
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.suspendAppResult
+import com.tomasrepcik.sensorbox.core.storage.BACKUP_MEASUREMENT_PREFIX
+import com.tomasrepcik.sensorbox.core.storage.PENDING_MEASUREMENT_PREFIX
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +26,13 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
     override suspend fun loadMeasurements(): AppResult<List<MeasurementSummary>> = withContext(Dispatchers.IO) {
         suspendAppResult(AppErrorCode.STORAGE, "List saved measurements") {
             selectedMeasurementsDirectory().listFiles()
-                .filter(DocumentFile::isDirectory)
+                .filter {
+                    it.isDirectory &&
+                        !it.name.orEmpty().startsWith(
+                            PENDING_MEASUREMENT_PREFIX,
+                        ) &&
+                        !it.name.orEmpty().startsWith(BACKUP_MEASUREMENT_PREFIX)
+                }
                 .map(::createMeasurementSummary)
                 .sortedWith(
                     compareByDescending<MeasurementSummary> { it.recordedAtMillis ?: Long.MIN_VALUE }
@@ -76,7 +84,7 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
 
     private fun selectedMeasurementsDirectory(): DocumentFile {
         val permission = context.contentResolver.persistedUriPermissions
-            .filter { it.isReadPermission }
+            .filter { it.isReadPermission && it.isWritePermission }
             .maxByOrNull { it.persistedTime }
             ?: throw IllegalStateException("Recording archive is not configured")
         return DocumentFile.fromTreeUri(context, permission.uri)
@@ -93,6 +101,9 @@ class AndroidMeasurementRepository @Inject constructor(@ApplicationContext priva
         return MeasurementSummary(
             id = checkNotNull(directory.name),
             name = directory.name.orEmpty(),
+            sessionId = json?.get("sessionId")?.asPrimitive()?.contentOrNull?.takeIf(String::isNotBlank),
+            device = json?.get("device")?.asPrimitive()?.contentOrNull,
+            recordingName = json?.get("folder")?.asPrimitive()?.contentOrNull ?: directory.name.orEmpty(),
             recordedAtMillis = json?.get("millis")?.asPrimitive()?.longOrNull,
             recordedAtText = json?.get("date")?.asPrimitive()?.contentOrNull,
             fileCount = directory.listFiles().count { it.isFile && it.name != METADATA_FILE },

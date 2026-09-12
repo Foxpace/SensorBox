@@ -36,7 +36,16 @@ class WearCommandHandler @Inject constructor(
 
         WearCommand.RequestAvailableSensors -> sendAvailableSensors()
 
-        WearCommand.SyncMeasurements -> syncMeasurements().map { }
+        is WearCommand.CancelWatchSync -> {
+            syncMeasurements.cancel(command.requestId)
+            AppResult.success(Unit)
+        }
+
+        is WearCommand.CheckWatchMeasurements -> sendMeasurementStatus(command.requestId, false)
+
+        is WearCommand.CopyWatchMeasurements -> sendMeasurementStatus(command.requestId, true)
+
+        is WearCommand.WatchMeasurementsStatus -> AppResult.success(Unit)
 
         is WearCommand.RecordingResult -> {
             recordingResults.receive(command)
@@ -46,6 +55,24 @@ class WearCommandHandler @Inject constructor(
         WearCommand.LaunchPhone,
         is WearCommand.AvailableSensors,
         -> AppResult.success(Unit)
+    }
+
+    private suspend fun sendMeasurementStatus(requestId: String, copy: Boolean): AppResult<Unit> {
+        val available = syncMeasurements.available()
+        val transferred = if (copy && available.isSuccess) syncMeasurements(requestId) else null
+        val remaining = if (transferred?.isFailure == true) syncMeasurements.available() else available
+        val counts = remaining.getOrNull()
+        return sendCommand(
+            PHONE_APP_CAPABILITY,
+            PHONE_MESSAGE_PATH,
+            WearCommand.WatchMeasurementsStatus(
+                requestId = requestId,
+                fileCount = transferred?.getOrNull() ?: counts?.first ?: 0,
+                measurementCount = minOf(counts?.second ?: 0, transferred?.getOrNull() ?: Int.MAX_VALUE),
+                finished = copy,
+                failed = available.isFailure || transferred?.isFailure == true,
+            ),
+        )
     }
 
     suspend fun onAutomaticStop(reason: WearStopReason): AppResult<Unit> {

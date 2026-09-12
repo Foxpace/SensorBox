@@ -3,6 +3,7 @@ package com.tomasrepcik.sensorbox.recording.setup
 import android.hardware.SensorManager
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingRequest
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingSettings
 
 data class RecordingSetup(
     val sensorIds: Set<Int>,
@@ -60,4 +61,11 @@ fun StartedPhoneRecording.toWatchRecordingRequest(request: RecordingSetup) = Wea
     sensorIds = request.watchSensorIds.sorted(),
     includesGps = request.watchIncludesGps,
     durationMillis = durationMillis,
+    settings = WearRecordingSettings(
+        samplingPeriodIndex = request.samplingPeriodIndex,
+        stopOnLowBattery = request.stopOnLowBattery,
+        useWakeLock = request.useWakeLock,
+        gpsIntervalSeconds = request.gpsIntervalSeconds,
+        gpsMinDistanceMeters = request.gpsMinDistanceMeters,
+    ),
 )

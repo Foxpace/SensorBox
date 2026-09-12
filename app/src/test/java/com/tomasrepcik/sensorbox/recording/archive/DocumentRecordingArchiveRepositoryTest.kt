@@ -2,10 +2,10 @@ package com.tomasrepcik.sensorbox.recording.archive
 
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.MeasurementImport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.InputStream
 import java.io.OutputStream
 
 class DocumentRecordingArchiveRepositoryTest {
@@ -23,6 +23,8 @@ class DocumentRecordingArchiveRepositoryTest {
     }
 
     private class FakeDocumentStorage : DocumentStorage {
+        override fun beginMeasurementImport(measurementName: String): AppResult<MeasurementImport> = error("Not used")
+
         var persistedUri: String? = null
         var persistedFlags: Int? = null
 
@@ -42,16 +44,8 @@ class DocumentRecordingArchiveRepositoryTest {
             measurementName: String,
             mimeType: String,
             fileName: String,
-            replaceExisting: Boolean,
         ): AppResult<OutputStream> = error("not used")
 
         override fun deleteMeasurement(measurementName: String): AppResult<Unit> = AppResult.success(Unit)
-
-        override fun copyToMeasurement(
-            input: InputStream,
-            measurementName: String,
-            fileName: String,
-            mimeType: String,
-        ): AppResult<Unit> = AppResult.success(Unit)
     }
 }

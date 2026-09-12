@@ -28,7 +28,6 @@ fun WearMenuScreen(state: WearMenuState, onDestinationSelected: (WearMenuDestina
 @StringRes
 private fun WearMenuDestination.labelResource(): Int = when (this) {
     WearMenuDestination.RECORD -> R.string.activity_record
-    WearMenuDestination.SYNC -> R.string.sync_recordings
     WearMenuDestination.LIVE_SENSOR -> R.string.activity_view_sensor
     WearMenuDestination.PHONE_INFO -> R.string.activity_info_phone
     WearMenuDestination.SETTINGS -> R.string.activity_settings
@@ -39,7 +38,6 @@ private fun WearMenuDestination.labelResource(): Int = when (this) {
 @DrawableRes
 private fun WearMenuDestination.iconResource(): Int = when (this) {
     WearMenuDestination.RECORD -> R.drawable.ic_record
-    WearMenuDestination.SYNC -> R.drawable.ic_sync
     WearMenuDestination.LIVE_SENSOR -> R.drawable.ic_live
     WearMenuDestination.PHONE_INFO -> R.drawable.ic_phone
     WearMenuDestination.SETTINGS -> R.drawable.ic_settings

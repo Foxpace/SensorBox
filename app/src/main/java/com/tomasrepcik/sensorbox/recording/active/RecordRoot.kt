@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
+import com.tomasrepcik.sensorbox.measurements.sync.WatchSyncRoot
 import com.tomasrepcik.sensorbox.navigation.FullScreen
 import com.tomasrepcik.sensorbox.navigation.RecordingSetupRoute
 import com.tomasrepcik.sensorbox.navigation.SensorDetailsRoute
@@ -27,6 +28,10 @@ fun RecordRoot(onNavigate: (NavKey) -> Unit, viewModel: RecordViewModel = hiltVi
         }
     }
     FullScreen { modifier ->
-        RecordScreen(state, viewModel::accept, modifier)
+        RecordScreen(state, viewModel::accept, modifier) {
+            WatchSyncRoot(
+                isWatchConnected = state.isWatchConnected,
+            )
+        }
     }
 }

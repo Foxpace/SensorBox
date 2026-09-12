@@ -32,12 +32,23 @@ internal fun RecordingSetupTopBar(
             contentAlignment = Alignment.Center,
         ) {
             SensorBoxPrimaryButton(
-                label = state.startCountdownSeconds?.let { seconds ->
-                    pluralStringResource(R.plurals.starting_in_seconds, seconds, seconds)
-                } ?: stringResource(if (state.isStarting) R.string.starting_recording else R.string.start_recording),
+                label = when {
+                    state.isSyncingWatch -> stringResource(R.string.wait_for_watch_sync)
+
+                    state.startCountdownSeconds != null -> pluralStringResource(
+                        R.plurals.starting_in_seconds,
+                        state.startCountdownSeconds,
+                        state.startCountdownSeconds,
+                    )
+
+                    state.isStarting -> stringResource(R.string.starting_recording)
+
+                    else -> stringResource(R.string.start_recording)
+                },
                 onClick = { onIntent(RecordingSetupIntent.StartRecording) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = state.recordingArchivePath != null && sourceCount > 0 && !state.isStarting,
+                enabled =
+                state.recordingArchivePath != null && sourceCount > 0 && !state.isStarting && !state.isSyncingWatch,
                 loading = state.isStarting,
             )
         }

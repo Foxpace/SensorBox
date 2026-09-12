@@ -7,6 +7,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppError
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
+import com.tomasrepcik.sensorbox.measurements.sync.WatchSyncRepo
 import com.tomasrepcik.sensorbox.recording.PeerRecordingControl
 import com.tomasrepcik.sensorbox.recording.sources.ReceiveWatchSensorsUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connection.WearOsConstants.WEAR_APP_CAPABILITY
@@ -25,6 +26,7 @@ class PhoneWatchCommandHandler @Inject constructor(
     private val recordingResults: RecordingResultReceiver,
     private val recording: PeerRecordingControl,
     private val sendCommand: SendWearCommandUseCase,
+    private val watchSync: WatchSyncRepo,
 ) {
     suspend fun handle(command: WearCommand): AppResult<Unit> = when (command) {
         WearCommand.LaunchPhone -> launchPhone()
@@ -41,8 +43,15 @@ class PhoneWatchCommandHandler @Inject constructor(
 
         is WearCommand.StopRecording -> stopFromWatch(command)
 
+        is WearCommand.WatchMeasurementsStatus -> {
+            watchSync.receive(command)
+            AppResult.success(Unit)
+        }
+
+        is WearCommand.CheckWatchMeasurements,
+        is WearCommand.CopyWatchMeasurements,
+        is WearCommand.CancelWatchSync,
         WearCommand.RequestAvailableSensors,
-        WearCommand.SyncMeasurements,
         is WearCommand.StartRecording,
         -> AppResult.failure(AppError(AppErrorCode.VALIDATION, "Handle unsupported phone watch command"))
     }

@@ -8,13 +8,13 @@ import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesIntent
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferencesRepository
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.menu.WearMenuDestination
 import com.tomasrepcik.sensorbox.recording.DefaultWatchRecordingControlUseCase
 import com.tomasrepcik.sensorbox.recording.WatchRecordingPermissionUseCase
 import com.tomasrepcik.sensorbox.recording.live.ObserveSensorValuesUseCase
 import com.tomasrepcik.sensorbox.recording.session.RecordingSessionStore
 import com.tomasrepcik.sensorbox.recording.sources.GetWatchSensorsUseCase
-import com.tomasrepcik.sensorbox.sync.SyncWatchMeasurementsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -33,8 +33,8 @@ class WearDashboardViewModel @Inject constructor(
     private val recordingControl: DefaultWatchRecordingControlUseCase,
     private val preferencesRepository: AppPreferencesRepository,
     private val sessionStore: RecordingSessionStore,
-    private val syncMeasurements: SyncWatchMeasurementsUseCase,
     private val appFailures: AppFailureStore,
+    private val syncLock: MeasurementSyncLock = MeasurementSyncLock(),
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(WearDashboardState(sensors = getSensors()))
     private val mutableEffects = Channel<WearDashboardEffect>(Channel.BUFFERED)
@@ -48,9 +48,18 @@ class WearDashboardViewModel @Inject constructor(
         observeSession()
         observeRecordingFailures()
         observeFailures()
+        viewModelScope.launch {
+            syncLock.busy.collect { busy ->
+                mutableState.value = mutableState.value.copy(isSyncing = busy)
+            }
+        }
     }
 
     fun accept(intent: WearDashboardIntent) {
+        if (intent is WearDashboardIntent.Open || intent == WearDashboardIntent.Back) {
+            sensorJob?.cancel()
+            sensorJob = null
+        }
         mutableState.value = WearDashboardReducer.reduce(mutableState.value, intent)
         intent.toPreferenceIntent()?.let {
             updatePreference(it)
@@ -62,7 +71,6 @@ class WearDashboardViewModel @Inject constructor(
             is WearDashboardIntent.PermissionsResolved -> handlePermissionResult(intent.granted)
             WearDashboardIntent.StopRecording -> recordingControl.stop().showFailure()
             is WearDashboardIntent.ObserveSensor -> observeLiveSensor(intent.sensorType)
-            WearDashboardIntent.SyncMeasurements -> startSync()
             WearDashboardIntent.DismissFailure -> appFailures.dismiss()
             else -> Unit
         }
@@ -87,7 +95,6 @@ class WearDashboardViewModel @Inject constructor(
     private fun handleDestination(destination: WearMenuDestination) {
         when (destination) {
             WearMenuDestination.PHONE_INFO -> mutableEffects.trySend(WearDashboardEffect.OpenPhone)
-            WearMenuDestination.SYNC -> startSync()
             WearMenuDestination.PRIVACY, WearMenuDestination.TERMS -> openUrl(destination)
             else -> Unit
         }
@@ -135,8 +142,8 @@ class WearDashboardViewModel @Inject constructor(
         }
     }
 
-    private suspend fun publishSensorValue(value: Float) {
-        val samples = (mutableState.value.liveSamples + value).takeLast(MAX_SAMPLES)
+    private fun publishSensorValue(value: List<Float>) {
+        val samples = (mutableState.value.liveSamples + listOf(value)).takeLast(MAX_SAMPLES)
         mutableState.value = mutableState.value.copy(liveSamples = samples, message = null)
     }
 
@@ -171,29 +178,12 @@ class WearDashboardViewModel @Inject constructor(
         viewModelScope.launch { preferencesRepository.dispatch(intent).showFailure() }
     }
 
-    private fun startSync() {
-        if (mutableState.value.isSyncing) return
-        mutableState.value = mutableState.value.copy(isSyncing = true, message = WearDashboardMessage.Syncing)
-        viewModelScope.launch {
-            val result = syncMeasurements()
-            val message = result.fold(
-                onSuccess = WearDashboardMessage::FilesSent,
-                onFailure = { error ->
-                    appFailures.show(error)
-                    WearDashboardMessage.SyncFailed
-                },
-            )
-            mutableState.value = mutableState.value.copy(isSyncing = false, message = message)
-        }
-    }
-
     private fun AppResult<*>.showFailure() {
         errorOrNull()?.let(::showOperationFailure)
     }
 
     private fun showOperationFailure(error: AppError) {
         appFailures.show(error)
-        mutableState.value = mutableState.value.copy(message = WearDashboardMessage.SyncFailed)
     }
 
     private fun observeFailures() = viewModelScope.launch {

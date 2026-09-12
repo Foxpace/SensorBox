@@ -23,8 +23,9 @@ internal class SessionMetadataRecordingSource(
     storage: MeasurementStorage,
     clock: EpochClock,
     sensorManager: SensorManager,
+    device: String,
 ) : RecordingSource {
-    private val metadataWriter = MeasurementMetadataWriter(storage, clock, sensorManager)
+    private val metadataWriter = MeasurementMetadataWriter(storage, clock, sensorManager, device)
     private var toneGenerator: ToneGenerator? = null
 
     override val type = RecordingSourceType.SESSION_METADATA

@@ -2,7 +2,6 @@ package com.tomasrepcik.sensorbox.menu
 
 enum class WearMenuDestination {
     RECORD,
-    SYNC,
     LIVE_SENSOR,
     PHONE_INFO,
     SETTINGS,

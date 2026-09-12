@@ -9,9 +9,14 @@ import com.tomasrepcik.sensorbox.recording.RecordingState
 import com.tomasrepcik.sensorbox.recording.setup.SensorSelectionTopBar
 
 @Composable
-fun RecordScreen(state: RecordingState, onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
+fun RecordScreen(
+    state: RecordingState,
+    onIntent: (RecordIntent) -> Unit,
+    modifier: Modifier = Modifier,
+    watchSync: @Composable () -> Unit = {},
+) {
     Column(modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f)) { RecordContent(state, onIntent) }
+        Box(Modifier.weight(1f)) { RecordContent(state, onIntent, watchSync) }
         SensorSelectionTopBar(state, onIntent)
     }
 }

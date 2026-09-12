@@ -1,5 +1,6 @@
 package com.tomasrepcik.sensorbox.menu
 
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -23,15 +24,12 @@ class WearMenuScreenTest {
     }
 
     @Test
-    fun givenMenuWhenSyncIsTappedThenSyncDestinationIsSelected() {
-        var selectedDestination: WearMenuDestination? = null
-        WearMenuRobot(composeRule)
-            .givenMenu { selectedDestination = it }
-            .thenSyncIsVisible()
-            .whenSyncIsTapped()
+    fun givenMenuWhenDisplayedThenSyncIsNotOffered() {
+        // Given
+        WearMenuRobot(composeRule).givenMenu {}
 
-        composeRule.runOnIdle {
-            assertEquals(WearMenuDestination.SYNC, selectedDestination)
-        }
+        // Then
+        composeRule.onNodeWithText("Sync recordings").assertDoesNotExist()
+        composeRule.onNodeWithText("Sync to phone").assertDoesNotExist()
     }
 }

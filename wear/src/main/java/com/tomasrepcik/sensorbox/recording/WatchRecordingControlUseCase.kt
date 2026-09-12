@@ -8,6 +8,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
 import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingIntentFactory
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingRequest
 import com.tomasrepcik.sensorbox.recordinghost.session.RecordingService
@@ -25,6 +26,7 @@ interface WatchRecordingControlUseCase {
 class DefaultWatchRecordingControlUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intentFactory: RecordingIntentFactory,
+    private val syncLock: MeasurementSyncLock = MeasurementSyncLock(),
 ) : WatchRecordingControlUseCase {
     override fun start(
         sessionId: String,
@@ -34,7 +36,7 @@ class DefaultWatchRecordingControlUseCase @Inject constructor(
         sessionId = sessionId,
         sensorIds = request.sensorIds.toSet(),
         includesGps = request.includesGps,
-        preferences = preferences,
+        preferences = request.recordingPreferences(preferences),
         folderName = request.folderName,
         durationMillis = request.durationMillis,
     )
@@ -60,7 +62,7 @@ class DefaultWatchRecordingControlUseCase @Inject constructor(
             gpsMinDistanceMeters = preferences.recording.gpsMinDistanceMeters,
             durationMillis = durationMillis,
         )
-        ContextCompat.startForegroundService(context, intentFactory.create(request))
+        syncLock.whenIdle { ContextCompat.startForegroundService(context, intentFactory.create(request)) }
     }
 
     fun stop(): AppResult<Unit> = appResult(AppErrorCode.RECORDING, "Request watch recording stop") {

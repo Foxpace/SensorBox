@@ -9,10 +9,11 @@ import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
 import com.tomasrepcik.sensorbox.core.failure.flatMap
-import java.io.InputStream
 import java.io.OutputStream
 
 interface DocumentStorage {
+    fun beginMeasurementImport(measurementName: String): AppResult<MeasurementImport>
+
     fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit>
 
     fun hasConfiguredDirectory(): AppResult<Boolean>
@@ -21,25 +22,48 @@ interface DocumentStorage {
 
     fun createMeasurementDirectory(measurementName: String): AppResult<Unit>
 
-    fun openMeasurementFile(
-        measurementName: String,
-        mimeType: String,
-        fileName: String,
-        replaceExisting: Boolean = false,
-    ): AppResult<OutputStream>
+    fun openMeasurementFile(measurementName: String, mimeType: String, fileName: String): AppResult<OutputStream>
 
     fun deleteMeasurement(measurementName: String): AppResult<Unit>
-
-    fun copyToMeasurement(
-        input: InputStream,
-        measurementName: String,
-        fileName: String,
-        mimeType: String,
-    ): AppResult<Unit>
 }
 
-class NativeDocumentStorage(private val context: Context) : DocumentStorage {
-    override fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit> {
+class NativeDocumentStorage(
+    private val context: Context,
+    private val syncLock: MeasurementSyncLock = MeasurementSyncLock(),
+) : DocumentStorage {
+    private val preparedArchives = mutableSetOf<String>()
+
+    @Synchronized
+    override fun beginMeasurementImport(measurementName: String): AppResult<MeasurementImport> =
+        appResult(AppErrorCode.STORAGE, "Stage watch measurement") {
+            val root = checkNotNull(configuredDirectory()) { "Recording archive is unavailable" }
+            if (root.uri.toString() !in preparedArchives) {
+                recoverInterruptedImports(root)
+                preparedArchives.add(root.uri.toString())
+            }
+            NativeMeasurementImport(context, root, measurementName)
+        }
+
+    private fun recoverInterruptedImports(root: DocumentFile) {
+        root.listFiles().filter { it.name.orEmpty().startsWith(BACKUP_MEASUREMENT_PREFIX) }.forEach { backup ->
+            val name = checkNotNull(backup.name).removePrefix(BACKUP_MEASUREMENT_PREFIX)
+            if (root.findFile(name) == null) {
+                check(backup.renameTo(name)) { "Could not restore previous measurement" }
+            } else {
+                check(backup.delete()) { "Could not remove previous measurement backup" }
+            }
+        }
+        root.listFiles().filter { it.name.orEmpty().startsWith(PENDING_MEASUREMENT_PREFIX) }.forEach { pending ->
+            check(pending.delete()) { "Could not remove interrupted watch transfer" }
+        }
+    }
+
+    override fun persistRootAccess(uri: String, grantFlags: Int): AppResult<Unit> =
+        appResult(AppErrorCode.CONFLICT, "Change recording archive") {
+            syncLock.whenIdle { persistSelectedRoot(uri, grantFlags) }
+        }.flatMap { it }
+
+    private fun persistSelectedRoot(uri: String, grantFlags: Int): AppResult<Unit> {
         val selectedUri = Uri.parse(uri)
         val persistedFlags = grantFlags and READ_WRITE_FLAGS
         if (persistedFlags == 0) return storageFailure("Storage permission was not granted")
@@ -103,12 +127,11 @@ class NativeDocumentStorage(private val context: Context) : DocumentStorage {
         measurementName: String,
         mimeType: String,
         fileName: String,
-        replaceExisting: Boolean,
     ): AppResult<OutputStream> = appResult(AppErrorCode.STORAGE, "Access measurement directory") {
         measurementDirectory(measurementName)
     }.flatMap { directory ->
         if (directory == null) return@flatMap storageFailure("Measurement directory is unavailable")
-        createOrReplaceFile(directory, mimeType, fileName, replaceExisting).flatMap { createdFile ->
+        findOrCreateFile(directory, mimeType, fileName).flatMap { createdFile ->
             if (createdFile == null) return@flatMap storageFailure("Unable to create measurement file")
             appResult(AppErrorCode.STORAGE, "Open measurement file") {
                 context.contentResolver.openOutputStream(createdFile.uri, "wt")
@@ -129,23 +152,6 @@ class NativeDocumentStorage(private val context: Context) : DocumentStorage {
                 if (deleted) AppResult.success(Unit) else storageFailure("Unable to delete measurement")
             }
         }
-
-    override fun copyToMeasurement(
-        input: InputStream,
-        measurementName: String,
-        fileName: String,
-        mimeType: String,
-    ): AppResult<Unit> = openMeasurementFile(
-        measurementName = measurementName,
-        mimeType = mimeType,
-        fileName = fileName,
-        replaceExisting = true,
-    ).flatMap { output ->
-        appResult(AppErrorCode.STORAGE, "Copy measurement file") {
-            input.use { source -> output.use(source::copyTo) }
-            Unit
-        }
-    }
 
     private fun measurementDirectory(measurementName: String): DocumentFile? {
         val appDirectory = configuredDirectory() ?: return null
@@ -172,24 +178,15 @@ class NativeDocumentStorage(private val context: Context) : DocumentStorage {
     }
 }
 
-private fun createOrReplaceFile(
-    directory: DocumentFile,
-    mimeType: String,
-    fileName: String,
-    replaceExisting: Boolean,
-): AppResult<DocumentFile?> = appResult(AppErrorCode.STORAGE, "Create measurement file") {
-    val existing = directory.findFile(fileName)
-    if (replaceExisting && existing != null) {
-        if (existing.delete()) directory.createFile(normalizeMimeType(mimeType), fileName) else null
-    } else {
-        existing ?: directory.createFile(normalizeMimeType(mimeType), fileName)
+private fun findOrCreateFile(directory: DocumentFile, mimeType: String, fileName: String): AppResult<DocumentFile?> =
+    appResult(AppErrorCode.STORAGE, "Create measurement file") {
+        directory.findFile(fileName) ?: directory.createFile(normalizeMimeType(mimeType), fileName)
     }
-}
 
 private fun <T> storageFailure(operation: String): AppResult<T> =
     AppResult.failure(AppError(AppErrorCode.STORAGE, operation))
 
-private fun releaseOtherRootPermissions(context: Context, selectedUri: android.net.Uri) {
+private fun releaseOtherRootPermissions(context: Context, selectedUri: Uri) {
     val resolver = context.contentResolver
     resolver.persistedUriPermissions
         .filter { it.uri != selectedUri }

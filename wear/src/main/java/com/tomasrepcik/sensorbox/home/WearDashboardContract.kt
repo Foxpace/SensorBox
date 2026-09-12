@@ -14,8 +14,10 @@ data class WearDashboardState(
     val selectedSensorIds: Set<Int> = emptySet(),
     val includesGps: Boolean = false,
     val liveSensorType: Int? = null,
-    val liveSamples: List<Float> = emptyList(),
+    val liveSamples: List<List<Float>> = emptyList(),
     val preferences: AppPreferences = AppPreferences(),
+    val activeSession: RecordingSessionState.Running? = null,
+    val isStopping: Boolean = false,
     val isSyncing: Boolean = false,
     val isWaitingForPermissions: Boolean = false,
     val message: WearDashboardMessage? = null,
@@ -26,9 +28,6 @@ sealed interface WearDashboardMessage {
     data object PickSource : WearDashboardMessage
     data object PermissionRequired : WearDashboardMessage
     data object SensorUnavailable : WearDashboardMessage
-    data object Syncing : WearDashboardMessage
-    data object SyncFailed : WearDashboardMessage
-    data class FilesSent(val count: Int) : WearDashboardMessage
 }
 
 sealed interface WearDashboardIntent {
@@ -44,7 +43,6 @@ sealed interface WearDashboardIntent {
     data object ToggleBatteryRestriction : WearDashboardIntent
     data object ToggleWakeLock : WearDashboardIntent
     data object ToggleDisplay : WearDashboardIntent
-    data object SyncMeasurements : WearDashboardIntent
     data object DismissFailure : WearDashboardIntent
 }
 
@@ -56,19 +54,37 @@ sealed interface WearDashboardEffect {
 
 object WearDashboardReducer {
     fun reduce(state: WearDashboardState, intent: WearDashboardIntent): WearDashboardState = when (intent) {
-        is WearDashboardIntent.Open -> state.copy(route = intent.destination.toRoute(), message = null)
-        WearDashboardIntent.Back -> state.copy(route = WearRoute.MENU, message = null)
+        is WearDashboardIntent.Open -> state.copy(
+            route = intent.destination.toRoute(),
+            liveSensorType = null,
+            liveSamples = emptyList(),
+            message = null,
+        )
+
+        WearDashboardIntent.Back -> state.copy(
+            route = if (state.activeSession == null) WearRoute.MENU else WearRoute.ACTIVE,
+            message = null,
+        )
+
         is WearDashboardIntent.ToggleSensor -> state.toggleSensor(intent.sensorType)
+
         WearDashboardIntent.ToggleGps -> state.copy(includesGps = !state.includesGps)
+
         is WearDashboardIntent.ObserveSensor -> state.selectLiveSensor(intent.sensorType)
+
         else -> state
     }
 
-    fun recordingSessionChanged(state: WearDashboardState, session: RecordingSessionState) = when {
-        session is RecordingSessionState.Running -> state.copy(route = WearRoute.ACTIVE)
+    fun recordingSessionChanged(state: WearDashboardState, session: RecordingSessionState) = when (session) {
+        is RecordingSessionState.Running -> state.copy(
+            route = WearRoute.ACTIVE,
+            activeSession = session,
+            isStopping = false,
+        )
 
-        session is RecordingSessionState.Idle && state.route == WearRoute.ACTIVE ->
-            state.copy(route = WearRoute.MENU)
+        is RecordingSessionState.Stopping -> state.copy(isStopping = true)
+        is RecordingSessionState.Idle if state.route == WearRoute.ACTIVE ->
+            state.copy(route = WearRoute.MENU, activeSession = null, isStopping = false)
 
         else -> state
     }
@@ -91,7 +107,6 @@ object WearDashboardReducer {
     private fun WearMenuDestination.toRoute(): WearRoute = when (this) {
         WearMenuDestination.RECORD -> WearRoute.RECORD
         WearMenuDestination.LIVE_SENSOR -> WearRoute.LIVE
-        WearMenuDestination.SYNC -> WearRoute.SETTINGS
         WearMenuDestination.SETTINGS -> WearRoute.SETTINGS
         else -> WearRoute.MENU
     }

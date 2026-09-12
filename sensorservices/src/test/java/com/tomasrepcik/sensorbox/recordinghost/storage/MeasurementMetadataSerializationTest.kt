@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.recordinghost.storage
 
 import com.tomasrepcik.sensorbox.recordinghost.sources.sensor.SensorFileStats
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.float
@@ -27,6 +26,8 @@ class MeasurementMetadataSerializationTest {
                 "type",
                 "date",
                 "folder",
+                "sessionId",
+                "device",
                 "notes",
                 "annotations",
                 "ranges",
@@ -45,6 +46,8 @@ class MeasurementMetadataSerializationTest {
             ),
             json.keys,
         )
+        assertEquals("shared-session", json.getValue("sessionId").jsonPrimitive.content)
+        assertEquals("watch", json.getValue("device").jsonPrimitive.content)
         assertEquals(100L, json.getValue("millis").jsonPrimitive.long)
         assertEquals(200L, json.getValue("nanos").jsonPrimitive.long)
         assertEquals(60_100L, json.getValue("endedAtMillis").jsonPrimitive.long)
@@ -73,6 +76,8 @@ class MeasurementMetadataSerializationTest {
         type = "RECORDING",
         date = "23. 08. 2026 12:00:00",
         folder = "fixture",
+        sessionId = "shared-session",
+        device = "watch",
         notes = listOf("note"),
         annotations = listOf(MeasurementAnnotation(timestamp = 300L, annotation = "mark")),
         ranges = listOf(SensorRange(sensor = "Accelerometer", type = 1, range = 9.81f)),

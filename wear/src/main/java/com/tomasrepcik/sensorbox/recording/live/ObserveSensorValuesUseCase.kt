@@ -15,7 +15,7 @@ import javax.inject.Inject
 class ObserveSensorValuesUseCase @Inject constructor(@ApplicationContext context: Context) {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
 
-    operator fun invoke(sensorType: Int): Flow<Float> = callbackFlow {
+    operator fun invoke(sensorType: Int): Flow<List<Float>> = callbackFlow {
         val sensor = sensorManager.getDefaultSensor(sensorType)
         if (sensor == null) {
             close(IllegalArgumentException("Sensor type $sensorType is unavailable"))
@@ -31,9 +31,9 @@ class ObserveSensorValuesUseCase @Inject constructor(@ApplicationContext context
         awaitClose { sensorManager.unregisterListener(listener) }
     }.conflate()
 
-    private fun sensorListener(onValue: (Float) -> Unit) = object : SensorEventListener {
+    private fun sensorListener(onValue: (List<Float>) -> Unit) = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            event.values.firstOrNull()?.let(onValue)
+            if (event.values.isNotEmpty()) onValue(event.values.toList())
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit

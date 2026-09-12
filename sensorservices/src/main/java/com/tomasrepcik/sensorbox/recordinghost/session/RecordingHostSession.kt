@@ -131,12 +131,14 @@ internal class RecordingHostSession(
                 startedAtElapsedRealtime = elapsedRealtimeMillis(),
                 sensorIds = request.sensorIds.toList(),
                 includesGps = request.includesGps,
+                durationMillis = request.durationMillis,
+                sensorSamplingPeriod = request.sensorSamplingPeriod,
             ),
         )
         environment.scheduleAlarms(request.alarmOffsetsSeconds)
     }
 
-    private suspend fun finish(reason: RecordingSessionStopReason, executionResult: AppResult<Unit>) {
+    private fun finish(reason: RecordingSessionStopReason, executionResult: AppResult<Unit>) {
         if (isFinishing) return
         isFinishing = true
 

@@ -15,6 +15,7 @@ import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearCommandCodec
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingOperation
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingOutcome
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingRequest
+import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearRecordingSettings
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearStopReason
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
@@ -27,6 +28,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class PhoneWearDiscoveryEmulatorTest {
@@ -50,7 +52,7 @@ class PhoneWearDiscoveryEmulatorTest {
                 .sendMessage(WEAR_APP_CAPABILITY, WEAR_MESSAGE_PATH, payload)
                 .getOrThrow()
 
-            val catalog = withTimeout(RESPONSE_TIMEOUT_MILLIS) { response.await() }
+            val catalog = withTimeout(RESPONSE_TIMEOUT_MILLIS.milliseconds) { response.await() }
             assertTrue("Wear emulator returned no sensors", catalog.sensors.isNotEmpty())
             assertTrue(
                 "Wear emulator returned an incomplete sensor catalog",
@@ -93,6 +95,12 @@ class PhoneWearDiscoveryEmulatorTest {
                     folderName = "paired_sensor_permission_test",
                     sensorIds = listOf(catalog.sensors.first().type),
                     includesGps = false,
+                    settings = WearRecordingSettings(0,
+                        stopOnLowBattery = true,
+                        useWakeLock = false,
+                        gpsIntervalSeconds = 1,
+                        gpsMinDistanceMeters = 0
+                    ),
                 ),
             )
             connection.sendMessage(
@@ -141,6 +149,12 @@ class PhoneWearDiscoveryEmulatorTest {
                             folderName = "paired_gps_permission_test",
                             sensorIds = emptyList(),
                             includesGps = true,
+                            settings = WearRecordingSettings(0,
+                                stopOnLowBattery = true,
+                                useWakeLock = false,
+                                gpsIntervalSeconds = 1,
+                                gpsMinDistanceMeters = 0
+                            ),
                         ),
                     ),
                 ).getOrThrow(),
@@ -165,7 +179,7 @@ class PhoneWearDiscoveryEmulatorTest {
     private suspend inline fun <reified T : WearCommand> awaitCommand(
         commands: Channel<WearCommand>,
         crossinline matches: (T) -> Boolean = { true },
-    ): T = withTimeout(RESPONSE_TIMEOUT_MILLIS) {
+    ): T = withTimeout(RESPONSE_TIMEOUT_MILLIS.milliseconds) {
         commands.receiveAsFlow().filterIsInstance<T>().first { matches(it) }
     }
 

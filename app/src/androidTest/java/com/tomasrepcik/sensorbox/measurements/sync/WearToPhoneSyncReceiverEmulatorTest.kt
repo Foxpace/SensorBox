@@ -2,17 +2,18 @@ package com.tomasrepcik.sensorbox.measurements.sync
 
 import android.content.Context
 import android.util.Log
+import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tomasrepcik.sensorbox.wearoslib.sync.WearSyncEmulatorFixture
 import com.tomasrepcik.sensorbox.wearoslib.sync.WearSyncFileFixture
+import dagger.hilt.android.EntryPointAccessors
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class WearToPhoneSyncReceiverEmulatorTest {
@@ -22,48 +23,54 @@ class WearToPhoneSyncReceiverEmulatorTest {
             InstrumentationRegistry.getArguments().getString(WearSyncEmulatorFixture.SCENARIO_ARGUMENT),
         ) { "Missing ${WearSyncEmulatorFixture.SCENARIO_ARGUMENT} instrumentation argument" },
     )
-    private val root = File(context.filesDir, WearSyncEmulatorFixture.APP_DIRECTORY)
+    private val root by lazy { selectedArchive(context) }
 
     @Before
     fun preparePhoneDestination() {
-        root.deleteRecursively()
+        scenario.files.map { it.receivedMeasurementName }.distinct().forEach { name ->
+            root.findFile(name)?.delete()
+        }
         scenario.transferredFiles.forEach { fixture ->
             fixture.existingPhoneContent?.let { existingContent ->
-                receivedFile(fixture).apply {
-                    parentFile?.mkdirs()
-                    writeBytes(existingContent)
-                }
+                val folder = root.findFile(fixture.receivedMeasurementName)
+                    ?: checkNotNull(root.createDirectory(fixture.receivedMeasurementName))
+                val file = checkNotNull(folder.createFile("application/octet-stream", fixture.fileName))
+                checkNotNull(context.contentResolver.openOutputStream(file.uri)).use { it.write(existingContent) }
             }
         }
     }
 
     @Test
     fun givenPairedEmulatorsWhenWearSendsFilesThenPhoneReceivesExactBytes() {
+        val dependencies = EntryPointAccessors.fromApplication(context, SyncTestEntryPoint::class.java)
+        val viewModel = WatchSyncViewModel(
+            dependencies.sync(), dependencies.commands(), dependencies.storage(), kotlinx.coroutines.Dispatchers.IO,
+            dependencies.transfers(), dependencies.destination(),
+        )
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModel.accept(WatchSyncIntent.COPY) }
         Log.i(LOG_TAG, "READY_FOR_WEAR_TRANSFER")
 
         scenario.transferredFiles.forEach { fixture ->
-            val received = receivedFile(fixture)
-            assertTrue("Timed out waiting for $received", waitFor(received, fixture.content))
-            assertArrayEquals("Wrong bytes in $received", fixture.content, received.readBytes())
+            assertTrue("Timed out waiting for ${fixture.fileName}", waitFor(fixture))
+            val received = checkNotNull(receivedFile(fixture))
+            assertArrayEquals("Wrong bytes in $received", fixture.content, received.readBytes(context))
         }
         scenario.files.filterNot(WearSyncFileFixture::shouldTransfer).forEach { fixture ->
-            assertTrue("Unsupported file was transferred: ${receivedFile(fixture)}", !receivedFile(fixture).exists())
+            assertTrue("Unsupported file was transferred: ${receivedFile(fixture)}", receivedFile(fixture) == null)
         }
     }
 
-    private fun receivedFile(fixture: WearSyncFileFixture) =
-        File(root, "${fixture.receivedMeasurementName}/${fixture.fileName}")
+    private fun receivedFile(fixture: WearSyncFileFixture): DocumentFile? =
+        root.findFile(fixture.receivedMeasurementName)?.findFile(fixture.fileName)
 
-    private fun waitFor(receivedFile: File, expectedContent: ByteArray): Boolean {
+    private fun waitFor(fixture: WearSyncFileFixture): Boolean {
         repeat(MAX_ATTEMPTS) {
-            if (receivedFile.isFile && receivedFile.contentEquals(expectedContent)) return true
+            val received = receivedFile(fixture)
+            if (received?.isFile == true && received.readBytes(context).contentEquals(fixture.content)) return true
             Thread.sleep(POLL_INTERVAL_MILLIS)
         }
         return false
     }
-
-    private fun File.contentEquals(expectedContent: ByteArray): Boolean =
-        length() == expectedContent.size.toLong() && readBytes().contentEquals(expectedContent)
 
     private companion object {
         const val LOG_TAG = "SensorBoxEmulatorTest"

@@ -93,7 +93,17 @@ class RecordingCommandExchangeTest {
 
         fun startCommand() = WearCommand.StartRecording(
             sessionId = "session-123",
-            request = WearRecordingRequest("fixture", listOf(1), includesGps = false),
+            request = WearRecordingRequest(
+                "fixture",
+                listOf(1),
+                includesGps = false,
+                settings = WearRecordingSettings(0,
+                    stopOnLowBattery = true,
+                    useWakeLock = false,
+                    gpsIntervalSeconds = 1,
+                    gpsMinDistanceMeters = 0
+                ),
+            ),
         )
 
         private fun WearCommand.result(failed: Boolean): WearCommand.RecordingResult {

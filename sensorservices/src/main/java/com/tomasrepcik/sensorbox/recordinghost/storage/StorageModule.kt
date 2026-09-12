@@ -2,6 +2,7 @@ package com.tomasrepcik.sensorbox.recordinghost.storage
 
 import android.content.Context
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.core.storage.NativeDocumentStorage
 import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.core.time.SystemEpochClock
@@ -18,7 +19,12 @@ import javax.inject.Singleton
 object StorageModule {
     @Provides
     @Singleton
-    fun provideDocumentStorage(@ApplicationContext context: Context): DocumentStorage = NativeDocumentStorage(context)
+    fun provideDocumentStorage(@ApplicationContext context: Context, syncLock: MeasurementSyncLock): DocumentStorage =
+        NativeDocumentStorage(context, syncLock)
+
+    @Provides
+    @Singleton
+    fun provideMeasurementSyncLock(): MeasurementSyncLock = MeasurementSyncLock()
 
     @Provides
     @Singleton

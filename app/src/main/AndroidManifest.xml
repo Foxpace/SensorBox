@@ -9,9 +9,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission
         android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
         tools:ignore="HighSamplingRate" />
@@ -57,7 +54,7 @@
                 <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/sensorbox/v1/file"
+                    android:pathPrefix="/sensorbox/v3/file"
                     android:scheme="wear" />
             </intent-filter>
         </service>

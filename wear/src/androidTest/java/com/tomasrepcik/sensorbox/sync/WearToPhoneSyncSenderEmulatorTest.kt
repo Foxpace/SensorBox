@@ -4,23 +4,14 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.android.gms.tasks.Tasks
-import com.google.android.gms.wearable.CapabilityClient
-import com.google.android.gms.wearable.Wearable
-import com.tomasrepcik.sensorbox.core.failure.AppError
-import com.tomasrepcik.sensorbox.core.failure.AppResult
-import com.tomasrepcik.sensorbox.sync.DefaultSyncWatchMeasurementsUseCase
-import com.tomasrepcik.sensorbox.sync.SyncWatchMeasurementsUseCase
-import com.tomasrepcik.sensorbox.wearoslib.connection.GooglePlayWearConnectionRepository
-import com.tomasrepcik.sensorbox.wearoslib.sync.GooglePlayWearFileTransferClient
 import com.tomasrepcik.sensorbox.wearoslib.sync.WearSyncEmulatorFixture
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class WearToPhoneSyncSenderEmulatorTest {
@@ -34,7 +25,9 @@ class WearToPhoneSyncSenderEmulatorTest {
     @Before
     fun createScenarioFixture() {
         val root = File(context.filesDir, WearSyncEmulatorFixture.APP_DIRECTORY)
-        root.deleteRecursively()
+        (scenario.files.map { it.measurementName } + scenario.emptyMeasurementNames).distinct().forEach {
+            File(root, it).deleteRecursively()
+        }
         scenario.emptyMeasurementNames.forEach { File(root, it).mkdirs() }
         scenario.files.forEach { fixture ->
             File(root, fixture.measurementName).also(File::mkdirs)
@@ -45,39 +38,22 @@ class WearToPhoneSyncSenderEmulatorTest {
 
     @Test
     fun givenPairedEmulatorsWhenWearSyncsThenEverySupportedFileIsTransferred() = runBlocking {
-        val sync = DefaultSyncWatchMeasurementsUseCase(
-            context = context,
-            connectionRepository = GooglePlayWearConnectionRepository(context),
-            transferClient = GooglePlayWearFileTransferClient(context),
-        )
+        // Given
+        android.util.Log.i("SensorBoxEmulatorTest", "READY_FOR_PHONE_SYNC")
+        val root = File(context.filesDir, WearSyncEmulatorFixture.APP_DIRECTORY)
 
-        assertEquals(scenario.transferredFiles.size, syncWhenPhoneBecomesReachable(sync))
-    }
-
-    private suspend fun syncWhenPhoneBecomesReachable(sync: SyncWatchMeasurementsUseCase): Int {
-        var lastFailure: AppError? = null
-        repeat(MAX_ATTEMPTS) {
-            when (val result = sync()) {
-                is AppResult.Success -> return result.value
-                is AppResult.Failure -> lastFailure = result.error
+        // When
+        val cleaned = kotlinx.coroutines.withTimeoutOrNull(60_000L.milliseconds) {
+            while (scenario.transferredFiles.any { File(root, "${it.measurementName}/${it.fileName}").exists() }) {
+                delay(100L.milliseconds)
             }
-            delay(POLL_INTERVAL_MILLIS)
+            true
         }
-        val message = "Phone emulator did not become reachable: $lastFailure; ${connectionDiagnostics()}"
-        throw AssertionError(message, lastFailure?.cause)
-    }
 
-    private suspend fun connectionDiagnostics(): String = runCatching {
-        val nodes = Tasks.await(Wearable.getNodeClient(context).connectedNodes).joinToString { it.displayName }
-        val capabilities = Tasks.await(
-            Wearable.getCapabilityClient(context).getAllCapabilities(CapabilityClient.FILTER_ALL),
-        )
-            .mapValues { (_, info) -> info.nodes.map { it.displayName } }
-        "connectedNodes=[$nodes], capabilities=$capabilities"
-    }.getOrElse { "diagnostics failed: $it" }
-
-    private companion object {
-        const val POLL_INTERVAL_MILLIS = 1_000L
-        const val MAX_ATTEMPTS = 60
+        // Then
+        org.junit.Assert.assertTrue("Watch did not receive a committed-folder acknowledgement", cleaned == true)
+        scenario.files.filterNot { it.shouldTransfer }.forEach {
+            org.junit.Assert.assertTrue(File(root, "${it.measurementName}/${it.fileName}").exists())
+        }
     }
 }

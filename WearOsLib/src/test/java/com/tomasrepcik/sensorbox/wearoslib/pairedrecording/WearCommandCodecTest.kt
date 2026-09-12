@@ -7,16 +7,25 @@ import org.junit.Test
 
 class WearCommandCodecTest {
     @Test
-    fun `Given protocol v5 commands When round tripped Then every field survives`() {
+    fun `Given current commands When round tripped Then every field survives`() {
         val request = WearRecordingRequest(
             folderName = "shared_session",
             sensorIds = listOf(1, 4, 21),
             includesGps = true,
             durationMillis = 45_000L,
+            settings = WearRecordingSettings(0,
+                stopOnLowBattery = true,
+                useWakeLock = false,
+                gpsIntervalSeconds = 1,
+                gpsMinDistanceMeters = 0
+            ),
         )
         val commands = listOf(
             WearCommand.LaunchPhone,
-            WearCommand.SyncMeasurements,
+            WearCommand.CheckWatchMeasurements("check"),
+            WearCommand.CopyWatchMeasurements("copy"),
+            WearCommand.CancelWatchSync("copy"),
+            WearCommand.WatchMeasurementsStatus("copy", 3, 1, finished = true),
             WearCommand.RequestAvailableSensors,
             WearCommand.AvailableSensors(
                 listOf(

@@ -7,7 +7,12 @@ data class MeasurementsState(
     val measurements: List<MeasurementSummary> = emptyList(),
     val isLoading: Boolean = false,
     val errorCode: AppErrorCode? = null,
-)
+) {
+    val recordings: List<List<MeasurementSummary>>
+        get() = measurements.groupBy { measurement ->
+            measurement.sessionId?.let { "session:$it" } ?: "measurement:${measurement.id}"
+        }.values.map { group -> group.sortedBy { it.device == "watch" } }
+}
 
 sealed interface MeasurementsIntent {
     data object Refresh : MeasurementsIntent

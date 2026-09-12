@@ -15,7 +15,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 
 object WearCommandCodec {
-    const val PROTOCOL_VERSION = 5
+    const val PROTOCOL_VERSION = 7
 
     private val json = Json {
         classDiscriminator = "commandType"
@@ -57,7 +57,6 @@ internal object AppErrorCodeNameSerializer : KSerializer<AppErrorCode> {
 
     override fun deserialize(decoder: Decoder): AppErrorCode {
         val name = decoder.decodeString()
-        if (name == "MEASUREMENT") return AppErrorCode.RECORDING
         return AppErrorCode.entries.firstOrNull { it.name == name }
             ?: error("Unknown application error code")
     }
@@ -73,8 +72,15 @@ private const val MAX_ERROR_CONTEXT_ENTRIES = 16
 private fun WearCommand.isValid(): Boolean = when (this) {
     WearCommand.LaunchPhone,
     WearCommand.RequestAvailableSensors,
-    WearCommand.SyncMeasurements,
     -> true
+
+    is WearCommand.CheckWatchMeasurements -> validSessionId(requestId)
+
+    is WearCommand.CopyWatchMeasurements -> validSessionId(requestId)
+
+    is WearCommand.CancelWatchSync -> validSessionId(requestId)
+
+    is WearCommand.WatchMeasurementsStatus -> isValid()
 
     is WearCommand.AvailableSensors -> sensors.size <= MAX_SENSORS && sensors.all(WearSensorInfo::isValid)
 
@@ -96,7 +102,8 @@ private fun WearCommand.StartRecording.isValid(): Boolean = validSessionId(sessi
     request.folderName.isNotBlank() &&
     request.folderName.length <= MAX_FOLDER_LENGTH &&
     request.sensorIds.size <= MAX_SENSORS &&
-    request.durationMillis >= 0L
+    request.durationMillis >= 0L &&
+    request.settings.isValid()
 
 private fun WearCommand.RecordingResult.isValid(): Boolean = validSessionId(sessionId) &&
     failureCount >= 0 &&
@@ -126,3 +133,9 @@ private fun WearCommand.RecordingResult.hasValidError(): Boolean = errorCode != 
 private fun validSessionId(sessionId: String): Boolean = sessionId.isNotBlank() &&
     sessionId.length <= MAX_SESSION_ID_LENGTH &&
     sessionId.all { it.isLetterOrDigit() || it == '-' || it == '_' }
+
+private fun WearCommand.WatchMeasurementsStatus.isValid(): Boolean = validSessionId(requestId) &&
+    fileCount >= 0 && measurementCount >= 0 && measurementCount <= fileCount
+
+private fun WearRecordingSettings.isValid(): Boolean =
+    samplingPeriodIndex in 0..3 && gpsIntervalSeconds > 0 && gpsMinDistanceMeters >= 0

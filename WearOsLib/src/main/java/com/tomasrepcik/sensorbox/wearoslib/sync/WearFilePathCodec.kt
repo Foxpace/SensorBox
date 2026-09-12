@@ -5,13 +5,11 @@ import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
 import com.tomasrepcik.sensorbox.core.failure.flatMap
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 object WearFilePathCodec {
     fun encode(metadata: WearFileMetadata): AppResult<String> = if (
-        metadata.measurementName.isSafePathPart() && metadata.fileName.isSafePathPart()
+        metadata.isValid()
     ) {
         appResult(AppErrorCode.CONNECTIVITY, "Encode Wear file path") {
             "$PREFIX/${JSON.encodeToString(metadata).encodePart()}"
@@ -29,13 +27,19 @@ object WearFilePathCodec {
             require(encodedMetadata.isNotBlank() && '/' !in encodedMetadata)
             JSON.decodeFromString<WearFileMetadata>(encodedMetadata.decodePart())
         }.flatMap { metadata ->
-            if (metadata.measurementName.isSafePathPart() && metadata.fileName.isSafePathPart()) {
+            if (metadata.isValid()) {
                 AppResult.success(metadata)
             } else {
                 AppResult.failure(AppError(AppErrorCode.CONNECTIVITY, "Validate Wear file path"))
             }
         }
     }
+
+    private fun WearFileMetadata.isValid(): Boolean =
+        measurementName.isSafePathPart() && fileName.isSafePathPart() && requestId.isValidRequestId()
+
+    private fun String.isValidRequestId(): Boolean = isNotBlank() && length <= 128 &&
+        all { it.isLetterOrDigit() || it == '-' || it == '_' }
 
     private fun String.encodePart(): String = encodeToByteArray().toBase64Url()
 
@@ -86,7 +90,7 @@ object WearFilePathCodec {
     private fun String.isSafePathPart(): Boolean =
         isNotBlank() && length <= MAX_PART_LENGTH && '/' !in this && '\\' !in this && this != "." && this != ".."
 
-    const val PREFIX = "/sensorbox/v2/file"
+    const val PREFIX = "/sensorbox/v3/file"
     private const val MAX_PART_LENGTH = 120
     private const val BYTE_MASK = 0xFF
     private const val BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"

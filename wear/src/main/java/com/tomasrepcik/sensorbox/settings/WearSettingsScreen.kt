@@ -1,18 +1,12 @@
 package com.tomasrepcik.sensorbox.settings
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
-import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import com.tomasrepcik.sensorbox.R
 import com.tomasrepcik.sensorbox.design.WearListScreen
 import com.tomasrepcik.sensorbox.design.WearPageTitle
-import com.tomasrepcik.sensorbox.design.WearPrimaryButton
 import com.tomasrepcik.sensorbox.design.WearRadioRow
 import com.tomasrepcik.sensorbox.design.WearSectionTitle
 import com.tomasrepcik.sensorbox.design.WearSwitchRow
@@ -27,7 +21,6 @@ internal fun WearSettingsScreen(state: WearDashboardState, accept: (WearDashboar
         item { WearPageTitle(stringResource(R.string.activity_settings), transformation) }
         samplingPreferenceItems(state, transformation, accept)
         recordingPreferenceItems(state, transformation, accept)
-        measurementTransferItems(state, transformation, accept)
         state.message?.let { message ->
             item { WearSectionTitle(wearMessageText(message), transformation) }
         }
@@ -86,23 +79,5 @@ private fun TransformingLazyColumnScope.recordingPreferenceItems(
             transformation = transformation,
             onCheckedChange = { accept(WearDashboardIntent.ToggleDisplay) },
         )
-    }
-}
-
-private fun TransformingLazyColumnScope.measurementTransferItems(
-    state: WearDashboardState,
-    transformation: TransformationSpec,
-    accept: (WearDashboardIntent) -> Unit,
-) {
-    item { WearSectionTitle(stringResource(R.string.transfer), transformation) }
-    item {
-        WearPrimaryButton(
-            label = stringResource(if (state.isSyncing) R.string.syncing else R.string.sync_recordings),
-            transformation = transformation,
-            enabled = !state.isSyncing,
-        ) { accept(WearDashboardIntent.SyncMeasurements) }
-    }
-    if (state.isSyncing) {
-        item { CircularProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp)) }
     }
 }

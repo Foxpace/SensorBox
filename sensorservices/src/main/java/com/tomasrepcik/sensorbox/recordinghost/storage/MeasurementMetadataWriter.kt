@@ -14,9 +14,7 @@ import com.tomasrepcik.sensorbox.core.time.EpochClock
 import com.tomasrepcik.sensorbox.recording.RecordingStopContext
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingRequest
 import com.tomasrepcik.sensorbox.recordinghost.sources.sensor.SensorFileStats
-import com.tomasrepcik.sensorbox.recordinghost.storage.MeasurementStorage
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Collects session metadata and writes it once when the recording is closed. */
@@ -24,6 +22,7 @@ internal class MeasurementMetadataWriter(
     private val storage: MeasurementStorage,
     private val clock: EpochClock,
     private val sensorManager: SensorManager,
+    private val device: String,
 ) {
     private var request: RecordingRequest? = null
     private var startedAtMillis: Long = 0L
@@ -67,6 +66,8 @@ internal class MeasurementMetadataWriter(
                 type = RECORDING_TYPE,
                 date = ClockFormats.metadataTimestamp(startedAtMillis),
                 folder = active.folderName,
+                sessionId = active.sessionId,
+                device = device,
                 notes = active.notes,
                 annotations = annotations.toList(),
                 ranges = sensorRanges(active),
@@ -145,6 +146,8 @@ internal data class MeasurementMetadata(
     val type: String,
     val date: String,
     val folder: String,
+    val sessionId: String,
+    val device: String,
     val notes: List<String>,
     val annotations: List<MeasurementAnnotation>,
     val ranges: List<SensorRange>,

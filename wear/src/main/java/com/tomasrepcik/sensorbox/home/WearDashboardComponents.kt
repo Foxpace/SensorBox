@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.home
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
 import androidx.wear.compose.material3.lazy.TransformationSpec
@@ -21,15 +20,6 @@ internal fun TransformingLazyColumnItemScope.WearBackButton(
 @Composable
 internal fun wearMessageText(message: WearDashboardMessage): String = when (message) {
     WearDashboardMessage.PickSource -> stringResource(R.string.message_pick_source)
-
     WearDashboardMessage.PermissionRequired -> stringResource(R.string.message_permission_required)
-
     WearDashboardMessage.SensorUnavailable -> stringResource(R.string.message_sensor_unavailable)
-
-    WearDashboardMessage.Syncing -> stringResource(R.string.syncing)
-
-    WearDashboardMessage.SyncFailed -> stringResource(R.string.message_sync_failed)
-
-    is WearDashboardMessage.FilesSent ->
-        pluralStringResource(R.plurals.message_files_sent, message.count, message.count)
 }

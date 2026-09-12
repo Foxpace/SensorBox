@@ -114,7 +114,7 @@ internal fun SignificantMotionSetup(state: RecordingState, onIntent: (RecordingS
 }
 
 @Composable
-internal fun RecordingArchivePanel(path: String?, onChoose: () -> Unit) {
+internal fun RecordingArchivePanel(path: String?, enabled: Boolean = true, onChoose: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +127,11 @@ internal fun RecordingArchivePanel(path: String?, onChoose: () -> Unit) {
             )
         }
         Spacer(Modifier.width(14.dp))
-        SensorBoxSecondaryButton(stringResource(if (path == null) R.string.choose else R.string.change), onChoose)
+        SensorBoxSecondaryButton(
+            stringResource(if (path == null) R.string.choose else R.string.change),
+            onChoose,
+            enabled = enabled,
+        )
     }
     SensorBoxSettingsDivider()
 }

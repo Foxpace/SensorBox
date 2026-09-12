@@ -54,7 +54,6 @@ class MainActivity : ComponentActivity() {
                 updateDisplayPolicy(state.preferences.display.keepWearDisplayOn)
             }
             WearSensorBoxTheme(
-                themeMode = state.preferences.display.themeMode,
                 dynamicColor = state.preferences.display.dynamicColors,
             ) {
                 WearDashboardScreen(

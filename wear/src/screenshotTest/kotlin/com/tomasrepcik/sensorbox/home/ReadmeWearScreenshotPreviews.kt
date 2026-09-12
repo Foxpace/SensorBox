@@ -18,24 +18,25 @@ import com.tomasrepcik.sensorbox.core.preferences.AppPreferences
 import com.tomasrepcik.sensorbox.core.preferences.DisplayPreferences
 import com.tomasrepcik.sensorbox.core.preferences.RecordingPreferences
 import com.tomasrepcik.sensorbox.design.WearSensorBoxTheme
+import com.tomasrepcik.sensorbox.recording.session.RecordingSessionState
 import com.tomasrepcik.sensorbox.recording.sources.WatchSensorDescriptor
 
 @PreviewTest
 @ReadmeWearPreview
 @Composable
-fun readmeWearDashboard() = WearReadmeFrame(WearDashboardState(route = WearRoute.MENU))
+fun ReadmeWearDashboard() = WearReadmeFrame(WearDashboardState(route = WearRoute.MENU))
 
 @PreviewTest
 @ReadmeWearPreview
 @Composable
-fun readmeWearLivePicker() = WearReadmeFrame(
+fun ReadmeWearLivePicker() = WearReadmeFrame(
     WearDashboardState(route = WearRoute.LIVE, sensors = readmeWearSensors()),
 )
 
 @PreviewTest
 @ReadmeWearPreview
 @Composable
-fun wearRecordSelection() = WearReadmeFrame(
+fun WearRecordSelection() = WearReadmeFrame(
     WearDashboardState(
         route = WearRoute.RECORD,
         sensors = readmeWearSensors(),
@@ -47,7 +48,7 @@ fun wearRecordSelection() = WearReadmeFrame(
 @PreviewTest
 @ReadmeWearPreview
 @Composable
-fun wearSettings() = WearReadmeFrame(
+fun WearSettings() = WearReadmeFrame(
     WearDashboardState(
         route = WearRoute.SETTINGS,
         preferences = AppPreferences(
@@ -60,11 +61,10 @@ fun wearSettings() = WearReadmeFrame(
 @PreviewTest
 @ReadmeWearPreview
 @Composable
-fun wearActiveRecording() = WearReadmeFrame(
+fun WearActiveRecording() = WearReadmeFrame(
     WearDashboardState(
         route = WearRoute.ACTIVE,
-        selectedSensorIds = setOf(1, 4),
-        includesGps = true,
+        activeSession = RecordingSessionState.Running("phone", "walk", 0L, listOf(1, 4), true, 60_000L, 1),
     ),
 )
 

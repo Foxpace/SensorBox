@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.wearoslib.pairedrecording
 
 import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,7 +9,22 @@ sealed interface WearCommand {
     data object LaunchPhone : WearCommand
 
     @Serializable
-    data object SyncMeasurements : WearCommand
+    data class CheckWatchMeasurements(val requestId: String) : WearCommand
+
+    @Serializable
+    data class CopyWatchMeasurements(val requestId: String) : WearCommand
+
+    @Serializable
+    data class CancelWatchSync(val requestId: String) : WearCommand
+
+    @Serializable
+    data class WatchMeasurementsStatus(
+        val requestId: String,
+        val fileCount: Int,
+        val measurementCount: Int,
+        val finished: Boolean = false,
+        val failed: Boolean = false,
+    ) : WearCommand
 
     @Serializable
     data object RequestAvailableSensors : WearCommand
@@ -27,7 +41,6 @@ sealed interface WearCommand {
     @Serializable
     data class RecordingResult(
         val sessionId: String,
-        @SerialName("action")
         val operation: WearRecordingOperation,
         val outcome: WearRecordingOutcome,
         @Serializable(with = AppErrorCodeNameSerializer::class)
@@ -45,6 +58,7 @@ data class WearRecordingRequest(
     val sensorIds: List<Int>,
     val includesGps: Boolean,
     val durationMillis: Long = 0L,
+    val settings: WearRecordingSettings,
 )
 
 @Serializable
@@ -91,9 +105,21 @@ fun WearCommand.recordingSessionId(): String? = when (this) {
 
     is WearCommand.RecordingResult -> sessionId
 
+    is WearCommand.CheckWatchMeasurements,
+    is WearCommand.CopyWatchMeasurements,
+    is WearCommand.CancelWatchSync,
+    is WearCommand.WatchMeasurementsStatus,
     WearCommand.LaunchPhone,
     WearCommand.RequestAvailableSensors,
     is WearCommand.AvailableSensors,
-    WearCommand.SyncMeasurements,
     -> null
 }
+
+@Serializable
+data class WearRecordingSettings(
+    val samplingPeriodIndex: Int,
+    val stopOnLowBattery: Boolean,
+    val useWakeLock: Boolean,
+    val gpsIntervalSeconds: Int,
+    val gpsMinDistanceMeters: Int,
+)

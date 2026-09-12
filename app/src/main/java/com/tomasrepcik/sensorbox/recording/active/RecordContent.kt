@@ -30,7 +30,11 @@ import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-internal fun RecordContent(state: RecordingState, onIntent: (RecordIntent) -> Unit) {
+internal fun RecordContent(
+    state: RecordingState,
+    onIntent: (RecordIntent) -> Unit,
+    watchSync: @Composable () -> Unit = {},
+) {
     LazyColumn(contentPadding = PaddingValues(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 24.dp)) {
         stickyHeader {
             Surface(color = MaterialTheme.colorScheme.background) {
@@ -38,6 +42,7 @@ internal fun RecordContent(state: RecordingState, onIntent: (RecordIntent) -> Un
                     RecordHeader(
                         onMeasurements = { onIntent(RecordIntent.Navigate(MainRoute.MEASUREMENTS)) },
                         onOptions = { onIntent(RecordIntent.Navigate(MainRoute.SETTINGS)) },
+                        watchSync = watchSync,
                     )
                     Spacer(Modifier.height(18.dp))
                 }

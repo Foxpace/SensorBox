@@ -1,0 +1,5 @@
+<resources>
+    <string name="measurement_phone">Phone</string>
+    <string name="measurement_watch">Watch</string>
+    <string name="measurement_pair">Phone + Watch · Paired recording</string>
+</resources>

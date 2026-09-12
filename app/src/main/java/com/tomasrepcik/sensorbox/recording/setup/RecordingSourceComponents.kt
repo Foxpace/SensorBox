@@ -63,10 +63,11 @@ internal fun GpsRow(selected: Boolean, onToggle: () -> Unit, onInfo: (() -> Unit
 }
 
 @Composable
-internal fun RecordHeader(onMeasurements: () -> Unit, onOptions: () -> Unit) {
+internal fun RecordHeader(onMeasurements: () -> Unit, onOptions: () -> Unit, watchSync: @Composable () -> Unit = {}) {
     SensorBoxTopAppBar(
         title = stringResource(R.string.sources),
         actions = {
+            watchSync()
             IconButton(onClick = onMeasurements) {
                 Icon(
                     painterResource(R.drawable.ic_baseline_folder),

@@ -21,15 +21,8 @@ class WearMenuRobot(
         rule.onNodeWithContentDescription("Record").performClick()
     }
 
-    fun whenSyncIsTapped() = apply {
-        rule.onNodeWithContentDescription("Sync recordings").performClick()
-    }
-
     fun thenRecordIsVisible() = apply {
         rule.onNodeWithContentDescription("Record").assertIsDisplayed()
     }
 
-    fun thenSyncIsVisible() = apply {
-        rule.onNodeWithContentDescription("Sync recordings").assertIsDisplayed()
-    }
 }

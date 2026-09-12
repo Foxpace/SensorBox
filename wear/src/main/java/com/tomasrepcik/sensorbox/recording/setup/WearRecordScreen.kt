@@ -15,7 +15,7 @@ import com.tomasrepcik.sensorbox.home.wearMessageText
 internal fun WearRecordScreen(state: WearDashboardState, accept: (WearDashboardIntent) -> Unit) {
     val selectedCount = state.selectedSensorIds.size + if (state.includesGps) 1 else 0
     WearListScreen(
-        edgeButton = { WearRecordingStartButton(selectedCount, accept) },
+        edgeButton = { WearRecordingStartButton(selectedCount, accept, state.isSyncing) },
     ) { transformation ->
         item { WearPageTitle(stringResource(R.string.sources), transformation) }
         item { WearGpsSourceRow(state.includesGps, transformation) { accept(WearDashboardIntent.ToggleGps) } }

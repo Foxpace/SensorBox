@@ -9,6 +9,7 @@ import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.core.failure.appResult
 import com.tomasrepcik.sensorbox.core.failure.flatMap
 import com.tomasrepcik.sensorbox.core.storage.DocumentStorage
+import com.tomasrepcik.sensorbox.core.storage.MeasurementSyncLock
 import com.tomasrepcik.sensorbox.recording.setup.RecordingSetup
 import com.tomasrepcik.sensorbox.recording.setup.StartedPhoneRecording
 import com.tomasrepcik.sensorbox.recordinghost.request.RecordingIntentFactory
@@ -33,6 +34,7 @@ class AndroidPhoneRecordingController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intentFactory: RecordingIntentFactory,
     private val documentStorage: DocumentStorage,
+    private val syncLock: MeasurementSyncLock = MeasurementSyncLock(),
 ) : PhoneRecordingController {
     override fun start(sessionId: String, request: RecordingSetup): AppResult<StartedPhoneRecording> = documentStorage
         .hasConfiguredDirectory()
@@ -53,8 +55,10 @@ class AndroidPhoneRecordingController @Inject constructor(
     ) {
         val folderName = intentFactory.newFolderName(request.customName)
         val recordingRequest = request.toRecordingRequest(sessionId, folderName)
-        checkNotNull(ContextCompat.startForegroundService(context, intentFactory.create(recordingRequest))) {
-            "Recording foreground service is not registered"
+        syncLock.whenIdle {
+            checkNotNull(ContextCompat.startForegroundService(context, intentFactory.create(recordingRequest))) {
+                "Recording foreground service is not registered"
+            }
         }
         StartedPhoneRecording(sessionId, folderName, recordingRequest.durationMillis)
     }

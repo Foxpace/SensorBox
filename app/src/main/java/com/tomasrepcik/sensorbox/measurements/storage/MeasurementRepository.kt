@@ -20,6 +20,9 @@ data class MeasurementSummary(
     val recordedAtMillis: Long?,
     val recordedAtText: String?,
     val fileCount: Int,
+    val sessionId: String? = null,
+    val device: String? = null,
+    val recordingName: String = name,
 )
 
 data class MeasurementDetails(

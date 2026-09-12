@@ -12,10 +12,18 @@ import com.tomasrepcik.sensorbox.home.WearDashboardIntent
 import com.tomasrepcik.sensorbox.recording.sources.WatchSensorDescriptor
 
 @Composable
-internal fun WearRecordingStartButton(selectedCount: Int, accept: (WearDashboardIntent) -> Unit) {
+internal fun WearRecordingStartButton(
+    selectedCount: Int,
+    accept: (WearDashboardIntent) -> Unit,
+    syncing: Boolean = false,
+) {
     WearPrimaryEdgeButton(
-        label = pluralStringResource(R.plurals.start_source_count, selectedCount, selectedCount),
-        enabled = selectedCount > 0,
+        label = if (syncing) {
+            androidx.compose.ui.res.stringResource(R.string.wait_for_watch_sync)
+        } else {
+            pluralStringResource(R.plurals.start_source_count, selectedCount, selectedCount)
+        },
+        enabled = selectedCount > 0 && !syncing,
         onClick = { accept(WearDashboardIntent.StartRecording) },
     )
 }

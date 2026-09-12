@@ -9,6 +9,21 @@ import org.junit.Test
 
 class WearDashboardReducerTest {
     @Test
+    fun `Given a previously viewed sensor When live preview is reopened Then the picker has no old selection`() {
+        // Given
+        val previous = WearDashboardState(route = WearRoute.LIVE, liveSensorType = 1, liveSamples = listOf(listOf(2f)))
+        val menu = WearDashboardReducer.reduce(previous, WearDashboardIntent.Back)
+
+        // When
+        val reopened = WearDashboardReducer.reduce(menu, WearDashboardIntent.Open(WearMenuDestination.LIVE_SENSOR))
+
+        // Then
+        assertEquals(WearRoute.LIVE, reopened.route)
+        assertEquals(null, reopened.liveSensorType)
+        assertTrue(reopened.liveSamples.isEmpty())
+    }
+
+    @Test
     fun `Given menu When record is opened Then record route is selected`() {
         val givenState = WearDashboardState()
 
@@ -33,16 +48,6 @@ class WearDashboardReducerTest {
     }
 
     @Test
-    fun `Given menu When sync is selected Then transfer screen is opened`() {
-        val actual = WearDashboardReducer.reduce(
-            WearDashboardState(),
-            WearDashboardIntent.Open(WearMenuDestination.SYNC),
-        )
-
-        assertEquals(WearRoute.SETTINGS, actual.route)
-    }
-
-    @Test
     fun `Given live picker When sensor is chosen Then chart route retains sensor`() {
         val givenState = WearDashboardState(route = WearRoute.LIVE)
 
@@ -63,5 +68,34 @@ class WearDashboardReducerTest {
 
         assertEquals(WearRoute.ACTIVE, active.route)
         assertEquals(WearRoute.MENU, finished.route)
+    }
+
+    @Test
+    fun `Given local selections When phone recording starts Then its session is displayed`() {
+        // Given
+        val state = WearDashboardState(selectedSensorIds = setOf(1, 2, 3), includesGps = true)
+        val session = RecordingSessionState.Running("phone", "walk", 1L, listOf(4), false, 60_000L, 3)
+
+        // When
+        val active = WearDashboardReducer.recordingSessionChanged(state, session)
+
+        // Then
+        assertEquals(session, active.activeSession)
+        assertEquals(setOf(1, 2, 3), active.selectedSensorIds)
+        assertTrue(active.includesGps)
+    }
+
+    @Test
+    fun `Given a running session When stopping Then its config remains visible`() {
+        // Given
+        val session = RecordingSessionState.Running("phone", "walk", 1L, listOf(4), false)
+        val active = WearDashboardReducer.recordingSessionChanged(WearDashboardState(), session)
+
+        // When
+        val stopping = WearDashboardReducer.recordingSessionChanged(active, RecordingSessionState.Stopping)
+
+        // Then
+        assertEquals(session, stopping.activeSession)
+        assertTrue(stopping.isStopping)
     }
 }

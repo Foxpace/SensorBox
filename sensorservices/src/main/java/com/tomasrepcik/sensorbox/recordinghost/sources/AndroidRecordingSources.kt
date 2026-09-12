@@ -1,6 +1,7 @@
 package com.tomasrepcik.sensorbox.recordinghost.sources
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.SensorManager
 import com.google.android.gms.location.LocationServices
 import com.tomasrepcik.sensorbox.core.failure.AppResult
@@ -28,7 +29,13 @@ internal class AndroidRecordingSources(
     clock: EpochClock,
 ) {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
-    private val sessionMetadata = SessionMetadataRecordingSource(request, storage, clock, sensorManager)
+    private val sessionMetadata = SessionMetadataRecordingSource(
+        request,
+        storage,
+        clock,
+        sensorManager,
+        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)) "watch" else "phone",
+    )
 
     val sources: List<RecordingSource> = listOf(
         sessionMetadata,

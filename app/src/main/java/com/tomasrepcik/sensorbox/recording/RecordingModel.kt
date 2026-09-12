@@ -49,6 +49,7 @@ data class RecordingState(
     val elapsedSeconds: Long = 0,
     val isWatchConnected: Boolean = false,
     val isStarting: Boolean = false,
+    val isSyncingWatch: Boolean = false,
     val startCountdownSeconds: Int? = null,
     val message: RecordingMessage = RecordingMessage.NONE,
     val errorCode: AppErrorCode? = null,
