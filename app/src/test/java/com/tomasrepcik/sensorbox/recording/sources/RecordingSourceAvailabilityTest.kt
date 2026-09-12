@@ -9,9 +9,9 @@ import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.SendWearCommandUseCas
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearCommandCodec
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearSensorInfo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -23,15 +23,13 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordingSourceAvailabilityTest {
     @Test
-    fun `Given connected watch When sources are observed Then discovery is requested`() = runTest {
+    fun `Given connected watch When availability starts Then discovery is requested`() = runTest {
         // Given
         val repository = connectedRepository()
-        val availability = availability(repository)
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            availability.observe().collect()
-        }
+        val availability = availability(repository, applicationScope())
 
         // When
+        availability.start()
         advanceUntilIdle()
 
         // Then
@@ -41,9 +39,26 @@ class RecordingSourceAvailabilityTest {
     }
 
     @Test
+    fun `Given disconnected watch When it connects later Then discovery is requested`() = runTest {
+        // Given
+        val repository = FakeWearConnectionRepository()
+        val availability = availability(repository, applicationScope())
+        availability.start()
+        advanceUntilIdle()
+
+        // When
+        repository.emit(WearConnection.Connected(WearNode("watch", "Watch", isNearby = true)))
+        advanceUntilIdle()
+
+        // Then
+        val command = WearCommandCodec.decode(repository.sentMessages.single().payload).getOrThrow()
+        assertEquals(WearCommand.RequestAvailableSensors, command)
+    }
+
+    @Test
     fun `Given an empty watch response When it is received Then watch is available`() = runTest {
         // Given
-        val availability = availability(connectedRepository())
+        val availability = availability(connectedRepository(), applicationScope())
 
         // When
         availability.receive(emptyList())
@@ -56,7 +71,7 @@ class RecordingSourceAvailabilityTest {
     @Test
     fun `Given watch sensors When received Then details are sorted and retained`() = runTest {
         // Given
-        val availability = availability(connectedRepository())
+        val availability = availability(connectedRepository(), applicationScope())
 
         // When
         availability.receive(listOf(sensor(2, "Z sensor"), sensor(1, "A sensor"), sensor(1, "Duplicate")))
@@ -70,11 +85,10 @@ class RecordingSourceAvailabilityTest {
     fun `Given available watch sources When watch disconnects Then watch sources clear`() = runTest {
         // Given
         val repository = connectedRepository()
-        val availability = availability(repository)
+        val availability = availability(repository, applicationScope())
         availability.receive(listOf(sensor(1, "Sensor")))
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            availability.observe().collect()
-        }
+        availability.start()
+        advanceUntilIdle()
 
         // When
         repository.emit(WearConnection.Disconnected)
@@ -85,10 +99,18 @@ class RecordingSourceAvailabilityTest {
         assertTrue(availability.current.watchSensors.isEmpty())
     }
 
-    private fun availability(repository: FakeWearConnectionRepository) = RecordingSourceAvailability(
-        phoneSensors = AvailableSensorsUseCase { emptyList() },
+    private fun availability(
+        repository: FakeWearConnectionRepository,
+        scope: CoroutineScope,
+    ): RecordingSourceAvailability = RecordingSourceAvailability(
+        phoneSensors = { emptyList() },
         observeWatchCapability = ObserveWearCapabilityUseCase(repository),
         sendWatchCommand = SendWearCommandUseCase(SendWearMessageUseCase(repository)),
+        applicationScope = scope,
+    )
+
+    private fun TestScope.applicationScope() = CoroutineScope(
+        backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler),
     )
 
     private fun connectedRepository() = FakeWearConnectionRepository(

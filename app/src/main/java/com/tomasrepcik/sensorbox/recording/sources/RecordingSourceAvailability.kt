@@ -1,7 +1,6 @@
 package com.tomasrepcik.sensorbox.recording.sources
 
-import com.tomasrepcik.sensorbox.core.failure.AppError
-import com.tomasrepcik.sensorbox.core.failure.AppErrorCode
+import com.tomasrepcik.sensorbox.bootstrap.ApplicationScope
 import com.tomasrepcik.sensorbox.wearoslib.connection.ObserveWearCapabilityUseCase
 import com.tomasrepcik.sensorbox.wearoslib.connection.WearConnection
 import com.tomasrepcik.sensorbox.wearoslib.connection.WearOsConstants.WEAR_APP_CAPABILITY
@@ -9,11 +8,13 @@ import com.tomasrepcik.sensorbox.wearoslib.connection.WearOsConstants.WEAR_MESSA
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.SendWearCommandUseCase
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearCommand
 import com.tomasrepcik.sensorbox.wearoslib.pairedrecording.WearSensorInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,8 +39,10 @@ class RecordingSourceAvailability @Inject constructor(
     phoneSensors: AvailableSensorsUseCase,
     private val observeWatchCapability: ObserveWearCapabilityUseCase,
     private val sendWatchCommand: SendWearCommandUseCase,
+    @ApplicationScope private val applicationScope: CoroutineScope,
 ) : AvailableRecordingSourcesUseCase,
     ReceiveWatchSensorsUseCase {
+    private val started = AtomicBoolean(false)
     private val mutableSources = MutableStateFlow(
         AvailableRecordingSources(phoneSensors = phoneSensors()),
     )
@@ -47,14 +50,13 @@ class RecordingSourceAvailability @Inject constructor(
     override val current: AvailableRecordingSources
         get() = mutableSources.value
 
-    override fun observe(): Flow<AvailableRecordingSources> = channelFlow {
-        launch { mutableSources.collect { sources -> send(sources) } }
-        observeWatchCapability(WEAR_APP_CAPABILITY)
-            .catch { error ->
-                AppError.from(AppErrorCode.CONNECTIVITY, "Observe Wear connection", error)
-                emit(WearConnection.Disconnected)
-            }
-            .collect(::onWatchConnectionChanged)
+    override fun observe(): Flow<AvailableRecordingSources> = mutableSources.asStateFlow()
+
+    fun start() {
+        if (!started.compareAndSet(false, true)) return
+        applicationScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            observeWatchCapability(WEAR_APP_CAPABILITY).collect(::onWatchConnectionChanged)
+        }
     }
 
     override fun receive(sensors: List<WearSensorInfo>) {

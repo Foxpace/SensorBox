@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +20,8 @@ class MeasurementDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MeasurementDetailsState())
     private val mutableEffects = Channel<MeasurementDetailsEffect>(Channel.BUFFERED)
+    private var activeMeasurementId: String? = null
+    private var loadJob: Job? = null
 
     val state = mutableState.asStateFlow()
     val effects = mutableEffects.receiveAsFlow()
@@ -31,7 +34,10 @@ class MeasurementDetailsViewModel @Inject constructor(
     }
 
     private fun load(measurementId: String) {
-        viewModelScope.launch {
+        if (activeMeasurementId == measurementId) return
+        activeMeasurementId = measurementId
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             mutableState.value = MeasurementDetailsReducer.reduce(MeasurementDetailsResult.Loading)
             repository.loadMeasurementDetails(measurementId).fold(
                 onSuccess = { details ->

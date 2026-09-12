@@ -14,13 +14,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext context: Context) :
@@ -35,19 +35,13 @@ class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext
         }
         capabilityClient.addListener(capabilityListener, capability).await()
         trySend(loadConnection(capability))
-        val nodePolling = launch {
-            while (isActive) {
-                delay(NODE_POLL_INTERVAL_MILLIS)
-                trySend(loadConnectedNodeConnection())
-            }
-        }
         awaitClose {
-            nodePolling.cancel()
             capabilityClient.removeListener(capabilityListener)
         }
-    }.catch { error ->
-        AppError.from(AppErrorCode.CONNECTIVITY, "Observe Wear connection", error)
+    }.retryWhen { _, _ ->
         emit(WearConnection.Disconnected)
+        delay(CONNECTION_RETRY_DELAY_MILLIS.milliseconds)
+        true
     }.distinctUntilChanged()
 
     override suspend fun findNode(capability: String): WearNode? {
@@ -75,11 +69,6 @@ class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext
         ?.let(WearConnection::Connected)
         ?: WearConnection.Disconnected
 
-    private suspend fun loadConnectedNodeConnection(): WearConnection = WearNodeSelector
-        .select(nodeClient.connectedNodes.await().map { it.toWearNode() })
-        ?.let(WearConnection::Connected)
-        ?: WearConnection.Disconnected
-
     private fun Node.toWearNode() = WearNode(
         id = id,
         displayName = displayName,
@@ -87,6 +76,6 @@ class GooglePlayWearConnectionRepository @Inject constructor(@ApplicationContext
     )
 
     private companion object {
-        const val NODE_POLL_INTERVAL_MILLIS = 2_000L
+        const val CONNECTION_RETRY_DELAY_MILLIS = 2_000L
     }
 }

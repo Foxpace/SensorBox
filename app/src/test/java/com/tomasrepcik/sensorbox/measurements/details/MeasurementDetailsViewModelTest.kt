@@ -49,4 +49,22 @@ class MeasurementDetailsViewModelTest {
             viewModel.effects.first(),
         )
     }
+
+    @Test
+    fun `Given loaded details When the same screen returns Then its state is preserved`() = runTest {
+        // Given
+        val repository = FakeMeasurementRepository()
+        val viewModel = MeasurementDetailsViewModel(repository, measurementFailureStore())
+        viewModel.accept(MeasurementDetailsIntent.Load(MeasurementTestFixtures.summary.id))
+        advanceUntilIdle()
+        val loadedState = viewModel.state.value
+
+        // When
+        viewModel.accept(MeasurementDetailsIntent.Load(MeasurementTestFixtures.summary.id))
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(1, repository.detailsLoadCount)
+        assertEquals(loadedState, viewModel.state.value)
+    }
 }

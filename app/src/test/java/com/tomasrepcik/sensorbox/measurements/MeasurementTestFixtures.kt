@@ -2,7 +2,6 @@ package com.tomasrepcik.sensorbox.measurements
 
 import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
-import com.tomasrepcik.sensorbox.core.failure.DiagnosticLogger
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementDetails
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileContent
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileKind
@@ -42,13 +41,17 @@ internal class FakeMeasurementRepository : MeasurementRepository {
     var measurementsResult: AppResult<List<MeasurementSummary>> =
         AppResult.success(listOf(MeasurementTestFixtures.summary))
     var detailsResult: AppResult<MeasurementDetails> = AppResult.success(MeasurementTestFixtures.details)
+    var detailsLoadCount = 0
     var fileResult: AppResult<MeasurementFileContent> = AppResult.success(MeasurementTestFixtures.sensorContent)
     var fileLoadGate: CompletableDeferred<Unit>? = null
     var fileProgress = listOf(1f)
 
     override suspend fun loadMeasurements(): AppResult<List<MeasurementSummary>> = measurementsResult
 
-    override suspend fun loadMeasurementDetails(measurementId: String): AppResult<MeasurementDetails> = detailsResult
+    override suspend fun loadMeasurementDetails(measurementId: String): AppResult<MeasurementDetails> {
+        detailsLoadCount += 1
+        return detailsResult
+    }
 
     override suspend fun loadMeasurementFile(
         measurementId: String,
@@ -61,4 +64,4 @@ internal class FakeMeasurementRepository : MeasurementRepository {
     }
 }
 
-internal fun measurementFailureStore() = AppFailureStore(DiagnosticLogger { })
+internal fun measurementFailureStore() = AppFailureStore { }
