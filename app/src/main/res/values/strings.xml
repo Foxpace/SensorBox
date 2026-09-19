@@ -46,8 +46,8 @@
     <string name="intro_back">Back</string>
     <string name="intro_finish">Start SensorBox</string>
     <string name="dialog_privacy_policy">SensorBox does not collect or upload your sensor or GPS recordings. Your measurements stay in the recording archive you select. Recording begins only after your intent and remains visible through a foreground-service notification.</string>
-    <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
-    <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
+    <string name="link_terms" translatable="false">https://tomasrepcik.dev/terms-of-use</string>
+    <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/privacy-policy</string>
 
     <string name="about_app_description">SensorBox records raw phone and Wear OS sensor data locally using modern Android APIs.</string>
     <string name="about_privacy_policy">Privacy policy</string>

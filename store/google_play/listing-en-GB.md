@@ -1,3 +1,19 @@
+# English (United Kingdom) listing
+
+## App name
+
+SensorBox
+
+Character count: 9 of 30
+
+## Short description
+
+Record phone and Wear OS sensor data to local CSV files
+
+Character count: 55 of 80
+
+## Full description
+
 SensorBox records raw samples from supported phone and Wear OS sensors. Choose the sensors you need, add GPS or activity recognition when required, set the recording duration and sampling options, then start recording.
 
 Phone measurements are written as CSV files to a recording archive that you choose with Android's system folder picker. Notes, recording details and timestamped annotations are saved with the measurement metadata.
@@ -7,3 +23,5 @@ Browse stored measurements in the phone app and preview recorded values on chart
 The Wear OS app can record without a phone. It also provides live sensor charts and paired recording controls. You can copy completed watch measurements into the phone archive. After the phone confirms that a measurement was saved, SensorBox removes that confirmed copy from the watch.
 
 SensorBox has no account, advertising, analytics or publisher-operated cloud storage. Recordings remain under your control on your devices and in the archive you select.
+
+Character count: 1,036 of 4,000, including paragraph breaks

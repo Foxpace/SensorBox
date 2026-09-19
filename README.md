@@ -73,4 +73,15 @@ You need JDK 17 and Android SDK 37. A Wear OS device or emulator is only needed 
 
 No Firebase project, Maps key, secrets file, account, or external-storage permission is required.
 
+## Release it
+
+The Android release workflow builds, signs, verifies, and uploads the phone and Wear OS bundles using environment-provided credentials:
+
+```sh
+bundle install
+./release_android.sh --validate-only
+```
+
+The default Google Play destinations are draft releases on `internal` for the phone and `wear:qa` for Wear OS. See the [Google Play submission pack](store/google_play/README.md) for the required environment variables, listing materials, and remaining submission checks.
+
 SensorBox is licensed under the [Apache License 2.0](LICENSE).

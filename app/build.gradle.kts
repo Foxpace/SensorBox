@@ -9,6 +9,9 @@ plugins {
     alias(libs.plugins.screenshot)
 }
 
+val releaseVersionName = providers.gradleProperty("sensorbox.versionName")
+val phoneReleaseVersionCode = providers.gradleProperty("sensorbox.phoneVersionCode").map { it.toInt() }
+
 android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     namespace = "com.tomasrepcik.sensorbox"
@@ -19,8 +22,8 @@ android {
         applicationId = "com.tomasrepcik.sensorbox"
         minSdk = 24
         targetSdk = 37
-        versionCode = 87
-        versionName = "5.0.0-dev"
+        versionCode = phoneReleaseVersionCode.orNull ?: 87
+        versionName = releaseVersionName.orNull ?: "5.0.0-dev"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

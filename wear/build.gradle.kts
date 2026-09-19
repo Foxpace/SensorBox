@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.screenshot)
 }
 
+val releaseVersionName = providers.gradleProperty("sensorbox.versionName")
+val wearReleaseVersionCode = providers.gradleProperty("sensorbox.wearVersionCode").map { it.toInt() }
+
 android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     namespace = "com.tomasrepcik.sensorbox"
@@ -17,8 +20,8 @@ android {
         applicationId = "com.tomasrepcik.sensorbox"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1000049
-        versionName = "4.0.0-dev"
+        versionCode = wearReleaseVersionCode.orNull ?: 1000049
+        versionName = releaseVersionName.orNull ?: "4.0.0-dev"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

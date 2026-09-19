@@ -62,6 +62,6 @@
         <item quantity="other">Start with %1$d sources</item>
     </plurals>
 
-    <string name="link_terms" translatable="false">https://tomasrepcik.dev/sensorbox/terms-of-use</string>
-    <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/sensorbox/privacy-policy</string>
+    <string name="link_terms" translatable="false">https://tomasrepcik.dev/terms-of-use</string>
+    <string name="link_privacy_policy" translatable="false">https://tomasrepcik.dev/privacy-policy</string>
 </resources>

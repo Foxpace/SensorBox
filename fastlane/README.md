@@ -15,37 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Android
 
-### android test
+### android upload_bundle
 
 ```sh
-[bundle exec] fastlane android test
+[bundle exec] fastlane android upload_bundle
 ```
 
-Runs all the tests
-
-### android increment_vc
-
-```sh
-[bundle exec] fastlane android increment_vc
-```
-
-Increment version code
-
-### android build
-
-```sh
-[bundle exec] fastlane android build
-```
-
-Build
-
-### android deploy_internal
-
-```sh
-[bundle exec] fastlane android deploy_internal
-```
-
-Phone app to the google play
+Upload one signed Android bundle to a Google Play track
 
 ----
 

@@ -23,11 +23,11 @@ class PolicyLinksTest {
         }
 
         assertEquals(
-            "https://tomasrepcik.dev/sensorbox/privacy-policy",
+            "https://tomasrepcik.dev/privacy-policy",
             policyLinks["link_privacy_policy"],
         )
         assertEquals(
-            "https://tomasrepcik.dev/sensorbox/terms-of-use",
+            "https://tomasrepcik.dev/terms-of-use",
             policyLinks["link_terms"],
         )
     }
