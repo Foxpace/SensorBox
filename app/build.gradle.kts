@@ -11,6 +11,13 @@ plugins {
 
 val releaseVersionName = providers.gradleProperty("sensorbox.versionName")
 val phoneReleaseVersionCode = providers.gradleProperty("sensorbox.phoneVersionCode").map { it.toInt() }
+val releaseSigningValues = mapOf(
+    "keystorePath" to providers.environmentVariable("SENSORBOX_ANDROID_KEYSTORE_PATH").orNull,
+    "keystorePassword" to providers.environmentVariable("SENSORBOX_ANDROID_KEYSTORE_PASSWORD").orNull,
+    "keyAlias" to providers.environmentVariable("SENSORBOX_ANDROID_KEY_ALIAS").orNull,
+    "keyPassword" to providers.environmentVariable("SENSORBOX_ANDROID_KEY_PASSWORD").orNull,
+)
+val releaseSigningConfigured = releaseSigningValues.values.all { !it.isNullOrBlank() }
 
 android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
@@ -28,8 +35,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseSigningValues["keystorePath"]))
+                storePassword = releaseSigningValues["keystorePassword"]
+                keyAlias = releaseSigningValues["keyAlias"]
+                keyPassword = releaseSigningValues["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

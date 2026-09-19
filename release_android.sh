@@ -13,6 +13,7 @@ WEAR_PLAY_TRACK=""
 RELEASE_STATUS="draft"
 OUTPUT_DIRECTORY="build/play-release"
 VALIDATE_ONLY=false
+BUILD_ONLY=false
 
 PHONE_BUILD_FLOOR=87
 WEAR_BUILD_FLOOR=1000049
@@ -31,36 +32,31 @@ generate_version_step() {
 
 usage() {
   cat <<EOF
-Build, sign, verify, and upload SensorBox phone and Wear OS Android App Bundles.
+Build and sign SensorBox phone and Wear OS Android releases.
 
 Usage:
-  $SCRIPT_NAME \\
-    [--package-name com.example.app] \\
-    [--version-name 2026.09.19.12] \\
-    [--phone-version-code 88] \\
-    [--wear-version-code 1000050] \\
-    [--track internal] \\
-    [--wear-track wear:qa] \\
-    [--release-status draft] \\
-    [--output-directory PATH] \\
+  $SCRIPT_NAME \
+    [--package-name com.example.app] \
+    [--version-name 2026.09.19.12] \
+    [--phone-version-code 88] \
+    [--wear-version-code 1000050] \
+    [--track internal] \
+    [--wear-track wear:qa] \
+    [--release-status draft] \
+    [--output-directory PATH] \
+    [--build-only] \
     [--validate-only]
 
-Required environment variables:
-  ANDROID_GRADLE_ALIAS
-  ANDROID_GRADLE_BASE64_JKS
-  ANDROID_GRADLE_KEY_PASSWORD
-  ANDROID_GRADLE_KEYSTORE_PASSWORD
-  ANDROID_SUPPLY_BASE64_SECRET
+Required signing environment variables:
+  SENSORBOX_ANDROID_KEY_ALIAS
+  SENSORBOX_ANDROID_KEYSTORE_BASE64
+  SENSORBOX_ANDROID_KEY_PASSWORD
+  SENSORBOX_ANDROID_KEYSTORE_PASSWORD
 
-ANDROID_SUPPLY_BASE64_SECRET must contain the base64-encoded Google Play
-service-account JSON key. When version values are omitted, the version name is
-generated in UTC as yyyy.mm.dd.hh. Both version codes advance together from
-their current phone and Wear OS floors using minute steps since BUILD_EPOCH.
+Required only when uploading:
+  GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64
 
-The default destinations are draft releases on the phone internal track and
-the Wear OS wear:qa track. Fastlane uploads only the signed bundles. Store
-listing text, graphics, screenshots, and changelogs are skipped.
-Use --validate-only to ask Google Play to validate without committing a release.
+Use --build-only to create signed AAB and APK files without contacting Google Play.
 EOF
 }
 
@@ -75,6 +71,23 @@ require_command() {
 
 require_environment_variable() {
   [[ -n "${!1:-}" ]] || die "Required environment variable is missing: $1"
+}
+
+find_apksigner() {
+  local sdk_directory
+
+  if command -v apksigner >/dev/null 2>&1; then
+    command -v apksigner
+    return
+  fi
+
+  sdk_directory="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+  if [[ -z "$sdk_directory" && -f "$SCRIPT_DIRECTORY/local.properties" ]]; then
+    sdk_directory="$(sed -n 's/^sdk\.dir=//p' "$SCRIPT_DIRECTORY/local.properties" | head -n 1)"
+  fi
+
+  [[ -n "$sdk_directory" && -d "$sdk_directory/build-tools" ]] || return 1
+  find "$sdk_directory/build-tools" -type f -name apksigner | sort | tail -n 1
 }
 
 while [[ $# -gt 0 ]]; do
@@ -119,6 +132,10 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_DIRECTORY="$2"
       shift 2
       ;;
+    --build-only)
+      BUILD_ONLY=true
+      shift
+      ;;
     --validate-only)
       VALIDATE_ONLY=true
       shift
@@ -136,10 +153,7 @@ done
 [[ "$PACKAGE_NAME" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || \
   die "--package-name is not a valid Android application ID"
 
-if [[ -z "$VERSION_NAME" ]]; then
-  VERSION_NAME="$(generate_version_name)"
-fi
-
+[[ -n "$VERSION_NAME" ]] || VERSION_NAME="$(generate_version_name)"
 if [[ -z "$PHONE_VERSION_CODE" || -z "$WEAR_VERSION_CODE" ]]; then
   version_step="$(generate_version_step)"
   [[ "$version_step" =~ ^[1-9][0-9]*$ ]] || die "Generated version step is invalid"
@@ -147,7 +161,6 @@ if [[ -z "$PHONE_VERSION_CODE" || -z "$WEAR_VERSION_CODE" ]]; then
   [[ -n "$WEAR_VERSION_CODE" ]] || WEAR_VERSION_CODE="$((WEAR_BUILD_FLOOR + version_step))"
 fi
 
-[[ -n "$VERSION_NAME" ]] || die "Could not determine --version-name"
 [[ "$PHONE_VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || die "--phone-version-code must be a positive integer"
 [[ "$WEAR_VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || die "--wear-version-code must be a positive integer"
 [[ "$PHONE_VERSION_CODE" -le 2100000000 ]] || die "--phone-version-code exceeds Google Play's limit"
@@ -181,18 +194,22 @@ esac
 require_command ruby
 require_command keytool
 require_command jarsigner
-require_command zip
-require_command unzip
-require_command bundle
-
 [[ -x "$SCRIPT_DIRECTORY/gradlew" ]] || die "Gradle wrapper is missing or not executable"
-[[ -f "$SCRIPT_DIRECTORY/Gemfile" ]] || die "Gemfile not found at repository root"
 
-require_environment_variable ANDROID_GRADLE_ALIAS
-require_environment_variable ANDROID_GRADLE_BASE64_JKS
-require_environment_variable ANDROID_GRADLE_KEY_PASSWORD
-require_environment_variable ANDROID_GRADLE_KEYSTORE_PASSWORD
-require_environment_variable ANDROID_SUPPLY_BASE64_SECRET
+if [[ "$BUILD_ONLY" == false ]]; then
+  require_command bundle
+  [[ -f "$SCRIPT_DIRECTORY/Gemfile" ]] || die "Gemfile not found at repository root"
+fi
+
+require_environment_variable SENSORBOX_ANDROID_KEY_ALIAS
+require_environment_variable SENSORBOX_ANDROID_KEYSTORE_BASE64
+require_environment_variable SENSORBOX_ANDROID_KEY_PASSWORD
+require_environment_variable SENSORBOX_ANDROID_KEYSTORE_PASSWORD
+if [[ "$BUILD_ONLY" == false ]]; then
+  require_environment_variable GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64
+fi
+
+APKSIGNER="$(find_apksigner)" || die "Android SDK apksigner was not found"
 
 if [[ "$OUTPUT_DIRECTORY" != /* ]]; then
   OUTPUT_DIRECTORY="$SCRIPT_DIRECTORY/$OUTPUT_DIRECTORY"
@@ -202,17 +219,19 @@ umask 077
 release_tmp="$(mktemp -d "${TMPDIR:-/tmp}/sensorbox-android-release.XXXXXX")"
 keystore_path="$release_tmp/upload.jks"
 play_secret_path="$release_tmp/google-play-service-account.json"
+export SENSORBOX_ANDROID_KEYSTORE_PATH="$keystore_path"
 
 cleanup() {
   local exit_code=$?
 
   trap - EXIT HUP INT TERM
   unset \
-    ANDROID_GRADLE_ALIAS \
-    ANDROID_GRADLE_BASE64_JKS \
-    ANDROID_GRADLE_KEY_PASSWORD \
-    ANDROID_GRADLE_KEYSTORE_PASSWORD \
-    ANDROID_SUPPLY_BASE64_SECRET
+    SENSORBOX_ANDROID_KEY_ALIAS \
+    SENSORBOX_ANDROID_KEYSTORE_BASE64 \
+    SENSORBOX_ANDROID_KEYSTORE_PATH \
+    SENSORBOX_ANDROID_KEY_PASSWORD \
+    SENSORBOX_ANDROID_KEYSTORE_PASSWORD \
+    GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64
 
   if [[ -n "${release_tmp:-}" && -d "$release_tmp" ]]; then
     if ! rm -rf -- "$release_tmp"; then
@@ -232,81 +251,77 @@ trap 'exit 143' TERM
 ruby -rbase64 -e '
   encoded = ENV.fetch(ARGV.fetch(0)).gsub(/\s+/, "")
   File.binwrite(ARGV.fetch(1), Base64.strict_decode64(encoded))
-' ANDROID_GRADLE_BASE64_JKS "$keystore_path" || die "Could not decode ANDROID_GRADLE_BASE64_JKS"
+' SENSORBOX_ANDROID_KEYSTORE_BASE64 "$keystore_path" || \
+  die "Could not decode SENSORBOX_ANDROID_KEYSTORE_BASE64"
 
-ruby -rbase64 -rjson -e '
-  encoded = ENV.fetch(ARGV.fetch(0)).gsub(/\s+/, "")
-  decoded = Base64.strict_decode64(encoded)
-  JSON.parse(decoded)
-  File.binwrite(ARGV.fetch(1), decoded)
-' ANDROID_SUPPLY_BASE64_SECRET "$play_secret_path" || \
-  die "ANDROID_SUPPLY_BASE64_SECRET is not valid base64-encoded JSON"
+if [[ "$BUILD_ONLY" == false ]]; then
+  ruby -rbase64 -rjson -e '
+    encoded = ENV.fetch(ARGV.fetch(0)).gsub(/\s+/, "")
+    decoded = Base64.strict_decode64(encoded)
+    JSON.parse(decoded)
+    File.binwrite(ARGV.fetch(1), decoded)
+  ' GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 "$play_secret_path" || \
+    die "GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 is not valid base64-encoded JSON"
+fi
 
-chmod 600 "$keystore_path" "$play_secret_path"
+chmod 600 "$keystore_path"
+if [[ "$BUILD_ONLY" == false ]]; then
+  chmod 600 "$play_secret_path"
+fi
 
 keytool -list \
   -keystore "$keystore_path" \
   -storetype JKS \
-  -storepass:env ANDROID_GRADLE_KEYSTORE_PASSWORD \
-  -alias "$ANDROID_GRADLE_ALIAS" >/dev/null || \
-  die "Could not open the JKS or find alias '$ANDROID_GRADLE_ALIAS'"
+  -storepass:env SENSORBOX_ANDROID_KEYSTORE_PASSWORD \
+  -alias "$SENSORBOX_ANDROID_KEY_ALIAS" >/dev/null || \
+  die "Could not open the JKS or find alias '$SENSORBOX_ANDROID_KEY_ALIAS'"
 
 cd "$SCRIPT_DIRECTORY"
 
 printf 'Using version %s, phone code %s, and Wear OS code %s.\n' \
   "$VERSION_NAME" "$PHONE_VERSION_CODE" "$WEAR_VERSION_CODE"
 
-printf 'Building phone release bundle...\n'
-./gradlew :app:bundleRelease --console=plain \
+printf 'Building phone release bundle and APK...\n'
+./gradlew :app:bundleRelease :app:assembleRelease --console=plain \
   -Psensorbox.versionName="$VERSION_NAME" \
   -Psensorbox.phoneVersionCode="$PHONE_VERSION_CODE"
 
-printf 'Building Wear OS release bundle...\n'
-./gradlew :wear:bundleRelease --console=plain \
+printf 'Building Wear OS release bundle and APK...\n'
+./gradlew :wear:bundleRelease :wear:assembleRelease --console=plain \
   -Psensorbox.versionName="$VERSION_NAME" \
   -Psensorbox.wearVersionCode="$WEAR_VERSION_CODE"
 
 phone_aab="$SCRIPT_DIRECTORY/app/build/outputs/bundle/release/app-release.aab"
 wear_aab="$SCRIPT_DIRECTORY/wear/build/outputs/bundle/release/wear-release.aab"
+phone_apk="$SCRIPT_DIRECTORY/app/build/outputs/apk/release/app-release.apk"
+wear_apk="$SCRIPT_DIRECTORY/wear/build/outputs/apk/release/wear-release.apk"
 [[ -f "$phone_aab" ]] || die "Phone AAB not found: $phone_aab"
 [[ -f "$wear_aab" ]] || die "Wear OS AAB not found: $wear_aab"
+[[ -f "$phone_apk" ]] || die "Phone APK not found: $phone_apk"
+[[ -f "$wear_apk" ]] || die "Wear OS APK not found: $wear_apk"
 
 mkdir -p -- "$OUTPUT_DIRECTORY"
 signed_phone_aab="$OUTPUT_DIRECTORY/sensorbox-phone-$PHONE_VERSION_CODE.aab"
 signed_wear_aab="$OUTPUT_DIRECTORY/sensorbox-wear-$WEAR_VERSION_CODE.aab"
+signed_phone_apk="$OUTPUT_DIRECTORY/sensorbox-phone-$PHONE_VERSION_CODE.apk"
+signed_wear_apk="$OUTPUT_DIRECTORY/sensorbox-wear-$WEAR_VERSION_CODE.apk"
 
-sign_bundle() {
-  local source_aab=$1
-  local signed_aab=$2
-  local unsigned_copy=$3
-  local label=$4
-  local signature_entries=()
+cp -- "$phone_aab" "$signed_phone_aab"
+cp -- "$wear_aab" "$signed_wear_aab"
+cp -- "$phone_apk" "$signed_phone_apk"
+cp -- "$wear_apk" "$signed_wear_apk"
 
-  cp -- "$source_aab" "$unsigned_copy"
-  while IFS= read -r entry; do
-    signature_entries+=("$entry")
-  done < <(unzip -Z1 "$unsigned_copy" | grep -E '^META-INF/[^/]+\.(SF|RSA|DSA|EC)$' || true)
+printf 'Verifying signed release artifacts...\n'
+jarsigner -verify "$signed_phone_aab" >/dev/null || die "Phone AAB signature verification failed"
+jarsigner -verify "$signed_wear_aab" >/dev/null || die "Wear OS AAB signature verification failed"
+"$APKSIGNER" verify "$signed_phone_apk" || die "Phone APK signature verification failed"
+"$APKSIGNER" verify "$signed_wear_apk" || die "Wear OS APK signature verification failed"
 
-  if [[ ${#signature_entries[@]} -gt 0 ]]; then
-    zip -q -d "$unsigned_copy" "${signature_entries[@]}"
-  fi
-
-  printf 'Signing %s bundle with alias %s...\n' "$label" "$ANDROID_GRADLE_ALIAS"
-  jarsigner \
-    -keystore "$keystore_path" \
-    -storetype JKS \
-    -storepass:env ANDROID_GRADLE_KEYSTORE_PASSWORD \
-    -keypass:env ANDROID_GRADLE_KEY_PASSWORD \
-    -signedjar "$signed_aab" \
-    "$unsigned_copy" \
-    "$ANDROID_GRADLE_ALIAS"
-
-  printf 'Verifying %s bundle signature...\n' "$label"
-  jarsigner -verify "$signed_aab" >/dev/null || die "$label AAB signature verification failed"
-}
-
-sign_bundle "$phone_aab" "$signed_phone_aab" "$release_tmp/phone-unsigned.aab" "phone"
-sign_bundle "$wear_aab" "$signed_wear_aab" "$release_tmp/wear-unsigned.aab" "Wear OS"
+if [[ "$BUILD_ONLY" == true ]]; then
+  printf 'Signed release build completed successfully.\nPhone AAB: %s\nPhone APK: %s\nWear OS AAB: %s\nWear OS APK: %s\n' \
+    "$signed_phone_aab" "$signed_phone_apk" "$signed_wear_aab" "$signed_wear_apk"
+  exit 0
+fi
 
 upload_bundle() {
   local aab=$1
@@ -332,5 +347,5 @@ upload_bundle() {
 upload_bundle "$signed_phone_aab" "$PLAY_TRACK" "phone"
 upload_bundle "$signed_wear_aab" "$WEAR_PLAY_TRACK" "Wear OS"
 
-printf 'Release completed successfully.\nPhone AAB: %s\nWear OS AAB: %s\n' \
-  "$signed_phone_aab" "$signed_wear_aab"
+printf 'Release completed successfully.\nPhone AAB: %s\nPhone APK: %s\nWear OS AAB: %s\nWear OS APK: %s\n' \
+  "$signed_phone_aab" "$signed_phone_apk" "$signed_wear_aab" "$signed_wear_apk"

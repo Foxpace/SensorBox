@@ -40,13 +40,20 @@ The release script follows the Bookish environment-secret workflow. It builds th
 
 The uploads are sequential. If Google Play accepts the phone edit and rejects the Wear edit, the phone draft may already exist and should be reviewed in Play Console before retrying.
 
-Required environment variables:
+Required signing environment variables:
 
-- `ANDROID_GRADLE_ALIAS`
-- `ANDROID_GRADLE_BASE64_JKS`
-- `ANDROID_GRADLE_KEY_PASSWORD`
-- `ANDROID_GRADLE_KEYSTORE_PASSWORD`
-- `ANDROID_SUPPLY_BASE64_SECRET`
+- `SENSORBOX_ANDROID_KEY_ALIAS`
+- `SENSORBOX_ANDROID_KEYSTORE_BASE64`
+- `SENSORBOX_ANDROID_KEY_PASSWORD`
+- `SENSORBOX_ANDROID_KEYSTORE_PASSWORD`
+
+Uploads also require the shared `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64` value.
+
+Build signed AAB and APK files without uploading:
+
+```sh
+./release_android.sh --build-only
+```
 
 Validate the complete release with Google Play without committing it:
 
