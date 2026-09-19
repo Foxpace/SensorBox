@@ -20,14 +20,14 @@ import com.tomasrepcik.sensorbox.recording.sources.SensorDescriptor
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeSourceSelection() = PhoneReadmeFrame {
+fun ReadmeSourceSelection() = PhoneReadmeFrame {
     RecordScreen(state = readmeRecordingState(), onIntent = {})
 }
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeRecordingSetup() = PhoneReadmeFrame {
+fun ReadmeRecordingSetup() = PhoneReadmeFrame {
     RecordingSetupScreen(
         state = readmeRecordingState().copy(selectedSensorIds = setOf(Sensor.TYPE_GRAVITY)),
         onIntent = {},
@@ -38,32 +38,32 @@ fun readmeRecordingSetup() = PhoneReadmeFrame {
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroWelcome() = OnboardingReadmePreview(page = 0)
+fun ReadmeIntroWelcome() = OnboardingReadmePreview(page = 0)
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroPrivacy() = OnboardingReadmePreview(page = 1)
+fun ReadmeIntroPrivacy() = OnboardingReadmePreview(page = 1)
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroPolicy() = OnboardingReadmePreview(page = 2)
+fun ReadmeIntroPolicy() = OnboardingReadmePreview(page = 2)
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroLifecycle() = OnboardingReadmePreview(page = 3)
+fun ReadmeIntroLifecycle() = OnboardingReadmePreview(page = 3)
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroBattery() = OnboardingReadmePreview(page = 4)
+fun ReadmeIntroBattery() = OnboardingReadmePreview(page = 4)
 
 @PreviewTest
 @ReadmePhonePreview
 @Composable
-fun readmeIntroStorage() = OnboardingReadmePreview(page = 5, recordingArchivePath = "Documents/SensorBox")
+fun ReadmeIntroStorage() = OnboardingReadmePreview(page = 5, recordingArchivePath = "Documents/SensorBox")
 
 @Composable
 private fun OnboardingReadmePreview(page: Int, recordingArchivePath: String? = null) = PhoneReadmeFrame {
@@ -92,7 +92,7 @@ private fun readmeRecordingState() = RecordingState(
 
 @Preview(
     device = README_PHONE_DEVICE,
-    showSystemUi = true,
+    showSystemUi = false,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 )
 private annotation class ReadmePhonePreview

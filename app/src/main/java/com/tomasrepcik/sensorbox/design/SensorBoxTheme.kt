@@ -26,6 +26,7 @@ import androidx.core.view.WindowCompat
 import com.tomasrepcik.sensorbox.core.preferences.AppThemeMode
 
 val SensorBoxRecording = Color(0xFFFF6B72)
+private val DarkBackground = Color(0xFF101010)
 
 private val DarkColors = darkColorScheme(
     primary = Color.White,
@@ -37,9 +38,9 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF292929),
     onSecondaryContainer = Color.White,
     tertiary = Color(0xFFBDBDBD),
-    background = Color.Black,
+    background = DarkBackground,
     onBackground = Color.White,
-    surface = Color(0xFF101010),
+    surface = DarkBackground,
     onSurface = Color.White,
     surfaceVariant = Color(0xFF1C1C1C),
     onSurfaceVariant = Color(0xFFC7C7C7),

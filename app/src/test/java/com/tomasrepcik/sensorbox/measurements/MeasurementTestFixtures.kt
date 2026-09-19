@@ -1,6 +1,5 @@
 package com.tomasrepcik.sensorbox.measurements
 
-import com.tomasrepcik.sensorbox.core.failure.AppFailureStore
 import com.tomasrepcik.sensorbox.core.failure.AppResult
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementDetails
 import com.tomasrepcik.sensorbox.measurements.storage.MeasurementFileContent
@@ -63,5 +62,3 @@ internal class FakeMeasurementRepository : MeasurementRepository {
         return fileResult
     }
 }
-
-internal fun measurementFailureStore() = AppFailureStore { }
