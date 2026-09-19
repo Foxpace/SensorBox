@@ -1,1 +1,1 @@
-Log data from all sensors in your phone with annotations.
+Record phone and Wear OS sensor data to local CSV files

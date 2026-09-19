@@ -1,88 +1,87 @@
-# SensorBox - record all your sensors to csv files
+<p align="center">
+  <img src="AppImages/icon.png" width="132" alt="SensorBox app icon">
+</p>
 
-This repository is now archived and will no longer be actively maintained.
+<h1 align="center">SensorBox</h1>
 
 <p align="center">
-<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/icon.png" width="250">
+  A private, local-first sensor recorder for Android phones and Wear OS watches.
 </p>
 
 <p align="center">
-<img src="https://github.com/Creative-Motion-Apps/SensorBox/blob/master/AppImages/sensorbox_preview.png" width="1000">
+  <img alt="Android 10+" src="https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&amp;logoColor=white">
+  <img alt="Wear OS" src="https://img.shields.io/badge/Wear%20OS-supported-4285F4?logo=wearos&amp;logoColor=white">
+  <img alt="Jetpack Compose" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&amp;logoColor=white">
 </p>
 
-The SensorBox provides easy way to access sensors in Android phone and Wear Os. You can customize measurements in many ways, which is suitable for development of other apps. The outputs of the app are raw outputs of the system.
+## See it in use
 
-[![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<table>
+  <tr>
+    <td width="33%"><img src="docs/images/sensorbox-phone-record.png" alt="SensorBox phone sensor selection"></td>
+    <td width="33%"><img src="docs/images/sensorbox-phone-setup.png" alt="SensorBox recording setup"></td>
+    <td width="33%"><img src="docs/images/sensorbox-wear.png" alt="SensorBox Wear OS dashboard"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Choose the sensors and sources to record.</sub></td>
+    <td align="center"><sub>Set the recording options before you start.</sub></td>
+    <td align="center"><sub>Record from the watch or pair it with the phone.</sub></td>
+  </tr>
+</table>
 
-## Features:
+## The idea
 
-Whole functionality is hidden under SensorServices library, where one foreground service operates with sensors, GPS and other APIs.
+SensorBox records raw sensor samples from an Android phone or Wear OS watch into CSV files in a folder you choose. Recordings stay on your devices. There is no account, analytics service, or cloud storage in the recording path.
 
-* stores **sensor outputs** into the csv: *timestamp, values, accuracy*
-* values from the sensors are in raw format - **no resampling**
-* pick native sensor speed limits
-* compatible with **GPS**
-* can use **Activity recognition API from Android** and **Significant motion sensor**
-* write custom annotation during measurement
-* all extra information are stored in **JSON**
-* check sensor attributes and preview of the outputs
-* measurement can be customized :
-  *  write own key words to measurement 
-  *  set up timed alarms
-  *  set up countdown to start measurement
-  *  stop on low battery measurement
-  *  lock CPU, add app to whitelist
-* compatible with **Wear Os** with similar features
+This is a revamp of the previous SensorBox app after several years. The project has gone through a full refactor, and many problems from the previous version have been solved. Issues are still expected while the new version settles, especially across different phones, sensors, and Wear OS devices.
 
-## Organization of code and the libraries:
+> The behaviour was not persited 1:1 completly, but all major features and couple new were added. For example file browser was added or improved sync of files between wearable and phone. One of features which was removed was actually heart rate monitoring and other possible medical implementations as they do not fit into the domain of the app.
 
-### Code
-* whole code is in **Kotlin** (Flipper - third party - code is in Java)
-* the phone app follows **MVI architecture** - activity/fragment -> ViewModel -> repository
-  * There are 2 activities created with this architecture :
-    * **MainActivity** - created with other fragments like HomeFragment, AdvancedFragment, SettingsFragment, ...  - these **fragments share one ViewModel** defined by MainActivity. Meanwhile for the navigation is used androidx fragment navigation library.
-    * **MeasurementActivity** - alone activity to create annotations / stop the measurement if it is proceeding - **has its own ViewModel**
-* In the phone application is used **Hilt - dependency injection library** 
-* **The phone app and the Wear Os app use the same SensorService Library** which covers all the requirements from the apps. The library provides intents builders for both of them. 
-* **WearOsLib** provides easy and comprehensive code of how to find other device and send messages, send file between them. 
+## What it does
 
+- Records available phone and watch sensors at the selected sampling period
+- Records GPS and activity recognition data when requested
+- Runs recordings in a visible foreground service with explicit stop handling
+- Shows a live sensor signal on Wear OS before recording
+- Records on the watch independently when a phone is not available
+- Starts and stops paired phone and watch recordings together
+- Syncs watch measurements to the phone without deleting the watch originals
+- Writes measurements to a folder selected through Android's system folder picker
+- Adds metadata and annotations to recording sessions
 
-### Libraries:
+## How it is built
 
-* **app / wear** - implementation for the phone / wearable respectively 
-* **CountDownDialog** - library for creation of the countdowns, with interaface to interact and custom Dialog
-* **Flipper** - [Storage access framework](https://github.com/baldapps/Flipper) created by [baldapps](https://github.com/baldapps)
-* **Sensorservices** - main background service, which registers all the sensors and other providers of the data
-* **WearOsLib** - general library for communication of the phone and wearable and vice versa
+SensorBox uses feature-first modules and a pragmatic MVI flow:
 
-## How to build the project:
+```text
+Composable -> Intent -> ViewModel -> use case -> repository -> State + Effect
+```
 
-* clone / download the project to your machine
-* to activate google services follow steps at **[Firebase](https://console.firebase.google.com/u/0/).** Create project and get the `google-services.json`
-  * make sure, that the package id in app/wear build gradle is the same as in firebase console
-* `google-services.json` copy to the app folder and wear folder too
-* to activate Google maps, follow the steps here to create API key **[Google documentation](https://developers.google.com/maps/documentation/android-sdk/get-api-key#console)**
-* adding line to `local.properties`: **MAPS_API_KEY=YOUR_API_KEY** is enough
+The `app` module owns the phone UI and recording flows. The `wear` module owns the Wear OS UI and watch recording. `recording-core` contains the platform-independent recording state machine. `sensorservices` adapts Android sensors, GPS, foreground services, and file storage. `core` and `core-common` contain shared preferences, storage, diagnostics, and result types. `WearOsLib` contains the versioned phone-to-watch commands and file transport.
 
+Hilt wires Android implementations behind testable interfaces. Phone and watch keep their own recording sessions and local files. The phone can later sync completed watch measurements into the selected recording archive.
 
-## Third parties:
+## Build it
 
-Thanks goes to:
+You need JDK 17 and Android SDK 37. A Wear OS device or emulator is only needed to run the watch app and paired tests.
 
-* [GraphView](https://github.com/jjoe64/GraphView) - chart library 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Flipper](https://github.com/baldapps/Flipper) - storage access framework
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [AppIntro](https://github.com/AppIntro/AppIntro) - introduction to the app for the first launch
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Material dialogs](https://github.com/afollestad/material-dialogs) - dialogs with material design style
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Number picker](https://github.com/ShawnLin013/NumberPicker) - create custom number pickers
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [Android about page](https://github.com/medyo/android-about-page) - easy way to create about page
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-* [Licenses dialog](https://github.com/PSDev/LicensesDialog) - dialog to aggreate all licences - check out for the full licenses
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-* [Toasty](https://github.com/GrenderG/Toasty) - The usual Toast, but with steroids 💪 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+```sh
+./gradlew :app:assembleDebug :wear:assembleDebug
+./gradlew testDebugUnitTest detekt
+./gradlew :app:lintDebug :wear:lintDebug
+```
+
+No Firebase project, Maps key, secrets file, account, or external-storage permission is required.
+
+## Release it
+
+The Android release workflow builds, signs, verifies, and uploads the phone and Wear OS bundles using environment-provided credentials:
+
+```sh
+bundle install
+./release_android.sh --validate-only
+```
+
+The default Google Play destinations are draft releases on `internal` for the phone and `wear:qa` for Wear OS. See the [Google Play submission pack](store/google_play/README.md) for the required environment variables, listing materials, and remaining submission checks.
+
+SensorBox is licensed under the [Apache License 2.0](LICENSE).

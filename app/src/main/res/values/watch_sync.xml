@@ -1,0 +1,21 @@
+<resources>
+    <string name="watch_sync_up_to_date">Watch up to date. Nothing to sync</string>
+    <string name="watch_sync_retry">Retry</string>
+    <string name="watch_sync_title">Watch sync</string>
+    <string name="watch_sync_checking">Checking watch…</string>
+    <string name="watch_sync_progress">Syncing · %1$d files saved</string>
+    <string name="watch_sync_complete">Sync complete · %1$d files saved</string>
+    <string name="watch_sync_failed">Sync failed · tap to retry</string>
+    <string name="watch_sync_available">%1$d measurements to fetch</string>
+    <string name="watch_sync_destination">Saves watch measurements in your recording folder. Each measurement is deleted from the watch only after the phone confirms it was saved.</string>
+    <string name="watch_sync_refresh">Check watch again</string>
+    <string name="watch_sync_copy">Sync from watch</string>
+    <string name="watch_sync_show_progress">Watch syncing. Show progress</string>
+    <string name="watch_sync_file_progress">%1$d of %2$d files saved</string>
+    <string name="watch_sync_close">Close</string>
+    <plurals name="watch_measurements_to_fetch">
+        <item quantity="one">Fetch %1$d watch measurement</item>
+        <item quantity="other">Fetch %1$d watch measurements</item>
+    </plurals>
+    <string name="wait_for_watch_sync">Wait for watch sync</string>
+</resources>

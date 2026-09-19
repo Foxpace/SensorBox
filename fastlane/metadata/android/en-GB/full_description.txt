@@ -1,19 +1,9 @@
-Use your sensors in mobile to track motion by accelerometer, gyroscope, magnetometer, ... and location data by GPS, which are stored in CSV files in your phone. No data are sent out from smartphone.  
+SensorBox records raw samples from supported phone and Wear OS sensors. Choose the sensors you need, add GPS or activity recognition when required, set the recording duration and sampling options, then start recording.
 
-While measuring, you can make annotations, which you can customize in settings. They can be found in the same folder like CSV files called "extra". 
+Phone measurements are written as CSV files to a recording archive that you choose with Android's system folder picker. Notes, recording details and timestamped annotations are saved with the measurement metadata.
 
-App is constructed from more modules, which enable to set countdown to stop measurement, types of usage , use only motion sensors with/without GPS or just use all sensors. 
+Browse stored measurements in the phone app and preview recorded values on charts. The available sensors depend on the hardware in your device.
 
-More parameters can be found in settings, with which you can modify measurement, like you want. 
+The Wear OS app can record without a phone. It also provides live sensor charts and paired recording controls. You can copy completed watch measurements into the phone archive. After the phone confirms that a measurement was saved, SensorBox removes that confirmed copy from the watch.
 
-Can use sensors: accelerometer, gyroscope, magnetometer, rotation vector calculation, thermometer, barometer, luxmeter, proximity sensor, humidity meter, pedometer.
-
-If you are owner of Wear Os device, you can use it to get additional data. Wear motion data are collected by smartphone and stored in individual CSV files. Phone is required to collect data. Also, you can take a look at graphs directly in Wear Os with option to pause recording. 
-
-Recently, the activity recognition client , Google's API, has been added, so all motion changes, which can result in change of motion state, can be recorded. Two files are generated. One with timestamps of significant changes, which resulted in change of motion state. This data are event based. Second file has timestamps with confidence of each possible activity, which can client recognize. This  data are recorded periodically with customizable frequency. 
-
-Supported activities by activity recognition client: vehicle, bike, running, walking, still, tilting. 
-
-Wear Os app now supports local storage, so you can record data without paired phone. Sync can be done manually through phone app. Meanwhile local storage is in test phase, but available at all versions of app. 
-
-More will come and if you have some kind of problem / suggestion, contact us via email down below.
+SensorBox has no account, advertising, analytics or publisher-operated cloud storage. Recordings remain under your control on your devices and in the archive you select.

@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.hardware.type.watch" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission
+        android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
+        tools:ignore="HighSamplingRate" />
     <application
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher_white_square"
+        android:name=".bootstrap.WearSensorBoxApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_descriptor"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <uses-library
@@ -31,7 +32,7 @@
             android:value="true" />
 
         <activity
-            android:name=".activities.MainActivity"
+            android:name=".bootstrap.MainActivity"
             android:exported="true"
             android:taskAffinity=".main">
             <intent-filter>
@@ -41,78 +42,21 @@
         </activity>
 
         <activity
-            android:name=".activities.PermissionActivityForResult"
-            android:label="@string/title_activity_permission_for_result"
-            android:taskAffinity=".main" />
-
-        <activity
-            android:name=".activities.PermissionActivity"
-            android:label="@string/title_activity_permission"
-            android:taskAffinity=".main" />
-
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-
-        <activity
-            android:name=".activities.MapsActivity"
-            android:label="@string/title_activity_maps"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".activities.MainSettings"
-            android:label="@string/title_activity_main_settings"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".activities.SettingsPicker"
-            android:label="@string/title_activity_settings"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".activities.PickSensorMeasure"
-            android:label="@string/title_activity_pick_sensor_measure"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".activities.StopActivity"
-            android:label="@string/title_activity_stopactivity"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".activities.MoveToMain"
+            android:name=".bootstrap.MoveToMain"
             android:taskAffinity=".main" />
 
         <service
-            android:name=".communication.MsgListener"
-            android:exported="true"
-            android:foregroundServiceType="dataSync">
+            android:name=".pairedrecording.MsgListener"
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
 
                 <data
                     android:host="*"
-                    android:pathPrefix="/com.motionapps.sensorbox.Sensors"
+                    android:pathPrefix="/sensorbox/v3/wear"
                     android:scheme="wear" />
             </intent-filter>
         </service>
-        <service
-            android:name=".rlRecording.RealTimeSensorService"
-            android:exported="true"
-            android:foregroundServiceType="dataSync"
-            android:permission="com.foxpace.sensors.LAUNCH">
-            <intent-filter>
-                <action android:name="com.foxpace.sensors.LAUNCH" />
-            </intent-filter>
-        </service>
-
-        <activity
-            android:name=".activities.PickSensorShow"
-            android:label="@string/title_activity_pick_sensor"
-            android:taskAffinity=".main" />
-        <activity
-            android:name=".charts.GraphViewer"
-            android:label="@string/title_activity_graph_viewer"
-            android:taskAffinity=".main" />
-
-        <property
-            android:name="android.content.MEDIA_CAPABILITIES"
-            android:resource="@xml/media_capabilities" />
     </application>
 
 </manifest>

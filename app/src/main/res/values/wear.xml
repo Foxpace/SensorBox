@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string-array name="android_wear_capabilities" translatable="false">
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@array/android_wear_capabilities">
+    <string-array
+        name="android_wear_capabilities"
+        translatable="false"
+        tools:ignore="UnusedResources">
         <item>phone_app</item>
     </string-array>
 </resources>

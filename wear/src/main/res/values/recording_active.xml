@@ -1,0 +1,8 @@
+<resources>
+    <string name="recording_gps_on">GPS on</string>
+    <string name="recording_gps_off">GPS off</string>
+    <string name="recording_duration_seconds">Duration: %1$d s</string>
+    <string name="recording_until_stopped">Until stopped</string>
+    <string name="recording_stopping">Saving…</string>
+    <string name="stop_recording">Stop</string>
+</resources>
